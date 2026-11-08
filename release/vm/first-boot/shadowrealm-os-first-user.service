@@ -1,0 +1,19 @@
+[Unit]
+Description=ShadowRealm-OS appliance administrator setup
+ConditionPathExists=/var/lib/shadowrealm-os/appliance-first-boot/required
+After=systemd-user-sessions.service
+Before=display-manager.service getty@tty1.service
+
+[Service]
+Type=oneshot
+ExecStartPre=-/usr/bin/plymouth quit
+ExecStartPre=-/usr/bin/chvt 1
+ExecStart=/usr/local/libexec/shadowrealm-os-first-user
+StandardInput=tty-force
+StandardOutput=tty
+StandardError=tty
+TTYPath=/dev/tty1
+TimeoutStartSec=infinity
+
+[Install]
+RequiredBy=display-manager.service

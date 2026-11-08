@@ -1,0 +1,274 @@
+#!/usr/bin/python3
+"""Native ShadowRealm-OS settings backed by actual system services."""
+import concurrent.futures,json,pathlib,subprocess,sys
+import ctypes
+ctypes.CDLL(None).prctl(15,('Shadow Network' if '--network' in __import__('sys').argv else 'BluetoothPanel' if '--bluetooth' in __import__('sys').argv else 'Shadow Shield').encode(),0,0,0)
+import gi
+gi.require_version('Gtk','3.0');gi.require_version('GdkPixbuf','2.0')
+from gi.repository import Gtk,GLib,GdkPixbuf,Gio
+POOL=concurrent.futures.ThreadPoolExecutor(max_workers=3)
+HOME=pathlib.Path.home();BASE=HOME/'.local/share/shadow-link'
+def cmd(*args):
+ p=subprocess.run(args,capture_output=True,text=True,timeout=8)
+ if p.returncode:raise RuntimeError(p.stderr.strip() or p.stdout.strip() or 'The requested action could not be completed.')
+ return p.stdout
+
+def fields(line):
+ parts=[];word='';escape=False
+ for c in line:
+  if escape:word+=c;escape=False
+  elif c=='\\':escape=True
+  elif c==':':parts.append(word);word=''
+  else:word+=c
+ return parts+[word]
+
+def page(tabs,name):
+ box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14,margin=18);tabs.append_page(box,Gtk.Label(label=name));return box
+
+def textview(box):
+ view=Gtk.TextView(editable=False,cursor_visible=False,wrap_mode=Gtk.WrapMode.WORD_CHAR,monospace=True);scroll=Gtk.ScrolledWindow();scroll.set_min_content_height(160);scroll.add(view);box.pack_start(scroll,True,True,0);return view
+
+class Panel(Gtk.Application):
+ def __init__(self,mode):
+  super().__init__(application_id='org.shadowrealm_os.'+mode.capitalize(),flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE);self.mode=mode;self.syncing=False;self.refreshing=False;self.busy=False;self.port_signature=None;self.connect('activate',self.activate);self.connect('command-line',self.command_line)
+ def command_line(self,app,command):
+  self.activate()
+  args=command.get_arguments()[1:]
+  if self.mode=='network' and args:
+   for i in range(self.tabs.get_n_pages()):
+    child=self.tabs.get_nth_page(i)
+    if self.tabs.get_tab_label_text(child).lower()==args[0].lower():self.tabs.set_current_page(i);break
+  return 0
+ def activate(self,*args):
+  if hasattr(self,'window'):self.window.present();return
+  title={'shield':'Shadow Shield','network':'Shadow Network','bluetooth':'Shadow Bluetooth'}[self.mode]
+  self.window=Gtk.ApplicationWindow(application=self,title=title);self.window.set_default_size(730,600)
+  from shadow_effects import attach
+  attach(self.window)
+  outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14,margin=20);self.window.add(outer);header=Gtk.Box(spacing=14);outer.pack_start(header,False,False,0)
+  self.logo=Gtk.Image();header.pack_start(self.logo,False,False,0);label=Gtk.Label(xalign=0);label.set_markup('<span size="x-large" weight="bold">'+title+'</span>');header.pack_start(label,True,True,0)
+  self.tabs=Gtk.Notebook();outer.pack_start(self.tabs,True,True,0);self.status=Gtk.Label(xalign=0,wrap=True);outer.pack_end(self.status,False,False,0)
+  getattr(self,'build_'+self.mode)();self.brand();Gtk.Settings.get_default().connect('notify::gtk-theme-name',lambda *_:self.brand());self.window.show_all();self.refresh();GLib.timeout_add_seconds(4,self.refresh)
+ def brand(self):
+  logo = BASE/'logo.png'
+  try:
+   if logo.is_file():
+    self.logo.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(str(logo),52,52,True))
+   else:
+    self.logo.set_from_icon_name('preferences-system',Gtk.IconSize.DIALOG)
+  except (GLib.Error, OSError):
+   self.logo.set_from_icon_name('preferences-system',Gtk.IconSize.DIALOG)
+  try:mode=(HOME/'.config/shadowrealm-os/appearance-mode').read_text().strip()
+  except OSError:mode='neon'
+  for icon in (BASE/'icons'/mode/('shadow-'+self.mode+'.png'),BASE/'icons'/('shadow-'+self.mode+'.png')):
+   if icon.is_file():
+    try:self.window.set_icon_from_file(str(icon));break
+    except (GLib.Error,OSError):pass
+ def button(self,box,label,callback):
+  b=Gtk.Button(label=label);b.connect('clicked',callback);box.pack_start(b,False,False,0);return b
+ def async_run(self,fn,done):
+  future=POOL.submit(fn)
+  def finished(f):
+   try:value=f.result();error=None
+   except Exception as e:value=None;error=str(e)
+   GLib.idle_add(done,value,error)
+  future.add_done_callback(finished)
+ def action(self,args):
+  self.status.set_text('Applying change…')
+  def done(value,error):self.status.set_text(error or 'Change applied.');self.refresh();return False
+  self.async_run(lambda:cmd(*args),done)
+ def launch(self,*args):
+  try:subprocess.Popen(args,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+  except Exception as e:self.status.set_text(str(e))
+ def details(self,title,text):
+  dialog=Gtk.Dialog(title=title,transient_for=self.window,modal=True);dialog.add_button('Close',Gtk.ResponseType.CLOSE);dialog.set_default_size(680,440);box=dialog.get_content_area();v=textview(box);v.get_buffer().set_text(text or 'No matching events were recorded.');dialog.show_all();dialog.run();dialog.destroy()
+ def confirm(self,text):
+  d=Gtk.MessageDialog(transient_for=self.window,modal=True,message_type=Gtk.MessageType.QUESTION,buttons=Gtk.ButtonsType.OK_CANCEL,text=text);result=d.run();d.destroy();return result==Gtk.ResponseType.OK
+ def security(self,action,*args):
+  if self.busy:self.status.set_text('Please finish the current administrator action first.');return
+  if action=='firewall-disable' and not self.confirm('Turn off incoming connection filtering?'):return
+  self.busy=True;self.status.set_text('Waiting for administrator authentication…')
+  def work():
+   p=subprocess.run(['/usr/bin/pkexec','/usr/local/libexec/shadowrealm-os-security-control',action,*args],capture_output=True,text=True,timeout=120)
+   try:data=json.loads(p.stdout)
+   except Exception:raise RuntimeError(p.stderr.strip() or 'Authentication was cancelled. No change was made.')
+   if not data.get('ok'):raise RuntimeError(data.get('message','Action failed.'))
+   return data
+  def done(data,error):
+   self.busy=False;self.status.set_text(error or data['message'])
+   if data and data.get('details'):self.details(data['message'],data['details'])
+   self.refresh();return False
+  self.async_run(work,done)
+ def build_shield(self):
+  box=page(self.tabs,'Protection');self.summary=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.summary,False,False,0)
+  self.on=self.button(box,'Enable firewall',lambda *_:self.security('firewall-enable'));self.off=self.button(box,'Disable firewall…',lambda *_:self.security('firewall-disable'))
+  box.pack_start(Gtk.Label(label='Incoming connections are controlled by the Allowed ports list.',xalign=0,wrap=True),False,False,0)
+  self.button(box,'Reload AppArmor baseline policy',lambda *_:self.security('policy-reload'));self.button(box,'View loaded policies',lambda *_:self.security('policy-details'));self.button(box,'View security activity',lambda *_:self.security('security-logs'))
+  box.pack_start(Gtk.Label(label='The current AppArmor baseline does not confine every application. Disk encryption has not been verified.',xalign=0,wrap=True),False,False,0)
+  box=page(self.tabs,'Allowed ports');self.ports=Gtk.ListStore(str,str,str,str);view=self.portview=Gtk.TreeView(model=self.ports)
+  box.pack_start(Gtk.Label(label='The firewall drops unsolicited incoming connections by default. An allow rule lets traffic reach a port; it does not start a service there.',xalign=0,wrap=True),False,False,0)
+  for i,title in enumerate(['Protocol','Port','Purpose','Rule status']):
+   renderer=Gtk.CellRendererText();view.append_column(Gtk.TreeViewColumn(title,renderer,text=i))
+  self.button(box,'Edit selected description…',self.edit_port_description)
+  scroll=Gtk.ScrolledWindow();scroll.add(view);box.pack_start(scroll,True,True,0);self.button(box,'Allow an incoming port…',self.allow_port);self.button(box,'Remove selected custom rule',self.remove_port)
+  box=page(self.tabs,'Privacy');self.privacy=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.privacy,False,False,0)
+  box.pack_start(Gtk.Label(label='A connected VPN interface alone does not verify protected routing. Tor only protects applications configured to use it.',xalign=0,wrap=True),False,False,0)
+  self.tor_start=self.button(box,'Start Tor service',lambda *_:self.security('tor-start'));self.tor_stop=self.button(box,'Stop Tor service',lambda *_:self.security('tor-stop'))
+  row=Gtk.Box(spacing=10);box.pack_start(row,False,False,0)
+  self.button(row,'DNS Settings…',lambda *_:self.open_network('dns'))
+  self.button(row,'VPN Settings…',lambda *_:self.open_network('vpn'))
+  self.button(box,'Open Tor Browser',lambda *_:self.launch('flatpak','run','org.torproject.torbrowser-launcher'))
+  box=page(self.tabs,'Internet Pause')
+  box.pack_start(Gtk.Label(label='Pause outbound Internet access on wired and wireless connections. This stays on until you resume it, including after a reboot. Loopback services remain available. Remote sessions will disconnect; resume locally.',xalign=0,wrap=True),False,False,0)
+  self.pause_info=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.pause_info,False,False,0)
+  self.pause_on=self.button(box,'Pause Internet…',lambda *_:self.pause_internet())
+  self.pause_off=self.button(box,'Resume Internet',lambda *_:self.security('internet-resume'))
+  self.pause_on.set_sensitive(False);self.pause_off.set_sensitive(False)
+
+ def open_network(self,tab):
+  self.launch('/usr/bin/python3',str(BASE/'bin/shadow-system-panels'),'--network',tab)
+ def port_descriptions(self):
+  path=HOME/'.config/shadowrealm-os/firewall-descriptions.json'
+  try:
+   data=json.loads(path.read_text())
+   return data if isinstance(data,dict) else {}
+  except (OSError,ValueError):return {}
+ def edit_port_description(self,*unused):
+  model,row=self.portview.get_selection().get_selected()
+  if row is None:return
+  protocol,number,purpose,_=model[row]
+  dialog=Gtk.Dialog(title='Edit port description',transient_for=self.window,modal=True)
+  dialog.add_button('Cancel',Gtk.ResponseType.CANCEL);dialog.add_button('Save',Gtk.ResponseType.OK)
+  entry=Gtk.Entry(text=purpose,max_length=96);entry.set_activates_default(True)
+  dialog.set_default_response(Gtk.ResponseType.OK);dialog.get_content_area().add(entry);dialog.show_all()
+  response=dialog.run();description=entry.get_text().strip();dialog.destroy()
+  if response!=Gtk.ResponseType.OK:return
+  data=self.port_descriptions();data[protocol.lower()+':'+number]=description
+  path=HOME/'.config/shadowrealm-os/firewall-descriptions.json';path.parent.mkdir(parents=True,exist_ok=True)
+  temporary=path.with_suffix('.new');temporary.write_text(json.dumps(data,indent=2)+'\n');temporary.replace(path)
+  self.port_signature=None;self.refresh()
+ def allow_port(self,*unused):
+  d=Gtk.Dialog(title='Allow incoming port',transient_for=self.window,modal=True);d.add_button('Cancel',Gtk.ResponseType.CANCEL);d.add_button('Allow',Gtk.ResponseType.OK);box=d.get_content_area();box.set_spacing(12);box.set_border_width(18);proto=Gtk.ComboBoxText();proto.append_text('TCP');proto.append_text('UDP');proto.set_active(0);port=Gtk.SpinButton.new_with_range(1,65535,1);port.set_value(8080);box.pack_start(Gtk.Label(label='Protocol'),False,False,0);box.pack_start(proto,False,False,0);box.pack_start(Gtk.Label(label='Port number'),False,False,0);box.pack_start(port,False,False,0);d.show_all();result=d.run();values=(proto.get_active_text().lower(),str(port.get_value_as_int()));d.destroy()
+  if result==Gtk.ResponseType.OK:self.security('port-allow',*values)
+ def remove_port(self,*unused):
+  model,row=self.portview.get_selection().get_selected()
+  if row is None:return
+  protocol,number,purpose,_=model[row]
+  if self.confirm('Remove the '+protocol+' '+number+' incoming rule?'):self.security('port-remove',protocol.lower(),number)
+ def build_network(self):
+  box=page(self.tabs,'Connection');self.device=Gtk.ComboBoxText();self.device.connect('changed',lambda *_:self.refresh());box.pack_start(self.device,False,False,0);self.netinfo=Gtk.Label(xalign=0,yalign=0,selectable=True,wrap=True);box.pack_start(self.netinfo,True,True,0)
+  self.button(box,'Connect / reconnect selected device',lambda *_:self.network_action('connect'));self.button(box,'Disconnect selected device…',lambda *_:self.network_action('disconnect'));self.button(box,'Manage saved connections',lambda *_:self.launch('nm-connection-editor'))
+  box=page(self.tabs,'Wi-Fi');box.pack_start(Gtk.Label(label='Join Wi-Fi networks from the top-bar network menu. Saved networks and passwords can be edited in connection settings.',xalign=0,wrap=True),False,False,0);self.wifi=textview(box);self.button(box,'Refresh available Wi-Fi networks',lambda *_:self.refresh());self.button(box,'Open connection settings',lambda *_:self.launch('nm-connection-editor'))
+  from shadow_network_tools import DNSPage, VPNPage
+  self.dns_page=DNSPage(self,page(self.tabs,'DNS'))
+  self.vpn_page=VPNPage(self,page(self.tabs,'VPN'))
+  box=page(self.tabs,'Airplane Mode')
+  box.pack_start(Gtk.Label(label='Pause Wi-Fi, mobile broadband, and Bluetooth. Ethernet stays connected.',xalign=0,wrap=True),False,False,0)
+  self.airplane=Gtk.ToggleButton(label='Airplane Mode: OFF');self.airplane.set_sensitive(False)
+  self.airplane.connect('toggled',self.airplane_changed);box.pack_start(self.airplane,False,False,0)
+  self.radio_status=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.radio_status,False,False,0)
+ def pause_internet(self):
+  if self.confirm('Pause Internet access until you manually resume it? Remote sessions will disconnect. Resume locally.'):self.security('internet-pause')
+ def airplane_changed(self,button):
+  if self.syncing or getattr(self,'airplane_busy',False):return
+  from shadow_airplane import set_mode
+  enabled=button.get_active();self.airplane_busy=True;button.set_sensitive(False)
+  self.status.set_text('Applying wireless radio settings…')
+  def done(value,error):
+   self.airplane_busy=False;self.status.set_text(error or 'Wireless radio settings applied.');self.refresh();return False
+  self.async_run(lambda:set_mode(enabled),done)
+ def network_action(self,action):
+  device=self.device.get_active_id()
+  if not device:return
+  if action=='disconnect' and not self.confirm('Disconnect '+device+'? Network applications and remote connections will stop.'):return
+  self.action(['nmcli','--wait','6','device',action,device])
+ def build_bluetooth(self):
+  box=page(self.tabs,'Controller');self.btinfo=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.btinfo,False,False,0);self.power=Gtk.CheckButton(label='Bluetooth enabled');self.power.connect('toggled',self.bt_power);box.pack_start(self.power,False,False,0);self.bt_devices=self.button(box,'Find, pair and manage devices',lambda *_:self.launch('blueman-manager'));self.bt_adapter=self.button(box,'Bluetooth adapter settings',lambda *_:self.launch('blueman-adapters'));self.paired=textview(box);self.button(box,'Refresh controller and devices',lambda *_:self.refresh())
+  self.bt_devices.set_sensitive(False);self.bt_adapter.set_sensitive(False)
+ def bt_power(self,toggle):
+  if not self.syncing:self.action(['bluetoothctl','power','on' if toggle.get_active() else 'off'])
+ def refresh(self):
+  if self.refreshing:return True
+  self.refreshing=True
+  selected_device=self.device.get_active_id() if self.mode=='network' else None
+  def work():
+   if self.mode=='shield':
+    p=pathlib.Path('/run/shadowrealm-os/security-status')
+    state=dict(line.split('=',1) for line in p.read_text().splitlines() if '=' in line) if p.exists() else {}
+    ports=pathlib.Path('/etc/shadowrealm-os/firewall-ports.json')
+    from shadow_network_tools import profiles,read_dns,LOCAL_PROXY
+    dns='Unavailable';vpn=[]
+    try:
+     active=profiles(True)
+     vpn=[row[1] for row in active if row[2] in ('vpn','wireguard')]
+     link=next((row for row in active if row[2] in ('802-3-ethernet','802-11-wireless')),None)
+     if link:
+      auto4,v4,auto6,v6=read_dns(link[0])
+      nameservers=[line.split()[1] for line in pathlib.Path('/etc/resolv.conf').read_text().splitlines() if line.startswith('nameserver ')]
+      if LOCAL_PROXY in nameservers:
+       dns='DNSCrypt in use' if nameservers==[LOCAL_PROXY] else 'DNSCrypt with other resolvers'
+      elif v4 or v6 or auto4=='yes' or auto6=='yes':dns='Custom DNS'
+      else:dns='Automatic DNS'
+    except (OSError,ValueError,RuntimeError,subprocess.TimeoutExpired):pass
+    pause_state=subprocess.run(['systemctl','show','shadowrealm-os-internet-pause.service','-p','LoadState','-p','ActiveState','--value'],capture_output=True,text=True,timeout=3).stdout.splitlines()
+    return state,json.loads(ports.read_text()) if ports.exists() else {'tcp':[],'udp':[]},dns,vpn,pause_state
+   if self.mode=='network':
+    devices=[fields(x) for x in cmd('nmcli','--colors','no','-t','-f','DEVICE,TYPE,STATE,CONNECTION','device').splitlines()];devices=[x for x in devices if len(x)>=4 and x[0]!='lo'];selected=selected_device or (devices[0][0] if devices else None);detail=cmd('nmcli','--colors','no','-t','-f','GENERAL,IP4,WIRED-PROPERTIES','device','show',selected) if selected else '';wifi='No Wi-Fi adapter is available. In a VM, the host Wi-Fi connection normally appears as wired Ethernet.'
+    wireless=next((x[0] for x in devices if x[1]=='wifi'),None)
+    if wireless:wifi=cmd('nmcli','--colors','no','-f','SSID,SIGNAL,SECURITY','device','wifi','list','ifname',wireless)
+    from shadow_airplane import status
+    try:radios,status_error=status(),None
+    except Exception as error:radios,status_error=None,str(error)
+    return devices,detail,wifi,radios,status_error
+   from shadow_airplane import has_bluetooth_controller
+   if not has_bluetooth_controller():return '', '', ''
+   controllers=cmd('bluetoothctl','list').strip();return controllers,cmd('bluetoothctl','show') if controllers else '',cmd('bluetoothctl','devices','Paired') if controllers else ''
+  self.async_run(work,self.loaded);return True
+ def loaded(self,data,error):
+  self.refreshing=False
+  if error:self.status.set_text(error);return False
+  self.syncing=True
+  if self.mode=='shield':
+   s,ports,dns,vpn,pause_state=data;active=s.get('firewall')=='active';self.summary.set_text('Firewall: '+('Active' if active else 'Inactive')+'\n\nAppArmor: '+s.get('apparmor','checking')+'\nLoaded baseline profiles: '+s.get('apparmor_profiles','0'));self.on.set_sensitive(not active);self.off.set_sensitive(active);signature=(active,json.dumps(ports,sort_keys=True))
+   if signature!=self.port_signature:
+    descriptions=self.port_descriptions()
+    self.ports.clear()
+    for proto in ['tcp','udp']:
+     for port in ports.get(proto,[]):
+      purpose=descriptions.get(proto+':'+str(port)) or ('Administrator SSH' if proto=='tcp' and port==22 else 'Custom incoming rule')
+      self.ports.append([proto.upper(),str(port),purpose,'Configured' if active else 'Firewall inactive'])
+    self.port_signature=signature
+   tor=s.get('tor','not-installed')
+   vpn_status=', '.join(vpn) if vpn else s.get('vpn_interface','Connected') if s.get('vpn')=='connected' else 'Disconnected'
+   self.privacy.set_text('DNS: '+dns+'\n\nVPN: '+vpn_status+'\n\nTor: '+tor.replace('-',' '))
+   self.tor_start.set_sensitive(tor=='stopped');self.tor_stop.set_sensitive(tor=='running')
+   installed='loaded' in pause_state
+   paused='active' in pause_state
+   self.pause_info.set_text('Internet is paused.' if paused else 'Internet is available.' if installed else 'Installation requires administrator authentication.')
+   self.pause_on.set_sensitive(installed and not paused and not self.busy)
+   self.pause_off.set_sensitive(installed and paused and not self.busy)
+  elif self.mode=='network':
+   devices,details,wifi,radios,status_error=data
+   if not getattr(self,'airplane_busy',False):
+    enabled,available,blocked=radios or (False,False,[])
+    self.airplane.set_active(enabled);self.airplane.set_label('Airplane Mode: '+('ON' if enabled else 'OFF'))
+    self.airplane.set_sensitive(enabled or available)
+    self.radio_status.set_text(status_error or ('Hardware blocked: '+', '.join(blocked) if blocked else 'Wireless radios available.' if available else 'No wireless radios are available on this system.'))
+   selected=self.device.get_active_id();signature=tuple(tuple(d) for d in devices)
+   if getattr(self,'device_signature',None)!=signature:
+    self.device.remove_all()
+    for d in devices:self.device.append(d[0],d[0]+' — '+d[2]+' — '+d[3])
+    self.device.set_active_id(selected or (devices[0][0] if devices else ''));self.device_signature=signature
+   values={}
+   for line in details.splitlines():
+    p=fields(line)
+    if len(p)>1:values[p[0]]=':'.join(p[1:])
+   labels=[('GENERAL.CONNECTION','Connection'),('GENERAL.STATE','Status'),('GENERAL.TYPE','Device type'),('GENERAL.HWADDR','Hardware address'),('IP4.ADDRESS[1]','IPv4 address'),('IP4.GATEWAY','Gateway'),('IP4.DNS[1]','DNS server')];self.netinfo.set_text('\n\n'.join(label+': '+values.get(key,'—') for key,label in labels));self.wifi.get_buffer().set_text(wifi)
+  else:
+   controllers,details,paired=data;available=bool(controllers);self.btinfo.set_text(details if available else 'No Bluetooth controller is available. Connect a Bluetooth adapter to this system; in VirtualBox it must be passed through to the VM.');self.power.set_sensitive(available);self.bt_devices.set_sensitive(available);self.bt_adapter.set_sensitive(available);self.power.set_active('Powered: yes' in details);self.paired.get_buffer().set_text(paired or ('No paired devices.' if available else 'Pairing and discovery become available when a controller is connected.'))
+  self.syncing=False;return False
+
+if __name__=='__main__':
+ mode=sys.argv[1].lstrip('-') if len(sys.argv)>1 else 'shield'
+ if mode not in ['shield','network','bluetooth']:raise SystemExit('Unknown settings panel')
+ Panel(mode).run([sys.argv[0],*sys.argv[2:]])

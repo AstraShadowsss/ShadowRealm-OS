@@ -1,0 +1,132 @@
+#!/usr/bin/python3
+"""Shadow Audio: live PipeWire/PulseAudio controls; no shell command execution."""
+import concurrent.futures,json,pathlib,subprocess,time
+import ctypes
+ctypes.CDLL(None).prctl(15,('Shadow Audio').encode(),0,0,0)
+import gi
+gi.require_version('Gtk','3.0')
+from gi.repository import Gtk,GLib
+POOL=concurrent.futures.ThreadPoolExecutor(max_workers=2)
+def command(*args):
+ p=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,timeout=6)
+ if p.returncode:raise RuntimeError(p.stderr.strip() or 'The audio service did not accept this change.')
+ return p.stdout
+
+def query():
+ data={k:json.loads(command('pactl','-f','json','list',k)) for k in ['sinks','sources','sink-inputs']}
+ data['default-sink']=command('pactl','get-default-sink').strip();data['default-source']=command('pactl','get-default-source').strip();return data
+
+def percent(item):
+ channels=list(item.get('volume',{}).values())
+ return round(sum(c.get('value',0) for c in channels)/len(channels)/65536*100) if channels else 0
+
+class Audio(Gtk.Application):
+ def __init__(self):
+  super().__init__(application_id='org.shadowrealm_os.Audio');self.connect('activate',self.activate);self.syncing=False;self.refreshing=False;self.streams={};self.devices={};self.touch=0;self.pending={}
+ def activate(self,app):
+  if hasattr(self,'window'):self.window.present();return
+  w=self.window=Gtk.ApplicationWindow(application=self,title='Shadow Audio');w.set_default_size(680,570);w.set_position(Gtk.WindowPosition.CENTER)
+  from shadow_effects import attach
+  attach(w)
+  w.set_icon_name("shadowrealm-os-app-audio")
+  css=Gtk.CssProvider();css.load_from_data(b'scale.shadow-volume trough { min-height: 8px; background-color: alpha(@theme_fg_color,0.18); border: 1px solid alpha(@theme_fg_color,0.4); border-radius: 5px; } scale.shadow-volume slider { min-width: 18px; min-height: 18px; background-image: none; background-color: @theme_selected_bg_color; border: 1px solid @theme_fg_color; border-radius: 10px; margin: -6px; } scale.shadow-volume highlight { min-height: 8px; background-color: @theme_selected_bg_color; }')
+  Gtk.StyleContext.add_provider_for_screen(w.get_screen(),css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+  outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=16,margin=22);w.add(outer)
+  title=Gtk.Label(xalign=0);title.set_markup('<span size="x-large" weight="bold">Shadow Audio</span>');outer.pack_start(title,False,False,0)
+  outer.pack_start(Gtk.Label(label='Choose devices and control sound for the whole system or individual apps.',xalign=0,wrap=True),False,False,0)
+  tabs=Gtk.Notebook();outer.pack_start(tabs,True,True,0)
+  self.controls={}
+  for kind,name,note in [('sink','Output','Sound plays through the selected output device.'),('source','Microphone','Choose the input used by recording and calling apps.')]:
+   box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12,margin=16)
+   scroll=Gtk.ScrolledWindow();scroll.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.AUTOMATIC);scroll.add(box)
+   tabs.append_page(scroll,Gtk.Label(label=name))
+   box.pack_start(Gtk.Label(label=note,xalign=0,wrap=True),False,False,0)
+   combo=Gtk.ComboBoxText();combo.connect('changed',self.choose_device,kind);box.pack_start(combo,False,False,0)
+   box.pack_start(Gtk.Label(label=name+' volume',xalign=0),False,False,0)
+   scale=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,0,100,1);scale.set_value_pos(Gtk.PositionType.RIGHT);scale.set_digits(0);scale.set_size_request(-1,38);scale.get_style_context().add_class("shadow-volume");scale.set_hexpand(True);scale.connect('value-changed',self.change_volume,kind);box.pack_start(scale,False,False,0)
+   mute=Gtk.CheckButton(label='Mute output' if kind=='sink' else 'Mute microphone');mute.connect('toggled',self.mute_device,kind);box.pack_start(mute,False,False,0)
+   self.controls[kind]=(combo,scale,mute)
+   if kind=='sink':
+    self.test_button=Gtk.Button(label='Play test sound');self.test_button.connect('clicked',self.test_sound);box.pack_start(self.test_button,False,False,0);self.output_hint=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.output_hint,False,False,0)
+  box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12,margin=18);tabs.append_page(box,Gtk.Label(label='Applications'))
+  box.pack_start(Gtk.Label(label='Apps appear here while they are playing sound.',xalign=0,wrap=True),False,False,0)
+  scroll=Gtk.ScrolledWindow();self.appsbox=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=16);scroll.add(self.appsbox);box.pack_start(scroll,True,True,0)
+  self.empty=Gtk.Label(label='No applications are playing sound.');self.appsbox.pack_start(self.empty,False,False,12)
+  self.status=Gtk.Label(xalign=0,wrap=True);outer.pack_start(self.status,False,False,0)
+  b=Gtk.Button(label='Refresh devices');b.connect('clicked',lambda *_:self.refresh());outer.pack_start(b,False,False,0)
+  w.show_all();self.refresh();GLib.timeout_add_seconds(2,self.refresh)
+ def submit(self,fn,done):
+  future=POOL.submit(fn)
+  def completed(f):
+   try:value=f.result();error=None
+   except Exception as e:value=None;error=str(e)
+   GLib.idle_add(done,value,error)
+  future.add_done_callback(completed)
+ def act(self,*args):
+  self.touch=time.monotonic();self.status.set_text('Applying change…')
+  def done(value,error):self.status.set_text(error or 'Change applied.');self.refresh();return False
+  self.submit(lambda:command(*args),done)
+ def refresh(self):
+  if self.refreshing:return True
+  self.refreshing=True;self.submit(query,self.loaded);return True
+ def loaded(self,data,error):
+  self.refreshing=False
+  if error:self.status.set_text('Audio service: '+error);return False
+  self.syncing=True
+  for kind,key in [('sink','sinks'),('source','sources')]:
+   items=[x for x in data[key] if not (kind=='source' and x['name'].endswith('.monitor'))]
+   combo,scale,mute=self.controls[kind];signature=tuple((x['name'],x.get('description',x['name'])) for x in items)
+   if self.devices.get(kind)!=signature:
+    combo.remove_all()
+    for identity,label in signature:combo.append(identity,label)
+    self.devices[kind]=signature
+   current=next((x for x in items if x['name']==data['default-'+kind]),items[0] if items else None)
+   for control in [combo,scale,mute]:control.set_sensitive(current is not None)
+   if current and time.monotonic()-self.touch>0.8:combo.set_active_id(current['name']);scale.set_value(min(100,percent(current)));mute.set_active(bool(current.get('mute')))
+   if kind=='sink' and current:
+    muted=bool(current.get('mute'));self.output_hint.set_text('Output is muted. Uncheck Mute output, or use the sound test.' if muted else 'Output is ready to play sound.');self.test_button.set_label('Unmute and play test sound' if muted else 'Play test sound')
+  ids={str(s['index']) for s in data['sink-inputs']}
+  for identity in list(self.streams):
+   if identity not in ids:self.streams.pop(identity)[0].destroy()
+  self.empty.set_visible(not ids)
+  for stream in data['sink-inputs']:
+   identity=str(stream['index']);props=stream.get('properties',{});name=props.get('application.name',props.get('media.name','Audio application'))
+   if identity not in self.streams:
+    row=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=7);row.pack_start(Gtk.Label(label=name,xalign=0),False,False,0)
+    scale=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,0,100,1);scale.set_digits(0);scale.set_size_request(-1,38);scale.get_style_context().add_class("shadow-volume");scale.connect('value-changed',self.stream_volume,identity);row.pack_start(scale,False,False,0)
+    mute=Gtk.CheckButton(label='Mute this application');mute.connect('toggled',self.stream_mute,identity);row.pack_start(mute,False,False,0);self.appsbox.pack_start(row,False,False,0);row.show_all();self.streams[identity]=(row,scale,mute)
+   _,scale,mute=self.streams[identity]
+   if time.monotonic()-self.touch>0.8:scale.set_value(min(100,percent(stream)));mute.set_active(bool(stream.get('mute')))
+  self.syncing=False
+  if not self.status.get_text() or self.status.get_text()=='Applying change…':self.status.set_text('Connected to the system audio service. Changes apply immediately.')
+  return False
+ def test_sound(self,*unused):
+  identity=self.controls['sink'][0].get_active_id()
+  if not identity:return
+  def play():
+   command('pactl','set-sink-mute',identity,'0')
+   return command('paplay','--device='+identity,str(pathlib.Path.home()/'.local/share/shadow-link/sounds/test-tone.wav'))
+  self.touch=time.monotonic()
+  def done(value,error):self.status.set_text(error or 'Test sound played.');self.refresh();return False
+  self.submit(play,done)
+ def choose_device(self,combo,kind):
+  if not self.syncing and combo.get_active_id():self.act('pactl','set-default-'+kind,combo.get_active_id())
+ def change_volume(self,scale,kind):
+  if self.syncing:return
+  identity=self.controls[kind][0].get_active_id()
+  if identity:self.debounce(kind,('pactl','set-'+kind+'-volume',identity,str(round(scale.get_value()))+'%'))
+ def mute_device(self,toggle,kind):
+  if not self.syncing:
+   identity=self.controls[kind][0].get_active_id()
+   if identity:self.act('pactl','set-'+kind+'-mute',identity,'1' if toggle.get_active() else '0')
+ def stream_volume(self,scale,identity):
+  if not self.syncing:self.debounce(identity,('pactl','set-sink-input-volume',identity,str(round(scale.get_value()))+'%'))
+ def stream_mute(self,toggle,identity):
+  if not self.syncing:self.act('pactl','set-sink-input-mute',identity,'1' if toggle.get_active() else '0')
+ def debounce(self,key,args):
+  self.touch=time.monotonic()
+  if key in self.pending:GLib.source_remove(self.pending.pop(key))
+  def apply():self.pending.pop(key,None);self.act(*args);return False
+  self.pending[key]=GLib.timeout_add(150,apply)
+
+if __name__=='__main__':Audio().run(None)

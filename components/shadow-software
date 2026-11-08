@@ -1,0 +1,301 @@
+#!/usr/bin/python3
+"""Debian and Flatpak software management for ShadowRealm-OS."""
+import concurrent.futures,json,os,pathlib,platform,re,shlex,subprocess,sys
+HOME=pathlib.Path.home()
+os.environ['XDG_DATA_DIRS']=':'.join(dict.fromkeys([str(HOME/'.local/share/shadow-link/share'),str(HOME/'.local/share/flatpak/exports/share'),'/var/lib/flatpak/exports/share']+os.environ.get('XDG_DATA_DIRS','/usr/local/share:/usr/share').split(':')))
+import ctypes
+ctypes.CDLL(None).prctl(15,('SoftwareCenter').encode(),0,0,0)
+import gi
+gi.require_version('Gtk','3.0');gi.require_version('GioUnix','2.0')
+from gi.repository import Gtk,Gio,GioUnix,GLib
+POOL=concurrent.futures.ThreadPoolExecutor(max_workers=1)
+BASE=HOME/'.local/share/shadow-link/bin'
+BUILTINS={
+ 'terminal':('Terminal',['shadow-terminal']),
+ 'calendar':('Shadow Calendar',['shadow-link','--calendar']),
+ 'calculator':('Shadow Calculator',['shadow-link','--calculator']),
+ 'clock':('Clocks',['gnome-clocks']),
+ 'widgets':('Shadow Widgets',['shadow-link','--widget-settings']),
+ 'control':('Shadow Control Center',['shadow-link','--control-center']),
+ 'shield':('Shadow Shield',['shadow-link','--shield']),
+ 'audio':('Shadow Audio',['shadow-link','--audio']),
+ 'network':('Shadow Network',['shadow-link','--network']),
+ 'bluetooth':('Shadow Bluetooth',['shadow-link','--bluetooth'])}
+def command(args,timeout=120):
+ r=subprocess.run(args,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=timeout)
+ if r.returncode:raise RuntimeError((r.stderr or r.stdout or 'The operation failed.').strip()[-3000:])
+ return r.stdout
+def rows(text,columns):
+ return [line.split('\t',columns-1) for line in text.splitlines() if line.strip() and len(line.split('\t',columns-1))==columns]
+def installed():
+ flat=rows(command(['flatpak','list','--app','--columns=application,name,version,installation']),4)
+ result=[(name,version or 'Not provided','Flatpak · '+scope,identity,True) for identity,name,version,scope in flat]
+ ids={r[3] for r in result}
+ try:versions=json.loads(pathlib.Path('/var/lib/shadowrealm-os/application-versions.json').read_text())
+ except (OSError,ValueError):versions={}
+ owners={}
+ ownership=subprocess.run(['/usr/bin/dpkg-query','-S','/usr/share/applications/*.desktop','/usr/bin/*'],
+                          capture_output=True,text=True,check=False)
+ for line in ownership.stdout.splitlines():
+  owner,separator,filename=line.partition(': ')
+  if separator:owners[filename]=owner.split(', ',1)[0]
+ native_versions={}
+ packages=command(['/usr/bin/dpkg-query','-W','-f=${binary:Package}\t${Version}\n'])
+ for package,version in rows(packages,2):native_versions[package]=version
+ for app in Gio.AppInfo.get_all():
+  if not app.should_show() or app.get_id()=='shadow-link.desktop' or (app.get_id() or '').removesuffix('.desktop') in ids:continue
+  if not isinstance(app,GioUnix.DesktopAppInfo):continue
+  executable=pathlib.Path(app.get_executable() or '').name.lower();version=versions.get(executable,app.get_string('X-AppVersion') or 'Not recorded');source='Native application'
+  filename=str(pathlib.Path(app.get_filename()).resolve()) if app.get_filename() else ''
+  owner=owners.get(filename) or (owners.get('/usr/bin/'+executable) if executable not in {'xfce4-terminal','xdg-open'} else None)
+  if owner in native_versions:version=native_versions[owner];source='Native package'
+  if (app.get_id() or '').startswith('shadow-') and 'shadow-link' in (app.get_commandline() or ''):version='Built-in';source='ShadowRealm-OS application'
+  result.append((app.get_display_name(),version,source,app.get_id(),False))
+ names={r[0].casefold() for r in result}
+ for key,(name,args) in BUILTINS.items():
+  if name.casefold() not in names and (BASE/args[0]).is_file():result.append((name,'Built-in','ShadowRealm-OS application','builtin:'+key,False))
+ return sorted(result,key=lambda r:r[0].casefold())
+def debian_updates():
+ import apt
+ cache=apt.Cache()
+ result=[]
+ for package in cache:
+  if not package.is_upgradable or not package.candidate or not package.installed:continue
+  origins=package.candidate.origins
+  security=any(origin.origin=='Debian' and
+               (origin.archive.endswith('-security') or origin.codename.endswith('-security'))
+               for origin in origins)
+  channel='Debian Security' if security else next(
+   (origin.label for origin in origins if origin.label),'APT')
+  result.append((package.name,package.installed.version,package.candidate.version,channel))
+ return sorted(result,key=lambda row:(row[3]!='Debian Security',row[0]))
+
+def debian_sources():
+ import apt_pkg
+ apt_pkg.init()
+ sources=apt_pkg.SourceList();sources.read_main_list()
+ return [('Debian/APT',source.uri,source.dist) for source in sources.list]
+
+class Software(Gtk.Application):
+ def __init__(self):
+  super().__init__(application_id='org.shadowrealm_os.Software');self.connect('activate',self.activate);self.busy=False
+ def activate(self,*unused):
+  if hasattr(self,'window'):self.window.present();return
+  self.window=Gtk.ApplicationWindow(application=self,title='Software & Updates');self.window.set_icon_name("shadowrealm-os-app-software");self.window.set_default_size(920,650)
+  sys.path.insert(0,str(HOME/'.local/share/shadow-link/bin'))
+  try:
+   from shadow_effects import attach
+   attach(self.window)
+  except ImportError:pass
+  outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12,margin=18);self.window.add(outer)
+  title=Gtk.Label(xalign=0);title.set_markup('<span size="x-large" weight="bold">Software &amp; Updates</span>');outer.pack_start(title,False,False,0)
+  notice=Gtk.Label(label='Debian maintains native packages, security fixes, and the kernel. Flatpak manages its apps and runtimes separately.',xalign=0,wrap=True);notice.set_width_chars(1);notice.set_max_width_chars(72);outer.pack_start(notice,False,False,0)
+  tabs=Gtk.Notebook();outer.pack_start(tabs,True,True,0)
+  self.apps,self.appview,installed_page=self.table(tabs,'Installed',['Application','Version','Source'],[str,str,str,str,bool])
+  toolbar=Gtk.Box(spacing=10);installed_page.pack_start(toolbar,False,False,0)
+  search=Gtk.SearchEntry(placeholder_text='Filter installed applications');toolbar.pack_start(search,True,True,0)
+  self.filter=self.apps.filter_new();self.filter.set_visible_func(lambda model,it,data:search.get_text().casefold() in model[it][0].casefold());self.appview.set_model(self.filter);search.connect('search-changed',lambda *_:self.filter.refilter())
+  self.button(toolbar,'Open',self.open_app);self.remove=self.button(toolbar,'Remove…',self.remove_app);self.button(toolbar,'Refresh',self.refresh)
+  self.appview.get_selection().connect('changed',self.app_selected)
+  self.permissions=self.button(toolbar,'Flatpak Permissions…',self.flatpak_permissions)
+  self.permissions.set_sensitive(False)
+  self.updates,self.updateview,update_page=self.table(tabs,'Flatpak Updates',['Software','Available version','Source'],[str,str,str])
+  self.update_message=Gtk.Label(label='Check for updates to see actual available Flatpak app and runtime updates.',xalign=0,wrap=True);update_page.pack_start(self.update_message,False,False,0)
+  row=Gtk.Box(spacing=10);update_page.pack_start(row,False,False,0);self.button(row,'Check for Updates',self.check_updates);self.apply_button=self.button(row,'Apply Flatpak Updates',self.apply_updates);self.apply_button.set_sensitive(False)
+  self.native_updates,_,native_page=self.table(tabs,'System Updates',['Package','Installed version','Available version','Source'],[str,str,str,str])
+  self.native_message=Gtk.Label(label='Refresh Debian’s package lists before checking for the latest updates.',xalign=0,wrap=True);native_page.pack_start(self.native_message,False,False,0)
+  row=Gtk.Box(spacing=10);native_page.pack_start(row,False,False,0)
+  self.button(row,'Refresh Debian Lists…',self.refresh_debian)
+  self.button(row,'Check Cached Updates',self.check_debian)
+  self.button(row,'Install Debian Updates…',self.apply_debian)
+  self.button(row,'Update Status & History…',self.update_status)
+  self.catalog,self.catalogview,catalog_page=self.table(tabs,'Flatpak Catalog',['Application','Description'],[str,str,str])
+  row=Gtk.Box(spacing=10);catalog_page.pack_start(row,False,False,0);self.query=Gtk.SearchEntry(placeholder_text='Search Flathub for an application');row.pack_start(self.query,True,True,0);self.query.connect('activate',self.search);self.button(row,'Search',self.search);self.button(row,'Install Selected…',self.install_app)
+  self.debian_catalog,self.debian_view,catalog_page=self.table(tabs,'APT Catalog',['Package','Description'],[str,str])
+  row=Gtk.Box(spacing=10);catalog_page.pack_start(row,False,False,0)
+  self.debian_query=Gtk.SearchEntry(placeholder_text='Search Debian package names')
+  row.pack_start(self.debian_query,True,True,0);self.debian_query.connect('activate',self.search_debian)
+  self.button(row,'Search',self.search_debian);self.button(row,'Install Selected…',self.install_debian)
+  self.components,_,system_page=self.table(tabs,'System Components',['Component','Version','Update coverage'],[str,str,str])
+  system_page.pack_start(Gtk.Label(label='Debian APT updates the kernel and base system. ShadowRealm-OS desktop tools are installed separately.',xalign=0,wrap=True),False,False,0)
+  self.sources,_,sources_page=self.table(tabs,'Sources',['Source','Address','Options'],[str,str,str])
+  row=Gtk.Box(spacing=10);outer.pack_start(row,False,False,0);self.spinner=Gtk.Spinner();row.pack_start(self.spinner,False,False,0);self.status=Gtk.Label(label='Loading installed software…',xalign=0,wrap=True,selectable=True);row.pack_start(self.status,True,True,0)
+  self.window.show_all();self.remove.set_sensitive(False);self.refresh()
+ def table(self,tabs,label,titles,types):
+  page=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12,margin=12);tabs.append_page(page,Gtk.Label(label=label))
+  model=Gtk.ListStore(*types);view=Gtk.TreeView(model=model);view.set_headers_visible(True)
+  for i,title in enumerate(titles):
+   renderer=Gtk.CellRendererText();renderer.set_property('ellipsize',3);column=Gtk.TreeViewColumn(title,renderer,text=i);column.set_resizable(True);column.set_expand(i==0);column.set_min_width(200 if title=='Source' else 160 if 'ersion' in title else 100);view.append_column(column)
+  scroll=Gtk.ScrolledWindow();scroll.set_policy(Gtk.PolicyType.AUTOMATIC,Gtk.PolicyType.AUTOMATIC);scroll.add(view);page.pack_start(scroll,True,True,0)
+  return model,view,page
+ def button(self,box,label,callback):
+  b=Gtk.Button(label=label);b.connect('clicked',callback);box.pack_start(b,False,False,0);return b
+ def work(self,label,job,done=None):
+  if self.busy:self.status.set_text('An operation is already running.');return
+  self.busy=True;self.spinner.start();self.status.set_text(label)
+  def complete(future):
+   try:answer=(True,future.result())
+   except Exception as error:answer=(False,str(error))
+   GLib.idle_add(self.finished,answer,done)
+  POOL.submit(job).add_done_callback(complete)
+ def finished(self,answer,done):
+  self.busy=False;self.spinner.stop()
+  if not answer[0]:
+   self.status.set_text(answer[1])
+   if self.update_message.get_text().startswith('Looking for'):
+    self.update_message.set_text('Update check failed. See the message below and try again.')
+   return False
+  if done:done(answer[1])
+  else:
+   from shadow_flatpak_exports import sync_exports
+   sync_exports()
+   self.status.set_text('Operation completed.');self.refresh()
+  return False
+ def refresh(self,*unused):
+  def load():return installed(),debian_sources(),rows(command(['flatpak','remotes','--columns=name,url,options']),3)
+  def display(data):
+   self.apps.clear();self.components.clear();self.sources.clear()
+   for row in data[0]:self.apps.append(row)
+   self.components.append(('Running Linux kernel',platform.release(),'Debian APT · reboot after kernel updates'))
+   self.components.append(('Shadow Link','Built-in','ShadowRealm-OS menu, widgets and control panels'))
+   for row in data[1]:self.sources.append(row)
+   for row in data[2]:self.sources.append(row)
+   self.status.set_text(f'{len(data[0])} installed applications · {len(data[1])} APT sources.');self.app_selected()
+  self.work('Reading installed software…',load,display)
+ def search_debian(self,*unused):
+  query=self.debian_query.get_text().strip()
+  if len(query)<2:self.status.set_text('Enter at least two characters of a package name.');return
+  def load():
+   result=command(['/usr/bin/apt-cache','search','--names-only',re.escape(query)])
+   return [line.split(' - ',1) for line in result.splitlines() if ' - ' in line][:250]
+  def show(packages):
+   self.debian_catalog.clear()
+   for package in packages:self.debian_catalog.append(package)
+   self.status.set_text(f'{len(packages)} matching packages shown.')
+  self.work('Searching the Debian package catalog…',load,show)
+ def install_debian(self,*unused):
+  selected=self.selected(self.debian_view)
+  if not selected:return
+  name=selected[0]
+  if not re.fullmatch(r'[a-z0-9][a-z0-9+.-]+(?::[a-z0-9-]+)?',name):return
+  self.debian_terminal('Install '+name,'sudo /usr/bin/apt install '+shlex.quote(name))
+ def check_debian(self,*unused):
+  def show(packages):
+   self.native_updates.clear()
+   for package in packages:self.native_updates.append(package)
+   self.native_message.set_text(f'{len(packages)} updates in the current Debian package lists.')
+   self.status.set_text('Read the cached Debian package lists.')
+  self.work('Reading the Debian package lists…',debian_updates,show)
+ def debian_terminal(self,title,script):
+  cmd=script+'; result=$?; printf "\\nAPT finished (exit code %s)\\n" "$result"; exec /bin/bash -i'
+  subprocess.Popen(['/usr/bin/shadowrealm-os-terminal','-T',title,
+                    '-e','/bin/bash','-c',cmd])
+  self.native_message.set_text('Follow the terminal prompts, then select Check Cached Updates.')
+ def refresh_debian(self,*unused):
+  self.debian_terminal('Refresh Debian package lists','sudo /usr/bin/apt-get update')
+ def apply_debian(self,*unused):
+  self.debian_terminal('Install Debian updates','sudo /usr/bin/apt-get update && sudo /usr/bin/apt upgrade')
+ def selected(self,view):
+  model,it=view.get_selection().get_selected();return list(model[it]) if it else None
+ def app_selected(self,*unused):
+  row=self.selected(self.appview)
+  self.remove.set_sensitive(bool(row and row[4]))
+  self.permissions.set_sensitive(bool(row and row[4]))
+ def details(self,title,content):
+  dialog=Gtk.Dialog(title=title,transient_for=self.window,modal=True)
+  dialog.add_button('Close',Gtk.ResponseType.CLOSE)
+  dialog.set_default_size(660,430)
+  scroll=Gtk.ScrolledWindow()
+  view=Gtk.TextView(editable=False,monospace=True,wrap_mode=Gtk.WrapMode.WORD_CHAR)
+  view.get_buffer().set_text(content)
+  scroll.add(view)
+  dialog.get_content_area().pack_start(scroll,True,True,8)
+  dialog.show_all();dialog.run();dialog.destroy()
+ def update_status(self,*unused):
+  try:
+   cfg=command(['apt-config','shell','PERIOD','APT::Periodic::Unattended-Upgrade'],10)
+   period=shlex.split(cfg.partition('=')[2].rstrip(';\n'))
+   timer=command(['systemctl','is-enabled','apt-daily-upgrade.timer'],10).strip()
+   automatic='Enabled' if period and period[0].isdigit() and int(period[0])>0 and timer=='enabled' else 'Off or not scheduled'
+  except (RuntimeError,subprocess.SubprocessError,OSError):
+   automatic='Unknown'
+  reboot='Restart requested' if pathlib.Path('/run/reboot-required').exists() else 'No restart flag reported'
+  try:
+   with open('/var/log/apt/history.log',encoding='utf-8',errors='replace') as log:
+    log.seek(max(0,os.fstat(log.fileno()).st_size-24000))
+    history=log.read().strip()
+  except OSError:
+   history='APT history is unavailable.'
+  self.details('Update Status & History',f'Automatic Debian updates: {automatic}\n{reboot}\nRunning kernel: {platform.release()}\n\nRecent APT activity\n\n{history}')
+ def flatpak_permissions(self,*unused):
+  row=self.selected(self.appview)
+  if not row or not row[4]:return
+  scope='--user' if row[2].endswith('user') else '--system'
+  try:
+   declared=command(['flatpak','info',scope,'--show-permissions',row[3]],10)
+   overrides=command(['flatpak','override','--user','--show',row[3]],10)
+   system=command(['flatpak','override','--system','--show',row[3]],10)
+   self.details(row[0]+' permissions',f'Declared permissions\n{declared}\nSystem app overrides\n{system or "None"}\nUser app overrides\n{overrides or "None"}')
+  except (RuntimeError,subprocess.SubprocessError,OSError) as error:
+   self.status.set_text(str(error))
+ def open_app(self,*unused):
+  row=self.selected(self.appview)
+  if not row:return
+  try:
+   if row[3].startswith('builtin:'):
+    args=BUILTINS[row[3].split(':',1)[1]][1];subprocess.Popen([str(BASE/args[0])]+args[1:])
+   else:
+    app=GioUnix.DesktopAppInfo.new(row[3]+'.desktop' if row[4] else row[3]);assert app,'Application launcher was not found.';app.launch([],None)
+   self.status.set_text('Opened '+row[0]+'.')
+  except Exception as error:self.status.set_text(str(error))
+ def confirm(self,title,message):
+  dialog=Gtk.MessageDialog(transient_for=self.window,modal=True,message_type=Gtk.MessageType.QUESTION,buttons=Gtk.ButtonsType.OK_CANCEL,text=title);dialog.format_secondary_text(message);answer=dialog.run();dialog.destroy();return answer==Gtk.ResponseType.OK
+ def remove_app(self,*unused):
+  row=self.selected(self.appview)
+  if not row or not row[4]:return
+  if not self.confirm('Remove '+row[0]+'?','The application will be removed. Its saved settings and data will be retained.'):return
+  scope='--user' if row[2].endswith('user') else '--system'
+  self.work('Removing '+row[0]+'…',lambda:command(['flatpak','uninstall',scope,'--noninteractive',row[3]],900))
+ def check_updates(self,*unused):
+  if self.busy:return
+  self.updates.clear();self.apply_button.set_sensitive(False)
+  self.update_message.set_text('Looking for Flatpak app and runtime updates…')
+  def load():
+   result=[]
+   for scope in ['--system','--user']:
+    for identity,name,version in rows(command(['flatpak','remote-ls',scope,'--updates','--columns=application,name,version']),3):
+     result.append((name or identity,version or 'Version not provided','Flatpak '+scope[2:]))
+   return result
+  def show(result):
+   for row in result:self.updates.append(row)
+   self.apply_button.set_sensitive(bool(result))
+   self.update_message.set_text(f'{len(result)} Flatpak updates available.' if result else 'Flatpak apps and runtimes are up to date.')
+   self.status.set_text('Flatpak update check completed.')
+  self.work('Checking Flatpak update sources…',load,show)
+ def apply_updates(self,*unused):
+  if self.busy:return
+  scopes=sorted({'--'+row[2].split()[-1] for row in self.updates})
+  if not scopes or not self.confirm('Apply available Flatpak updates?','This updates Flatpak apps and runtimes.'):return
+  self.apply_button.set_sensitive(False)
+  def update():
+   for scope in scopes:command(['flatpak','update',scope,'--noninteractive'],1800)
+  self.work('Applying Flatpak updates. An administrator prompt may appear…',update,lambda *_:self.check_updates())
+ def search(self,*unused):
+  query=self.query.get_text().strip()
+  if not query:return
+  def show(result):
+   self.catalog.clear()
+   for identity,name,description in rows(result,3):self.catalog.append((name,description,identity))
+   self.status.set_text(f'{len(self.catalog)} matching applications from configured Flatpak sources.')
+  self.work('Searching Flathub…',lambda:command(['flatpak','search','--columns=application,name,description',query],180),show)
+ def install_app(self,*unused):
+  row=self.selected(self.catalogview)
+  if not row:return
+  if not re.fullmatch(r'[A-Za-z0-9_.-]+',row[2]):return
+  if not self.confirm('Install '+row[0]+'?','Source: Flathub. Required shared runtimes will also be installed. An administrator prompt may appear.'):return
+  def install():
+   user_sources=command(['flatpak','remotes','--user','--columns=name']).splitlines()
+   scope='--user' if 'flathub' in user_sources else '--system'
+   return command(['flatpak','install',scope,'--noninteractive','flathub',row[2]],1800)
+  self.work('Installing '+row[0]+'…',install)
+if __name__=='__main__':Software().run(sys.argv)

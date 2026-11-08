@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+pid=$(pgrep -u "$(id -u)" -x xfce4-session)
+case "$pid" in
+    ''|*[!0-9]*) exit 1 ;;
+esac
+dbus-update-activation-environment --systemd DISPLAY XAUTHORITY XDG_CURRENT_DESKTOP
+if ! systemctl --user is-active --quiet graphical-session.target; then
+    systemd-run --user --collect --unit=shadowrealm-os-xfce-session \
+        --property=Wants=graphical-session.target \
+        --property=Before=graphical-session.target \
+        /usr/bin/tail --pid="$pid" -f /dev/null
+fi
+"$(dirname "$0")/shadow_flatpak_exports.py"
+systemctl --user start xdg-desktop-portal.service

@@ -1,0 +1,53 @@
+#!/usr/bin/python3
+"""Login artwork, optional session sounds and screensaver preferences."""
+import json,os,subprocess,tempfile
+from pathlib import Path
+import gi
+gi.require_version('Gtk','3.0');gi.require_version('GdkPixbuf','2.0')
+from gi.repository import Gtk,GdkPixbuf,Gio
+base=Path.home()/'.config/shadowrealm-os';base.mkdir(parents=True,exist_ok=True)
+settings=base/'experience.json'
+try:state=json.loads(settings.read_text())
+except (OSError,ValueError):state={}
+def save():settings.write_text(json.dumps(state,indent=2))
+win=Gtk.Window(title='Login, Sounds & Screensaver');win.set_default_size(560,500);win.set_border_width(20);win.connect('destroy',Gtk.main_quit)
+box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12);scroll=Gtk.ScrolledWindow();scroll.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.AUTOMATIC);scroll.add(box);win.add(scroll)
+def label(text):box.pack_start(Gtk.Label(label=text,xalign=0,wrap=True),False,False,0)
+def button(text,fn):
+ b=Gtk.Button(label=text);b.connect('clicked',fn);box.pack_start(b,False,False,0);return b
+label('Login screen background')
+label('Follow the selected theme, or choose a separate image for the system login screen. Changing it requires administrator authentication.')
+status=Gtk.Label(xalign=0,wrap=True)
+def background(reset=False):
+ temp=None
+ if not reset:
+  d=Gtk.FileChooserDialog(title='Login Background',transient_for=win,action=Gtk.FileChooserAction.OPEN);d.add_buttons('Cancel',Gtk.ResponseType.CANCEL,'Choose',Gtk.ResponseType.OK)
+  filt=Gtk.FileFilter();filt.set_name('Images');filt.add_pixbuf_formats();d.add_filter(filt)
+  path=d.get_filename() if d.run()==Gtk.ResponseType.OK else None;d.destroy()
+  if not path:return
+  try:
+   pix=GdkPixbuf.Pixbuf.new_from_file_at_scale(path,3840,2160,True)
+   fd,temp=tempfile.mkstemp(prefix='sr-login-',suffix='.png');os.close(fd);pix.savev(temp,'png',[],[])
+  except Exception as e:status.set_text(str(e));return
+ args=['pkexec','/usr/libexec/shadowrealm-os-login-background']+(['reset'] if reset else ['set',temp])
+ proc=Gio.Subprocess.new(args,Gio.SubprocessFlags.STDERR_PIPE)
+ def done(p,r):
+  try:
+   _,_,err=p.communicate_utf8_finish(r);status.set_text('Login background saved. It appears at the next login screen.' if p.get_successful() else err.strip() or 'Change was cancelled.')
+  finally:
+   if temp:Path(temp).unlink(missing_ok=True)
+ proc.communicate_utf8_async(None,None,done)
+button('Choose Login Background…',lambda *_:background());button('Use Theme Background',lambda *_:background(True))
+label('Optional session chimes')
+for key,text in [('login','Play a short sign-in sound'),('logout','Play a short sign-out / shutdown sound')]:
+ b=Gtk.CheckButton(label=text);b.set_active(state.get(key,True));b.connect('toggled',lambda b,k=key:(state.__setitem__(k,b.get_active()),save()));box.pack_start(b,False,False,0)
+volume=Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL,0,60,1);volume.set_value(state.get('volume',25));volume.set_digits(0);volume.set_tooltip_text('Chime volume — follows the system mute and output device');volume.connect('value-changed',lambda b:(state.__setitem__('volume',int(b.get_value())),save()));box.pack_start(volume,False,False,0)
+button('Preview Sign-in Chime',lambda *_:subprocess.Popen(['/usr/libexec/shadowrealm-os-session-sound','preview']))
+label('Screensaver animation')
+combo=Gtk.ComboBoxText()
+for key,text in [('bounce','Bouncing SR logo'),('circuit','Circuit flow'),('matrix','ShadowRealm-OS digital rain')]:combo.append(key,text)
+style=base/'saver-style';combo.set_active_id(style.read_text().strip() if style.exists() else 'bounce');combo.connect('changed',lambda c:style.write_text(c.get_active_id() or 'bounce'));box.pack_start(combo,False,False,0)
+button('Preview Screensaver',lambda *_:subprocess.Popen(['/usr/libexec/xfce4-screensaver/shadowrealm-os-saver','--preview']))
+button('Screensaver Timeout, Enable & Lock Settings…',lambda *_:subprocess.Popen(['xfce4-screensaver-preferences']))
+button('Alarms, Timers & Stopwatch…',lambda *_:subprocess.Popen(['gnome-clocks']))
+box.pack_start(status,False,False,0);win.show_all();Gtk.main()

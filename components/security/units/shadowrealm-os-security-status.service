@@ -1,0 +1,5 @@
+[Unit]
+Description=Update ShadowRealm-OS security status
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/shadowrealm-os-security-status

@@ -1,0 +1,551 @@
+#!/usr/bin/python3
+"""ShadowRealm-OS local account rename, queued via polkit and executed before login.
+
+Only local /home accounts are supported.  No account change occurs during queue,
+preflight, or installation.  The apply command is reserved for the boot service.
+"""
+import fcntl
+import grp
+import json
+import os
+import pwd
+import re
+import shutil
+import stat
+import subprocess
+import sys
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+STATE = Path('/var/lib/shadowrealm-os/account-rename')
+NAME = re.compile(r'[a-z][a-z0-9_-]{0,30}\Z')
+MAX_TEXT = 1024 * 1024
+USER_ROOTS = (
+    '.config', '.local/share/shadow-link', '.local/share/applications',
+    '.local/share/xfce4', '.local/share/systemd', '.local/state',
+    '.local/bin', '.local/share/icons', '.local/share/flatpak/exports',
+    '.icons', '.themes', 'Desktop',
+    '.face', '.face.icon', '.profile', '.bash_profile', '.bashrc',
+    '.xsession', '.xinitrc',
+)
+# Only known system integration files: never recursively rewrite /etc or /usr.
+SYSTEM_FILES = (
+    Path('/etc/systemd/system/shadowrealm-os-brand-sync.path'),
+    Path('/usr/local/libexec/shadowrealm-os-brand-sync'),
+    Path('/etc/lightdm/lightdm.conf'),
+    Path('/etc/subuid'), Path('/etc/subgid'),
+)
+SYSTEM_DIRS = (Path('/etc/lightdm/lightdm.conf.d'), Path('/etc/lightdm/conf.d'))
+USER_SKIP_DIRS = {'__pycache__', 'repair-backups', '.git'}
+# Only rewrite text-like files.  Executable ELF objects, databases, images, and
+# third-party private binary formats are deliberately not modified.
+TEXT_EXTENSIONS = {
+    '.desktop', '.json', '.ini', '.conf', '.cfg', '.xml', '.css', '.py',
+    '.sh', '.txt', '.service', '.socket', '.timer', '.path', '.target',
+    '.list', '.yaml', '.yml', '.toml', '.theme', '.rc', '.properties',
+    '.xsettings', '.gtkrc', '.rules', '.desktop.in',
+}
+TEXT_NAMES = {
+    'appearance-modes.json', 'helpers.rc', 'mimeapps.list', 'user-dirs.dirs',
+    '.profile', '.bash_profile', '.bashrc', '.xsession', '.xinitrc',
+    'sdl2-config', 'shadow-terminal', 'shadow-link', 'shadow-appearance',
+    'shadow-appearance-apply',
+}
+
+
+def command(*argv):
+    subprocess.run(argv, check=True, timeout=180)
+
+
+def local_name(name):
+    return any(row.split(':', 1)[0] == name for row in
+               Path('/etc/passwd').read_text().splitlines() if row and not row.startswith('#'))
+
+
+def private_group(account):
+    """Only rename an exclusive, same-named private group; never a shared one."""
+    try:
+        group = grp.getgrnam(account.pw_name)
+    except KeyError:
+        return False
+    if group.gr_gid != account.pw_gid:
+        return False
+    other_primaries = any(u.pw_uid != account.pw_uid and
+                          u.pw_gid == group.gr_gid for u in pwd.getpwall())
+    other_members = any(member != account.pw_name for member in group.gr_mem)
+    return not (other_primaries or other_members)
+
+
+def validate(uid, new, *, expected_old=None, allow_resumed=False):
+    if uid < 1000 or not NAME.fullmatch(new):
+        raise ValueError('Invalid login name (use lowercase letters, digits, _ or -).')
+    account = pwd.getpwuid(uid)
+    if account.pw_uid != uid or not local_name(account.pw_name):
+        raise ValueError('Only local Linux accounts are supported.')
+    home = Path(account.pw_dir)
+    if home.parent != Path('/home') or home.is_symlink() or not home.is_dir():
+        raise ValueError('Only real home directories directly under /home are supported.')
+    if home.stat().st_uid != uid or home.stat().st_dev != home.parent.stat().st_dev:
+        raise ValueError('Home must belong to the account and be on the /home filesystem.')
+    target = Path('/home') / new
+    resumed = allow_resumed and account.pw_name == new and home == target
+    if not resumed:
+        if expected_old and account.pw_name != expected_old:
+            raise ValueError('Account identity differs from queued request.')
+        if account.pw_name == new or os.path.lexists(target):
+            raise ValueError('Target username or home already exists.')
+        for lookup in (pwd.getpwnam, grp.getgrnam):
+            try:
+                lookup(new)
+            except KeyError:
+                continue
+            raise ValueError('Target name is already used by a user or group.')
+    return account, home, target, resumed
+
+
+def transform(data, old_home, new_home):
+    # Do not rewrite /home/old-backup or /home/old.profile.
+    old = os.fsencode(old_home)
+    return re.sub(re.escape(old) + rb'(?=$|[/\\\s\x22\x27:;,)\]}])',
+                  lambda _: os.fsencode(new_home), data)
+
+
+def text_candidate(path):
+    return path.suffix.lower() in TEXT_EXTENSIONS or path.name in TEXT_NAMES or path.name.startswith('shadow-')
+
+
+def walk_user(home):
+    seen = set()
+    for relative in USER_ROOTS:
+        base = home / relative
+        if not (base.exists() or base.is_symlink()):
+            continue
+        # Deny symlinked ancestors and never traverse a symlink directory.
+        cur = home
+        bad = False
+        for part in Path(relative).parts:
+            cur = cur / part
+            if cur.is_symlink():
+                bad = True
+                break
+        if bad and not base.is_symlink():
+            continue
+        paths = [base]
+        if base.is_dir() and not base.is_symlink():
+            for parent, dirs, files in os.walk(base, followlinks=False):
+                paths.extend(Path(parent) / d for d in dirs
+                             if (Path(parent) / d).is_symlink())
+                dirs[:] = [d for d in dirs if d not in USER_SKIP_DIRS and
+                           not (Path(parent) / d).is_symlink()]
+                paths.extend(Path(parent) / d for d in dirs)
+                paths.extend(Path(parent) / f for f in files)
+        for path in paths:
+            if path in seen:
+                continue
+            seen.add(path)
+            yield path
+
+
+def planned_changes(home, old_home, new_home, uid, *, strict=False):
+    changes, unreadable = [], []
+    for path in walk_user(home):
+        try:
+            if path.is_symlink():
+                old_link = os.readlink(path)
+                if os.path.isabs(old_link) and (
+                    Path(old_link) == old_home or Path(old_link).is_relative_to(old_home)
+                ):
+                    new_link = str(new_home / Path(old_link).relative_to(old_home))
+                    changes.append(('link', path, old_link, new_link))
+                continue
+            if not path.is_file():
+                continue
+            meta = path.stat()
+            if meta.st_uid != uid:
+                continue
+            if not text_candidate(path) or meta.st_size > MAX_TEXT:
+                continue
+            data = path.read_bytes()
+            if b'\0' in data or not data:
+                continue
+            # Validate text encoding; never rewrite opaque binary formats.
+            data.decode('utf-8')
+            updated = transform(data, old_home, new_home)
+            if updated != data:
+                if meta.st_nlink > 1:
+                    raise RuntimeError(f'Referenced file is hardlinked; refusing unsafe edit: {path}')
+                changes.append(('file', path, data, updated))
+        except (OSError, UnicodeError) as error:
+            unreadable.append(f'{path}: {error}')
+    if strict and unreadable:
+        raise RuntimeError('Cannot safely inspect these user files: ' + '; '.join(unreadable[:5]))
+    return changes, unreadable
+
+
+def system_changes(old, new, old_home, new_home):
+    paths = list(SYSTEM_FILES)
+    for directory in SYSTEM_DIRS:
+        if directory.is_dir() and not directory.is_symlink():
+            paths.extend(sorted(directory.glob('*.conf')))
+    changes = []
+    for path in paths:
+        if not path.is_file() or path.is_symlink() or path.stat().st_uid != 0:
+            continue
+        data = path.read_bytes()
+        if b'\0' in data or len(data) > MAX_TEXT:
+            continue
+        updated = transform(data, old_home, new_home)
+        if path.name in ('subuid', 'subgid'):
+            updated = re.sub(rb'(?m)^' + re.escape(old.encode()) + rb'(?=:)',
+                             new.encode(), updated)
+        if path.suffix == '.conf' and '/lightdm/' in str(path):
+            updated = re.sub(
+                rb'(?im)^(\s*(?:autologin-user|user)\s*=\s*)' +
+                re.escape(old.encode()) + rb'(?=\s*(?:[#;].*)?$)',
+                lambda m: m.group(1) + new.encode(), updated)
+        if data != updated:
+            changes.append(('file', path, data, updated))
+    return changes
+
+
+def safe_state():
+    if STATE.is_symlink():
+        raise RuntimeError('Account rename state is a symlink.')
+    STATE.mkdir(parents=True, exist_ok=True, mode=0o700)
+    st = STATE.stat()
+    if st.st_uid != 0 or (stat.S_IMODE(st.st_mode) & 0o077):
+        raise RuntimeError('Unsafe account rename state directory permissions.')
+
+
+def atomic_json(path, value):
+    fd, temp = tempfile.mkstemp(prefix='.pending-', dir=STATE)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            json.dump(value, stream, indent=2)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(temp, 0o600)
+        os.replace(temp, path)
+    finally:
+        if os.path.lexists(temp):
+            os.unlink(temp)
+
+
+def preflight(new):
+    account, home, target, _ = validate(os.getuid(), new)
+    changes, unreadable = planned_changes(home, home, target, account.pw_uid)
+    return {'old': account.pw_name, 'new': new,
+            'home': str(home), 'target': str(target),
+            'references': [str(c[1]) for c in changes],
+            'unreadable': unreadable,
+            'private_group': private_group(account)}
+
+
+def queue(new):
+    if 'PKEXEC_UID' not in os.environ:
+        raise PermissionError('Queue must be authorized through polkit.')
+    uid = int(os.environ['PKEXEC_UID'])
+    account, home, target, _ = validate(uid, new)
+    if (STATE / 'pending.json').exists():
+        raise RuntimeError('Another rename is already pending.')
+    record = {'uid': uid, 'gid': account.pw_gid, 'old': account.pw_name,
+              'new': new, 'home': str(home), 'target': str(target),
+              'private_group': private_group(account),
+              'supplementary_groups': local_supplementary_groups(account.pw_name),
+              'queued_utc': datetime.now(timezone.utc).isoformat()}
+    atomic_json(STATE / 'pending.json', record)
+    print(f'Queued {account.pw_name} to {new}. Restart to apply before login.')
+
+
+def atomic_file(path, data, original_stat):
+    fd, temp = tempfile.mkstemp(prefix='.shadow-rename-', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'wb') as stream:
+            stream.write(data)
+            stream.flush()
+            os.fsync(stream.fileno())
+        # Preserve ACLs/xattrs/timestamps where supported, then owner/mode.
+        shutil.copystat(path, temp, follow_symlinks=False)
+        os.chown(temp, original_stat.st_uid, original_stat.st_gid)
+        os.chmod(temp, stat.S_IMODE(original_stat.st_mode))
+        os.replace(temp, path)
+    finally:
+        if os.path.lexists(temp):
+            os.unlink(temp)
+
+
+def apply_change(entry, backup, serial, applied):
+    kind, path, old, updated = entry
+    dst = backup / 'edited' / str(serial)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if kind == 'link':
+        dst.write_text(old)
+        # Never follow a symlink while replacing it.
+        original_meta = path.lstat()
+        tmp = path.with_name(f'.shadow-rename-link-{os.getpid()}')
+        tmp.symlink_to(updated)
+        try:
+            os.lchown(tmp, original_meta.st_uid, original_meta.st_gid)
+            tmp.replace(path)
+        finally:
+            tmp.unlink(missing_ok=True)
+        applied.append((kind, path, old, original_meta))
+    else:
+        st = path.stat()
+        shutil.copy2(path, dst)
+        atomic_file(path, updated, st)
+        applied.append((kind, path, dst, st))
+
+
+def restore_changes(applied):
+    errors = []
+    for kind, path, original, extra in reversed(applied):
+        try:
+            if kind == 'link':
+                path.unlink(missing_ok=True)
+                path.symlink_to(original)
+                os.lchown(path, extra.st_uid, extra.st_gid)
+            else:
+                if path.is_file() and not path.is_symlink():
+                    atomic_file(path, Path(original).read_bytes(), extra)
+        except Exception as error:
+            errors.append(f'{path}: {error}')
+    if errors:
+        raise RuntimeError('Rollback could not restore: ' + '; '.join(errors))
+
+
+def rename_metadata(old, new, moved):
+    for directory in (Path('/var/lib/AccountsService/users'),
+                      Path('/var/lib/AccountsService/icons'),
+                      Path('/var/lib/systemd/linger'),
+                      Path('/var/spool/cron/crontabs')):
+        before, after = directory / old, directory / new
+        if before.exists() and not before.is_symlink():
+            if os.path.lexists(after):
+                raise RuntimeError(f'Destination metadata already exists: {after}')
+            before.rename(after)
+            moved.append((before, after))
+
+
+
+def local_supplementary_groups(name):
+    """Read locally managed memberships, not directory-service groups."""
+    result = []
+    for line in Path('/etc/group').read_text().splitlines():
+        fields = line.split(':')
+        if len(fields) >= 4 and name in fields[3].split(','):
+            result.append(fields[0])
+    return result
+
+
+def ensure_group_memberships(old, new, old_groups, renamed_private, changes):
+    """Handle shadow-utils versions that do not rewrite member lists."""
+    for group in old_groups:
+        effective_group = new if renamed_private and group == old else group
+        members = grp.getgrnam(effective_group).gr_mem
+        if old in members:
+            command('/usr/bin/gpasswd', '-d', old, effective_group)
+            changes.append(('removed_old', effective_group))
+            members = grp.getgrnam(effective_group).gr_mem
+        if new not in members:
+            command('/usr/bin/gpasswd', '-a', new, effective_group)
+            changes.append(('added_new', effective_group))
+
+
+def restore_group_memberships(old, new, groups):
+    """Restore memberships only after the original login/group names exist."""
+    errors = []
+    for group in groups:
+        try:
+            members = grp.getgrnam(group).gr_mem
+            if new in members:
+                command('/usr/bin/gpasswd', '-d', new, group)
+            if old not in grp.getgrnam(group).gr_mem:
+                command('/usr/bin/gpasswd', '-a', old, group)
+        except Exception as error:
+            errors.append(f'{group}: {error}')
+    if errors:
+        raise RuntimeError('Group member rollback incomplete: ' + '; '.join(errors))
+
+
+def recover_interrupted_move(request):
+    """Finish only the two known same-filesystem usermod interruption states.
+
+    The root-owned pending request anchors identity and exact source/target paths.
+    Refuse ambiguous homes, live sessions, changed ownership and alternate mounts.
+    """
+    uid, old, new = request['uid'], request['old'], request['new']
+    before, after = Path('/home') / old, Path('/home') / new
+    account = pwd.getpwuid(uid)
+    if account.pw_gid != request['gid'] or account.pw_name not in (old, new):
+        raise RuntimeError('Interrupted rename identity changed.')
+    if account.pw_dir not in (str(before), str(after)):
+        raise RuntimeError('Interrupted rename has an unexpected Home path.')
+    if account.pw_name == old and account.pw_dir == str(before) and before.is_dir():
+        return
+    if account.pw_name == new and account.pw_dir == str(after) and after.is_dir():
+        return
+    if subprocess.run(['/usr/bin/pgrep', '-u', str(uid)], stdout=subprocess.DEVNULL,
+                      stderr=subprocess.DEVNULL).returncode != 1:
+        raise RuntimeError('Cannot recover an account with running processes.')
+    existing = [p for p in (before, after) if os.path.lexists(p)]
+    if len(existing) != 1:
+        raise RuntimeError('Ambiguous interrupted Home move; administrator recovery required.')
+    home = existing[0]
+    if (home.is_symlink() or not home.is_dir() or home.stat().st_uid != uid or
+            home.stat().st_dev != home.parent.stat().st_dev):
+        raise RuntimeError('Unsafe interrupted Home move; administrator recovery required.')
+    if home == before and account.pw_name == new and account.pw_dir == str(after):
+        before.rename(after)
+    elif home == before and account.pw_name == old and account.pw_dir == str(after):
+        command('/usr/sbin/usermod', '-d', str(before), old)
+    elif home == after and account.pw_name == old:
+        command('/usr/sbin/usermod', '-l', new, '-d', str(after), old)
+    else:
+        raise RuntimeError('Unsupported interrupted rename state; administrator recovery required.')
+
+
+def apply(request):
+    uid, old, new = request['uid'], request['old'], request['new']
+    if not NAME.fullmatch(old) or not NAME.fullmatch(new) or old == new:
+        raise ValueError('Invalid queued account identity.')
+    if request.get('home') != str(Path('/home') / old) or request.get('target') != str(Path('/home') / new):
+        raise ValueError('Invalid queued Home paths.')
+    recover_interrupted_move(request)
+    account, home, target, resumed = validate(
+        uid, new, expected_old=old, allow_resumed=True)
+    if request['home'] != str(Path('/home') / old) or request['target'] != str(target):
+        raise ValueError('Queued home path does not match the requested account.')
+    if account.pw_gid != request['gid']:
+        raise RuntimeError('Primary group ID changed since request was queued.')
+    if not resumed and account.pw_name != old:
+        raise RuntimeError('Account identity changed since request was queued.')
+    if subprocess.run(['/usr/bin/pgrep', '-u', str(uid)],
+                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode != 1:
+        raise RuntimeError('Account still has running processes; refusing rename.')
+
+    old_groups = request.get('supplementary_groups', local_supplementary_groups(old))
+    # Prepare backup before touching passwd/group/ShadowRealm-OS configuration.
+    backup = Path(tempfile.mkdtemp(prefix='account-rename-', dir='/root'))
+    os.chmod(backup, 0o700)
+    etc = backup / 'account-db'
+    etc.mkdir(mode=0o700)
+    for filename in ('passwd', 'shadow', 'group', 'gshadow', 'subuid', 'subgid'):
+        src = Path('/etc') / filename
+        if src.is_file():
+            shutil.copy2(src, etc / filename)
+    (backup / 'request.json').write_text(json.dumps(request, indent=2))
+
+    user_renamed = resumed
+    group_renamed = False
+    moved = []
+    applied = []
+    member_changes = []
+    try:
+        if not resumed:
+            command('/usr/sbin/usermod', '-l', new, '-d', str(target), '-m', old)
+            user_renamed = True
+        current = pwd.getpwuid(uid)
+        if current.pw_name != new or current.pw_dir != str(target):
+            raise RuntimeError('Account was not renamed and moved as expected.')
+        if request.get('private_group', False):
+            try:
+                oldgroup = grp.getgrnam(old)
+            except KeyError:
+                oldgroup = None
+            if oldgroup and oldgroup.gr_gid == request['gid']:
+                command('/usr/sbin/groupmod', '-n', new, old)
+                group_renamed = True
+            elif grp.getgrnam(new).gr_gid != request['gid']:
+                raise RuntimeError('Private group is in an inconsistent state.')
+        ensure_group_memberships(old, new, old_groups, group_renamed, member_changes)
+        # Re-scan after move, so all paths resolve in the new home.
+        edits, unreadable = planned_changes(target, Path('/home') / old,
+                                             target, uid, strict=True)
+        if unreadable:
+            raise RuntimeError('Cannot inspect user settings.')
+        edits += system_changes(old, new, Path('/home') / old, target)
+        for idx, item in enumerate(edits):
+            apply_change(item, backup, idx, applied)
+        rename_metadata(old, new, moved)
+        command('/usr/bin/systemctl', 'daemon-reload')
+        print(f'PASS: {old} -> {new}; home={target}; '
+              f'group_renamed={group_renamed}; edited={len(edits)}; backup={backup}')
+    except Exception as original_error:
+        if resumed:
+            # Preserve successfully recovered edits. Reverting only this retry
+            # could mix paths from an earlier interrupted transaction.
+            raise RuntimeError(f'Resumed rename needs administrator recovery: {original_error}. '
+                               f'Recovered account state was preserved. Backup: {backup}') from original_error
+        failures = []
+        for before, after in reversed(moved):
+            try:
+                after.rename(before)
+            except Exception as error:
+                failures.append(str(error))
+        try:
+            restore_changes(applied)
+        except Exception as error:
+            failures.append(str(error))
+        if group_renamed:
+            try:
+                command('/usr/sbin/groupmod', '-n', old, new)
+            except Exception as error:
+                failures.append(str(error))
+        # usermod can fail *after* changing account metadata. Check the
+        # actual identity before attempting a reverse operation.
+        if not resumed:
+            try:
+                actual = pwd.getpwuid(uid)
+                if actual.pw_name == new and actual.pw_dir == str(target) and target.is_dir():
+                    command('/usr/sbin/usermod', '-l', old, '-d', str(Path('/home') / old), '-m', new)
+                elif actual.pw_name != old or actual.pw_dir != str(Path('/home') / old):
+                    failures.append('Partial usermod state requires administrator recovery.')
+            except Exception as error:
+                failures.append(str(error))
+        try:
+            restore_group_memberships(old, new, old_groups)
+        except Exception as error:
+            failures.append(str(error))
+        if failures:
+            raise RuntimeError(
+                f'Rename failed: {original_error}. Recovery needs administrator. '
+                f'Backup: {backup}. Rollback errors: {failures}') from original_error
+        raise RuntimeError(f'Rename canceled and rolled back: {original_error}. '
+                           f'Backup: {backup}') from original_error
+
+
+def main():
+    if len(sys.argv) == 3 and sys.argv[1] == 'preflight':
+        print(json.dumps(preflight(sys.argv[2])))
+        return
+    if os.geteuid() != 0:
+        raise PermissionError('Administrator authentication required.')
+    safe_state()
+    with (STATE / 'lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if len(sys.argv) == 3 and sys.argv[1] == 'queue':
+            queue(sys.argv[2])
+        elif len(sys.argv) == 2 and sys.argv[1] == 'apply' and 'PKEXEC_UID' not in os.environ:
+            pending = STATE / 'pending.json'
+            if not pending.is_file():
+                return
+            try:
+                apply(json.loads(pending.read_text()))
+            except Exception:
+                # Avoid an endless failing login boot loop. Preserve the
+                # request, failure log, and the root backup for recovery.
+                pending.rename(STATE / 'failed.json')
+                raise
+            pending.unlink()
+        else:
+            raise ValueError('Invalid helper action.')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except Exception as error:
+        print(f'ShadowRealm-OS account rename: {error}', file=sys.stderr)
+        sys.exit(1)

@@ -1,0 +1,34 @@
+#!/usr/bin/python3
+import os,pathlib,sys
+_extra=[str(pathlib.Path.home()/".local/share/flatpak/exports/share"),"/var/lib/flatpak/exports/share"]
+os.environ["XDG_DATA_DIRS"]=":".join(dict.fromkeys(_extra+os.environ.get("XDG_DATA_DIRS","/usr/local/share:/usr/share").split(":")))
+import ctypes
+ctypes.CDLL(None).prctl(15,('Browser Prefs' if '--settings' in __import__('sys').argv else 'Browser Launch').encode(),0,0,0)
+import gi
+gi.require_version('Gtk','3.0');gi.require_version('GioUnix','2.0')
+from gi.repository import Gio,GioUnix,Gtk
+def browsers():
+ return [app for app in Gio.AppInfo.get_all() if app.should_show() and isinstance(app,GioUnix.DesktopAppInfo) and 'WebBrowser' in (app.get_categories() or '') and not (app.get_id() or '').startswith('shadow-') and (app.get_executable() or '') not in ['exo-open','xdg-open','shadow-browser'] and app.get_id()!='xfce4-web-browser.desktop']
+apps=browsers();default=Gio.AppInfo.get_default_for_type('x-scheme-handler/https',False)
+chosen=next((app for app in apps if default and app.get_id()==default.get_id()),None)
+if '--settings' in sys.argv:
+ Gtk.init(None);window=Gtk.Window(title='Choose Default Browser');from shadow_effects import attach;attach(window);window.set_default_size(440,210);window.connect('destroy',Gtk.main_quit);box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=16,margin=20);window.add(box)
+ box.pack_start(Gtk.Label(label='Choose the browser opened by your desktop and dock launcher.',xalign=0,wrap=True),False,False,0);combo=Gtk.ComboBoxText()
+ for app in apps:combo.append(app.get_id(),app.get_display_name())
+ if apps:combo.set_active_id(chosen.get_id() if chosen else apps[0].get_id())
+ box.pack_start(combo,False,False,0);status=Gtk.Label(xalign=0,wrap=True);box.pack_start(status,False,False,0);button=Gtk.Button(label='Use This Browser');button.set_sensitive(bool(apps));box.pack_start(button,False,False,0)
+ def apply(*unused):
+  app=next(a for a in apps if a.get_id()==combo.get_active_id())
+  try:
+   for mime in ['x-scheme-handler/http','x-scheme-handler/https','text/html']:app.set_as_default_for_type(mime)
+   status.set_text(app.get_display_name()+' is now your default browser.')
+  except Exception as error:status.set_text(str(error))
+ button.connect('clicked',apply)
+ if not apps:status.set_text('No installed browser is available yet.')
+ window.show_all();Gtk.main()
+else:
+ if chosen is None:chosen=next((a for a in apps if 'librewolf' in (a.get_id() or '').lower()),apps[0] if apps else None)
+ if chosen is None:raise SystemExit('No installed browser is available. Open Default Browser settings after installing one.')
+ uris=sys.argv[1:]
+ if uris:chosen.launch_uris(uris,None)
+ else:chosen.launch([],None)

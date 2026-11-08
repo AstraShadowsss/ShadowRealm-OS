@@ -1,0 +1,72 @@
+#!/usr/bin/python3
+"""Root-only, bounded security actions for Shadow Shield. Never invokes a shell."""
+import fcntl,json,os,pathlib,re,subprocess,sys,tempfile
+CONFIG=pathlib.Path('/etc/nftables/shadowrealm-os.nft');PORTS=pathlib.Path('/etc/shadowrealm-os/firewall-ports.json')
+def run(*args,check=True):
+ p=subprocess.run(args,text=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=25)
+ if check and p.returncode:raise RuntimeError(p.stderr.strip() or p.stdout.strip() or 'Action failed')
+ return p.stdout
+
+def port_rule(action,protocol,number):
+ if protocol not in ('tcp','udp') or not number.isdecimal() or not 1<=int(number)<=65535:raise ValueError('Choose TCP or UDP and a port between 1 and 65535.')
+ number=int(number)
+ state=json.loads(PORTS.read_text()) if PORTS.exists() else {'tcp':[],'udp':[]}
+ values=set(state[protocol])
+ if action=='allow':values.add(number)
+ else:values.discard(number)
+ if len(values)>128:raise ValueError('The desktop supports at most 128 custom rules per protocol.')
+ state[protocol]=sorted(values)
+ old=CONFIG.read_text();base=re.sub(r'  # Shadow Shield managed ports begin\n.*?  # Shadow Shield managed ports end\n','',old,flags=re.S)
+ anchor='  udp sport 547 udp dport 546 accept\n'
+ base=re.sub(r'^  tcp dport 22 ct state new accept comment "ShadowRealm-OS administrator SSH"\n','',base,flags=re.M)
+ if anchor not in base:raise ValueError('Firewall configuration changed outside Shadow Shield. Review it before using port controls.')
+ lines=['  # Shadow Shield managed ports begin']
+ for proto in ['tcp','udp']:
+  if state[proto]:lines.append('  '+proto+' dport { '+', '.join(map(str,state[proto]))+' } accept comment "Shadow Shield custom ports"')
+ lines+=['  limit rate 5/minute log prefix "ShadowRealm-OS blocked: "','  # Shadow Shield managed ports end']
+ updated=base.replace(anchor,anchor+'\n'.join(lines)+'\n',1)
+ prefix='delete table inet shadowrealm-os\n' if subprocess.run(['/usr/sbin/nft','list','table','inet','shadowrealm-os'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0 else ''
+ with tempfile.NamedTemporaryFile(mode='w',dir='/etc/nftables',prefix='.shadow-check-',delete=False) as f:f.write(prefix+updated);test=pathlib.Path(f.name)
+ try:run('/usr/sbin/nft','-c','-f',str(test))
+ finally:test.unlink(missing_ok=True)
+ candidate=CONFIG.with_suffix('.nft.new');candidate.write_text(updated);candidate.chmod(0o644);candidate.replace(CONFIG)
+ try:
+  if subprocess.run(['/usr/bin/systemctl','is-active','--quiet','shadowrealm-os-firewall.service']).returncode==0:run('/usr/local/libexec/shadowrealm-os-firewall')
+ except Exception:
+  candidate.write_text(old);candidate.replace(CONFIG);raise
+ PORTS.parent.mkdir(parents=True,exist_ok=True);tmp=PORTS.with_suffix('.json.new');tmp.write_text(json.dumps(state,indent=2)+'\n');tmp.chmod(0o644);tmp.replace(PORTS)
+ return ('Allowed' if action=='allow' else 'Removed')+f' incoming {protocol.upper()} port {number}.'
+
+def internet_pause(action):
+ unit='shadowrealm-os-internet-pause.service'
+ if action=='internet-resume':
+  run('/usr/bin/systemctl','disable','--now',unit)
+  return 'Internet access resumed.'
+ run('/usr/bin/systemctl','enable','--now',unit)
+ return 'Internet paused until you choose Resume Internet. Remote sessions are disconnected; resume locally.'
+
+def main():
+ if os.geteuid()!=0:raise PermissionError('Administrator authentication is required.')
+ lock=open("/run/lock/shadowrealm-os-security.lock","w")
+ fcntl.flock(lock,fcntl.LOCK_EX)
+ args=sys.argv[1:]
+ if not args:raise ValueError('An action is required.')
+ action=args[0];message='';details=''
+ if action=='firewall-enable' and len(args)==1:run('/usr/bin/systemctl','enable','--now','shadowrealm-os-firewall.service');message='Firewall enabled with your configured rules.'
+ elif action=='firewall-disable' and len(args)==1:run('/usr/bin/systemctl','disable','--now','shadowrealm-os-firewall.service');message='Firewall disabled.'
+ elif action in ('port-allow','port-remove') and len(args)==3:message=port_rule(action.split('-')[1],args[1],args[2])
+ elif action in ('internet-pause','internet-resume') and len(args)==1:message=internet_pause(action)
+ elif action=='ssh-enable' and len(args)==1:
+  run('/usr/sbin/sshd','-t');run('/usr/bin/systemctl','enable','--now','ssh.service');message='Incoming SSH is enabled.'
+ elif action=='ssh-disable' and len(args)==1:
+  run('/usr/bin/systemctl','disable','--now','ssh.socket');run('/usr/bin/systemctl','disable','--now','ssh.service');message='Incoming SSH is disabled.'
+ elif action=='policy-reload' and len(args)==1:run('/usr/bin/systemctl','enable','--now','apparmor.service');run('/usr/bin/systemctl','restart','apparmor.service');message='AppArmor profiles load after installation; this live preview uses Debian’s overlay policy.' if pathlib.Path('/run/live/overlay/work').exists() else 'AppArmor baseline policy reloaded.'
+ elif action in ('tor-start','tor-stop') and len(args)==1:
+  run('/usr/bin/systemctl',action.split('-')[1],'tor@default.service');message='Tor service '+('started.' if action=='tor-start' else 'stopped.')
+ elif action=='policy-details' and len(args)==1:details=run('/usr/sbin/aa-status');message='Loaded AppArmor policies.'
+ elif action=='security-logs' and len(args)==1:details=run('/usr/bin/journalctl','-k','-b','--no-pager','-n','100','--grep=apparmor|ShadowRealm-OS blocked:');message='Recent AppArmor and blocked-connection events.'
+ else:raise ValueError('Unsupported action or invalid arguments.')
+ if action not in ('policy-details','security-logs'):run('/usr/local/libexec/shadowrealm-os-security-status')
+ print(json.dumps({'ok':True,'message':message,'details':details}))
+try:main()
+except Exception as e:print(json.dumps({'ok':False,'message':str(e)}));sys.exit(1)

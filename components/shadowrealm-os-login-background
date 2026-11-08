@@ -1,0 +1,25 @@
+#!/usr/bin/python3
+"""Authorized fixed-destination greeter artwork installation."""
+import os,sys,stat,struct,tempfile
+from pathlib import Path
+if os.geteuid()!=0:sys.exit('Administrator authentication is required.')
+uid=int(os.environ.get('PKEXEC_UID','-1'))
+if uid<0:sys.exit('Start this helper through the desktop authentication service.')
+conf=Path('/etc/lightdm/lightdm-gtk-greeter.conf.d/93-shadowrealm-os-custom-background.conf')
+target=Path('/usr/share/backgrounds/shadowrealm-os/custom-login.png')
+if sys.argv[1:]==['reset']:
+ conf.unlink(missing_ok=True);target.unlink(missing_ok=True);sys.exit(0)
+if len(sys.argv)!=3 or sys.argv[1]!='set':sys.exit('Invalid action.')
+fd=os.open(sys.argv[2],os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+with os.fdopen(fd,'rb') as f:
+ st=os.fstat(f.fileno())
+ if not stat.S_ISREG(st.st_mode) or st.st_uid!=uid or not 24<=st.st_size<=20000000:sys.exit('Invalid image owner, size or type.')
+ data=f.read(20000001)
+if data[:8]!=b'\x89PNG\r\n\x1a\n' or data[12:16]!=b'IHDR':sys.exit('Choose a PNG image.')
+w,h=struct.unpack('>II',data[16:24])
+if not 1<=w<=8192 or not 1<=h<=8192:sys.exit('Image dimensions are too large.')
+target.parent.mkdir(parents=True,exist_ok=True);conf.parent.mkdir(parents=True,exist_ok=True)
+for dest,content in [(target,data),(conf,b'[greeter]\nbackground=/usr/share/backgrounds/shadowrealm-os/custom-login.png\n')]:
+ fd,tmp=tempfile.mkstemp(dir=dest.parent,prefix='.sr-')
+ with os.fdopen(fd,'wb') as f:f.write(content)
+ os.chmod(tmp,0o644);os.replace(tmp,dest)
