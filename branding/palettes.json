@@ -1,0 +1,34 @@
+{
+  "Neon": [
+    "#00eafb",
+    "#ff27d5"
+  ],
+  "WhiteSilverGold": [
+    "#b38a35",
+    "#8e6b2c"
+  ],
+  "RedBlack": [
+    "#e24b4b",
+    "#c38b8b"
+  ],
+  "Woodland": [
+    "#8bd445",
+    "#efbf49"
+  ],
+  "Hacker": [
+    "#40f879",
+    "#a5ffc0"
+  ],
+  "BlackBlue": [
+    "#52b4ff",
+    "#7092ff"
+  ],
+  "BlueWhite": [
+    "#1765ad",
+    "#4058aa"
+  ],
+  "Professional": [
+    "#326d59",
+    "#60877a"
+  ]
+}

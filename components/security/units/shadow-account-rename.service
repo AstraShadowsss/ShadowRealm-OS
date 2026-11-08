@@ -1,0 +1,13 @@
+[Unit]
+Description=Apply a queued ShadowRealm-OS login and Home rename
+After=local-fs.target
+Before=systemd-user-sessions.service lightdm.service ssh.service ssh.socket shadowrealm-os-brand-sync.path
+ConditionPathExists=/var/lib/shadowrealm-os/account-rename/pending.json
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/libexec/shadow-account-rename apply
+TimeoutStartSec=5min
+
+[Install]
+WantedBy=multi-user.target

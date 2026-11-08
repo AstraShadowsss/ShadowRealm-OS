@@ -1,0 +1,17 @@
+[Unit]
+Description=ShadowRealm-OS inbound firewall (SSH retained)
+DefaultDependencies=no
+After=local-fs.target
+Before=network-pre.target
+Wants=network-pre.target
+ConditionPathExists=/usr/sbin/nft
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/libexec/shadowrealm-os-firewall
+ExecReload=/usr/local/libexec/shadowrealm-os-firewall
+ExecStop=/usr/local/libexec/shadowrealm-os-firewall stop
+
+[Install]
+WantedBy=multi-user.target

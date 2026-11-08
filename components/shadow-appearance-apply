@@ -1,0 +1,57 @@
+#!/usr/bin/python3
+from pathlib import Path
+import subprocess,json,re,sys,shutil
+from shadow_whole_theme import matching_icons,set_widgets
+from shadow_appearance_desktop import query as q, set_property as setq, wallpaper_properties, set_wallpaper
+h=Path.home();base=h/'.local/share/shadow-link';cfg=h/'.config/shadowrealm-os';cfg.mkdir(parents=True,exist_ok=True)
+mode=sys.argv[1] if len(sys.argv)>1 else 'neon';modes=json.loads((base/'appearance-modes.json').read_text())
+if mode not in modes:raise SystemExit('Unknown appearance mode')
+selected=modes[mode];selected['id']=mode
+wallprops=wallpaper_properties()
+wallpaper=Path(selected['wallpaper'])
+palette=base/'icons'/mode
+for path in (Path(selected['logo']),palette/'term.png',h/'.themes'/selected['theme']/'gtk-3.0/gtk.css',
+             h/'.themes'/selected['wm']/'xfwm4/themerc',h/'.local/share/icons'/selected['icons']/'index.theme'):
+ if not path.is_file():raise SystemExit('Missing theme asset: '+str(path))
+if wallpaper is not None and not wallpaper.is_file():raise SystemExit('Missing matching wallpaper: '+str(wallpaper))
+if selected.get('plain'):
+ accent=selected['accent']
+ if '--accent' in sys.argv:
+  accent=sys.argv[sys.argv.index('--accent')+1]
+ if not re.fullmatch(r'#[0-9a-fA-F]{6}',accent):raise SystemExit('Choose a valid accent color')
+ themefile=h/'.themes'/selected['theme']/'gtk-3.0/gtk.css'
+ sheet=themefile.read_text();previous=selected['accent'];sheet=sheet.replace(previous,accent);channels=[int(accent[i:i+2],16)/255 for i in (1,3,5)];contrast='#101114' if sum(c*w for c,w in zip(channels,[0.2126,0.7152,0.0722]))>0.55 else '#ffffff';sheet+='\n@define-color theme_selected_fg_color '+contrast+';\nbutton:checked, button.suggested-action { color: '+contrast+'; }\n';temp=themefile.with_suffix('.css.new');temp.write_text(sheet);temp.replace(themefile)
+ (cfg/'plain-accent').write_text(accent.lstrip('#')+'\n')
+ selected['accent']=accent;modes[mode]=selected;temp=base/'appearance-modes.json.new';temp.write_text(json.dumps(modes,indent=2)+'\n');temp.replace(base/'appearance-modes.json')
+
+statefile=cfg/'neon-appearance.json';props=[('xsettings','/Net/ThemeName'),('xsettings','/Net/IconThemeName'),('xsettings','/Gtk/FontName'),('xsettings','/Gtk/MonospaceFontName'),('xfwm4','/general/theme'),('xfwm4','/general/title_font'),('xfce4-panel','/plugins/plugin-8/digital-time-font')]
+files=[p for folder,pattern in ((h/'.local/share/applications','*.desktop'),
+      (h/'.config/xfce4/panel','launcher-*/*.desktop'),(h/'Desktop','*.desktop'))
+      for p in folder.glob(pattern) if p.is_file() and not p.is_symlink()]
+state=json.loads(statefile.read_text()) if statefile.exists() else {'properties':[[c,p,q(c,p)] for c,p in props]}
+for name,asset in [('logo.png',Path(selected['logo'])),('term.png',palette/'term.png')]:
+ target=base/name
+ temp=target.with_suffix('.palette-new.png')
+ if selected.get('unbranded'):
+  from PIL import Image
+  Image.new('RGBA',(32,32)).save(temp)
+ else:shutil.copy2(asset,temp)
+ temp.replace(target)
+matching_icons(selected,base,files)
+active_icons=base/'icons/current';active_tmp=base/'icons/current.orbital-new'
+active_tmp.unlink(missing_ok=True);active_tmp.symlink_to(mode);active_tmp.replace(active_icons)
+modefile=cfg/'appearance-mode';tmp=cfg/'appearance-mode.new';tmp.write_text(mode+'\n');tmp.replace(modefile)
+if mode=='neon':
+ for c,p,v in state['properties']:
+  if (c,p) in props and v is not None:setq(c,p,v)
+else:
+ setq('xsettings','/Gtk/FontName','DejaVu Sans 10');setq('xsettings','/Gtk/MonospaceFontName','DejaVu Sans Mono 10');setq('xfwm4','/general/title_font','DejaVu Sans Bold 10');setq('xfce4-panel','/plugins/plugin-8/digital-time-font','DejaVu Sans Bold 10')
+if selected.get('plain') and q('xsettings','/Net/ThemeName')==selected['theme']:setq('xsettings','/Net/ThemeName','Default')
+setq('xsettings','/Net/IconThemeName',selected['icons']);setq('xfwm4','/general/theme',selected['wm']);setq('xsettings','/Net/ThemeName',selected['theme'])
+subprocess.run(['gsettings','set','org.gnome.desktop.interface','color-scheme','prefer-light' if selected.get('light') or selected.get('unbranded') else 'prefer-dark'],check=False)
+set_wallpaper(wallpaper,wallprops)
+from shadow_effects import sync_panels
+sync_panels()
+set_widgets(selected.get('unbranded',False),base)
+subprocess.run(['xfce4-panel','--restart'],check=True)
+print('Appearance applied: '+selected['label'])

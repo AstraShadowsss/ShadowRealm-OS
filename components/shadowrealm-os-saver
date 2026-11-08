@@ -1,0 +1,58 @@
+#!/usr/bin/python3
+"""Original embedded Xfce screensaver visuals; locking belongs to Xfce."""
+import os,sys,math,time,random
+import gi
+gi.require_version('Gtk','3.0')
+gi.require_version('GdkX11','3.0')
+from gi.repository import Gtk,GLib,Gdk,GdkPixbuf,GdkX11
+preview='--preview' in sys.argv
+xid=os.getenv('XSCREENSAVER_WINDOW')
+if '--window-id' in sys.argv:xid=sys.argv[sys.argv.index('--window-id')+1]
+embedded=bool(xid and not preview)
+foreign=GdkX11.X11Window.foreign_new_for_display(Gdk.Display.get_default(),int(xid,0)) if embedded else None
+win=Gtk.Window(title='ShadowRealm-OS Screensaver Preview')
+win.set_default_size(900,540)
+win.connect('destroy',Gtk.main_quit)
+area=Gtk.DrawingArea();win.add(area)
+from pathlib import Path
+try:palette=(Path.home()/'.config/shadowrealm-os/appearance-mode').read_text().strip()
+except OSError:palette='neon'
+if palette not in ('neon','hacker','red-black','white-silver-gold','woodland','black-blue','blue-white','professional'):palette='neon'
+icon=Path('/usr/share/shadowrealm-os/desktop/runtime/icons')/palette/'orbital-logo.png'
+if not icon.is_file():icon=Path('/usr/share/pixmaps/shadowrealm-os-avatar.png')
+logo=GdkPixbuf.Pixbuf.new_from_file_at_scale(str(icon),160,160,True)
+start=time.monotonic()
+from pathlib import Path
+style=Path.home()/'.config/shadowrealm-os/saver-style'
+mode=style.read_text().strip() if style.exists() else 'bounce'
+def draw(widget,cr):
+ w=widget.get_allocated_width();h=widget.get_allocated_height();t=time.monotonic()-start
+ cr.set_source_rgb(.012,.016,.025);cr.paint()
+ if mode=='matrix':
+  cr.select_font_face('monospace');cr.set_font_size(18)
+  for col in range(max(1,w//24)):
+   for row,ch in enumerate('ShadowRealm-OS'):
+    y=((t*(35+col%7*5)+col*93+row*22)%(h+350))-200
+    cr.set_source_rgba(.12,.95,.4,.25+.7*row/14);cr.move_to(col*24,y);cr.show_text(ch)
+ elif mode=='circuit':
+  for i in range(18):
+   y=(i*43)%max(h,1);x=(t*48+i*137)%max(w,1)
+   cr.set_source_rgba(.05,.8,1,.18);cr.set_line_width(2);cr.move_to(0,y);cr.line_to(w*.45,y);cr.line_to(w*.5,y+25);cr.line_to(w,y+25);cr.stroke()
+   cr.set_source_rgb(.1,.95,1);cr.arc(x,y,3,0,math.tau);cr.fill()
+ else:
+  def bounce(span,speed):
+   span=max(1,span);v=t*speed%(2*span);return v if v<span else 2*span-v
+  Gdk.cairo_set_source_pixbuf(cr,logo,bounce(w-160,61),bounce(h-160,43));cr.paint()
+ return False
+area.connect('draw',draw)
+def frame():
+ if embedded:
+  class Size:
+   def get_allocated_width(self):return foreign.get_width()
+   def get_allocated_height(self):return foreign.get_height()
+  context=Gdk.cairo_create(foreign);draw(Size(),context);context.get_target().flush()
+ else:area.queue_draw()
+ return True
+GLib.timeout_add(33,frame)
+if not embedded:win.show_all()
+Gtk.main()

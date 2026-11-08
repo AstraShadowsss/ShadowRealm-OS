@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+umask 077
+state=/var/lib/shadowrealm-os/appliance-first-boot
+if [[ -s $state/pending-user ]]; then
+    read -r username < "$state/pending-user"
+else
+    printf 'Welcome to ShadowRealm-OS. Create an administrator account to continue.\n'
+    while true; do
+        read -rp 'Login name: ' username
+        if [[ $username =~ ^[a-z][a-z0-9_-]{0,30}$ ]] &&
+           ! getent passwd "$username" >/dev/null && ! getent group "$username" >/dev/null &&
+           [[ ! -e /home/$username && ! -L /home/$username ]]; then
+            break
+        fi
+        printf 'Choose an unused name beginning with a lowercase letter. Use lowercase letters, digits, hyphens or underscores.\n'
+    done
+    printf '%s\n' "$username" > "$state/pending-user"
+fi
+[[ $username =~ ^[a-z][a-z0-9_-]{0,30}$ ]]
+if ! getent passwd "$username" >/dev/null; then
+    adduser --disabled-password --comment '' "$username"
+fi
+until passwd "$username"; do
+    printf 'Password setup did not finish. Try again.\n'
+done
+adduser "$username" sudo
+rm -- "$state/pending-user" "$state/required"
+printf 'Account created. Opening the login screen.\n'

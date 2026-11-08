@@ -1,0 +1,13 @@
+[Unit]
+Description=ShadowRealm-OS manual outbound Internet pause
+Before=network-online.target
+After=local-fs.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /etc/shadowrealm-os/internet-pause.nft
+ExecStop=/usr/sbin/nft delete table inet shadowrealm_os_internet_pause
+
+[Install]
+WantedBy=multi-user.target

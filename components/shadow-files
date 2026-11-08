@@ -1,0 +1,6 @@
+#!/bin/sh
+# Use Debian Thunar without per-user library overrides.
+if command -v thunar >/dev/null 2>&1; then exec thunar "$@"; fi
+if command -v gio >/dev/null 2>&1; then exec gio open "${1:-$HOME}"; fi
+echo "Thunar is unavailable; reinstall thunar." >&2
+exit 127

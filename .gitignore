@@ -1,0 +1,13 @@
+outputs/
+build/
+*.iso
+*.vdi
+*.vmdk
+*.ova
+*.partial
+__pycache__/
+*.pyc
+protected-vms.local.json
+*.local.json
+.DS_Store
+Thumbs.db

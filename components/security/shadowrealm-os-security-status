@@ -1,0 +1,17 @@
+#!/bin/bash
+set -u
+mkdir -p /run/shadowrealm-os
+{
+ echo "updated=$(date -Iseconds)"
+ if /usr/sbin/nft list chain inet shadowrealm-os input 2>/dev/null | grep -q 'policy drop'; then echo firewall=active; else echo firewall=inactive; fi
+ if [[ -r /sys/kernel/security/apparmor/profiles ]]; then
+  if grep -q '(enforce)' /sys/kernel/security/apparmor/profiles; then echo apparmor=enforcing; elif grep -q . /sys/kernel/security/apparmor/profiles; then echo apparmor=enabled; else echo apparmor=available; fi
+  echo "apparmor_profiles=$(wc -l </sys/kernel/security/apparmor/profiles)"
+ else echo apparmor=unavailable; fi
+ if pgrep -x tor >/dev/null; then echo tor=running; elif command -v tor >/dev/null; then echo tor=stopped; else echo tor=not-installed; fi
+ vpn_device=$(timeout 3 nmcli -t -f TYPE,DEVICE connection show --active 2>/dev/null | awk -F: '$1=="vpn" || $1=="wireguard" {print $2; exit}')
+ if [[ -n "$vpn_device" && "$vpn_device" != -- ]]; then echo vpn=connected; echo "vpn_interface=$vpn_device"; else echo vpn=inactive; fi
+ echo encryption=not-verified
+} > /run/shadowrealm-os/security-status.new
+chmod 644 /run/shadowrealm-os/security-status.new
+mv /run/shadowrealm-os/security-status.new /run/shadowrealm-os/security-status

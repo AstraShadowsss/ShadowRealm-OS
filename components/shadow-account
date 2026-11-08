@@ -1,0 +1,189 @@
+#!/usr/bin/python3
+"""Local account settings, backed by AccountsService and PAM."""
+import os
+import pwd
+import subprocess
+import tempfile
+from pathlib import Path
+
+import gi
+gi.require_version("Gtk", "3.0")
+gi.require_version("GdkPixbuf", "2.0")
+from gi.repository import Gio, GLib, Gtk, GdkPixbuf
+
+SERVICE = "org.freedesktop.Accounts"
+INTERFACE = SERVICE + ".User"
+UID = os.getuid()
+
+
+class Account(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="org.shadowrealm_os.Account")
+        self.connect("activate", self.open)
+
+    def open(self, *_):
+        if hasattr(self, "window"):
+            self.window.present()
+            return
+        self.window = Gtk.ApplicationWindow(application=self, title="User Account")
+        self.window.set_default_size(520, 405)
+        self.window.set_icon_name("system-users")
+        from shadow_effects import attach
+        attach(self.window)
+        box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin=22)
+        self.window.add(box)
+        box.pack_start(Gtk.Label(label="Profile and sign-in", xalign=0), False, False, 0)
+        user = pwd.getpwuid(UID)
+        box.pack_start(Gtk.Label(label=f"Login username: {user.pw_name}", xalign=0), False, False, 0)
+        self.avatar = Gtk.Image.new_from_icon_name("avatar-default", Gtk.IconSize.DIALOG)
+        box.pack_start(self.avatar, False, False, 0)
+        self.buttons = []
+        for label, callback in (
+                                ("Choose Login Picture…", self.choose_picture),
+                                ("Change Password…", self.change_password),
+                                ("Rename Login and Home…", self.check_rename)):
+            button = Gtk.Button(label=label)
+            button.connect("clicked", callback)
+            self.buttons.append(button)
+            box.pack_start(button, False, False, 0)
+        self.status = Gtk.Label(xalign=0, wrap=True)
+        box.pack_start(self.status, True, True, 0)
+        try:
+            bus = Gio.bus_get_sync(Gio.BusType.SYSTEM, None)
+            path = bus.call_sync(SERVICE, "/org/freedesktop/Accounts", SERVICE,
+                                 "FindUserById", GLib.Variant("(x)", (UID,)),
+                                 GLib.VariantType.new("(o)"), Gio.DBusCallFlags.NONE, 4000, None).unpack()[0]
+            self.user = Gio.DBusProxy.new_sync(bus, Gio.DBusProxyFlags.NONE, None, SERVICE, path, INTERFACE, None)
+            self.user.connect("g-properties-changed", lambda *_: self.refresh_avatar())
+            self.refresh_avatar()
+        except GLib.Error as error:
+            self.status.set_text(error.message)
+            for button in self.buttons[:1]:
+                button.set_sensitive(False)
+        self.window.show_all()
+
+    def refresh_avatar(self):
+        value = self.user.get_cached_property("IconFile")
+        candidates = [value.get_string()] if value and value.get_string() else []
+        candidates += [str(Path.home()/".face"), "/usr/share/pixmaps/shadowrealm-os-avatar.png"]
+        for path in candidates:
+            try:
+                picture = GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 80, 80, True)
+                self.avatar.set_from_pixbuf(picture)
+                break
+            except GLib.Error:
+                continue
+
+    def update(self, method, value, success, temp=None):
+        for button in self.buttons[:1]:
+            button.set_sensitive(False)
+        self.status.set_text("Saving account settings…")
+        def done(proxy, result):
+            try:
+                proxy.call_finish(result)
+                self.status.set_text(success)
+                GLib.timeout_add(300, self.refresh_avatar_once)
+            except GLib.Error as error:
+                self.status.set_text(error.message)
+            finally:
+                if temp is not None:
+                    temp.unlink(missing_ok=True)
+                for button in self.buttons[:1]:
+                    button.set_sensitive(True)
+        self.user.call(method, GLib.Variant("(s)", (value,)), Gio.DBusCallFlags.ALLOW_INTERACTIVE_AUTHORIZATION,
+                       90000, None, done)
+
+    def refresh_avatar_once(self):
+        self.refresh_avatar()
+        return False
+
+    def choose_picture(self, *_):
+        dialog = Gtk.FileChooserDialog(title="Choose Login Picture", transient_for=self.window,
+                                       action=Gtk.FileChooserAction.OPEN)
+        dialog.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Choose", Gtk.ResponseType.OK)
+        images = Gtk.FileFilter()
+        images.set_name("Images")
+        images.add_pixbuf_formats()
+        dialog.add_filter(images)
+        selected = dialog.get_filename() if dialog.run() == Gtk.ResponseType.OK else None
+        dialog.destroy()
+        if selected:
+            temp = None
+            try:
+                image = GdkPixbuf.Pixbuf.new_from_file_at_scale(selected, 256, 256, True)
+                with tempfile.NamedTemporaryFile(prefix=".face-", suffix=".png", dir=Path.home(), delete=False) as file:
+                    temp = Path(file.name)
+                    image.savev(str(temp), "png", [], [])
+                face = Path.home()/".face"
+                os.chmod(temp, 0o644)
+                os.replace(temp, face)
+                temp = None
+                self.update("SetIconFile", str(face), "Account and login picture saved.")
+                self.refresh_avatar()
+            except (OSError, GLib.Error) as error:
+                if temp:
+                    temp.unlink(missing_ok=True)
+                self.status.set_text(str(error))
+
+    def check_rename(self, *_):
+        from shadow_account_preflight import preflight
+        dialog = Gtk.Dialog(title="Rename Login and Home", transient_for=self.window, modal=True)
+        dialog.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Check", Gtk.ResponseType.OK)
+        box = dialog.get_content_area()
+        box.set_spacing(8)
+        box.add(Gtk.Label(label="Enter a new login username. Home will move with it."))
+        name = Gtk.Entry(placeholder_text="New login username", max_length=31)
+        box.add(name)
+        box.add(Gtk.Label(label="1–31 characters. Start with a lowercase letter. Use only lowercase letters, numbers, hyphens, or underscores.", xalign=0, wrap=True, max_width_chars=48))
+        dialog.show_all()
+        result = dialog.run()
+        proposed = name.get_text().strip()
+        dialog.destroy()
+        if result != Gtk.ResponseType.OK:
+            return
+        try:
+            old, home, target, references, unreadable = preflight(proposed)
+        except (ValueError, OSError) as error:
+            self.status.set_text(str(error))
+            return
+        details = (f"Login: {old} → {proposed}\nHome: {home} → {target}\n"
+                   f"{len(references)} references found in the scanned folders. "
+                   f"{len(unreadable)} files could not be inspected. "
+                   "Third-party apps may have their own saved paths. Your password stays the same.")
+        helper = Path("/usr/local/libexec/shadow-account-rename")
+        if not helper.is_file():
+            self.status.set_text(details + "\nAdministrator setup is pending.")
+            return
+        confirm = Gtk.MessageDialog(transient_for=self.window, modal=True, message_type=Gtk.MessageType.QUESTION,
+                                    buttons=Gtk.ButtonsType.NONE, text="Apply on next restart?")
+        confirm.format_secondary_text(details)
+        confirm.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Queue Rename", Gtk.ResponseType.OK)
+        response = confirm.run()
+        confirm.destroy()
+        if response != Gtk.ResponseType.OK:
+            return
+        self.status.set_text("Waiting for administrator authentication…")
+        try:
+            process = Gio.Subprocess.new(["/usr/bin/pkexec", str(helper), "queue", proposed],
+                                          Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE)
+        except GLib.Error as error:
+            self.status.set_text(error.message)
+            return
+        def done(proc, result):
+            try:
+                _, out, err = proc.communicate_utf8_finish(result)
+                self.status.set_text((out if proc.get_successful() else err).strip()
+                                     or "The rename was not queued.")
+            except GLib.Error as error:
+                self.status.set_text(error.message)
+        process.communicate_utf8_async(None, None, done)
+
+    def change_password(self, *_):
+        subprocess.Popen(['/usr/bin/shadowrealm-os-terminal',
+                          '-T','Change Password',
+                          '-e','/usr/bin/passwd'])
+        self.status.set_text("Follow the password prompts in the Terminal.")
+
+
+if __name__ == "__main__":
+    Account().run()

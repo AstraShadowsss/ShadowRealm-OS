@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# Prefer the real GIO/GVfs Trash so restore, delete and empty function in Thunar.
+set -e
+base="$HOME/.local/share/shadow-link"
+if command -v gio >/dev/null 2>&1 && gio info 'trash:///' >/dev/null 2>&1; then
+ exec gio open 'trash:///'
+fi
+mkdir -p "$HOME/.local/share/Trash/files" "$HOME/.local/share/Trash/info"
+# The fallback exposes existing trash files only: it is not a full trash manager.
+if [[ -x "$base/bin/thunar" ]]; then
+ export LD_LIBRARY_PATH="$base/lib:${LD_LIBRARY_PATH:-}"
+ exec "$base/bin/thunar" "$HOME/.local/share/Trash/files"
+fi
+echo 'Trash backend not available. Install GVfs for full Trash integration.' >&2
+exit 1

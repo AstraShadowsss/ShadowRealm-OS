@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Shadow Pinball
+Comment=Neon arcade pinball on the Circuit Breach table
+Exec=shadow-pinball
+Icon=shadow-pinball
+Categories=Game;ArcadeGame;
+Terminal=false

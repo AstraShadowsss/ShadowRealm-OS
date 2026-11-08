@@ -1,0 +1,10 @@
+#!/bin/bash
+set -euo pipefail
+if [[ "${1:-}" == stop ]]; then
+ /usr/sbin/nft delete table inet shadowrealm-os 2>/dev/null || true
+ exit 0
+fi
+{
+ if /usr/sbin/nft list table inet shadowrealm-os >/dev/null 2>&1; then echo 'delete table inet shadowrealm-os'; fi
+ cat /etc/nftables/shadowrealm-os.nft
+} | /usr/sbin/nft -f -

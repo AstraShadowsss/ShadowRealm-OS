@@ -1,0 +1,199 @@
+--- a/panel/panel-dbus-service-infos.xml
++++ b/panel/panel-dbus-service-infos.xml
+@@ -47,6 +47,11 @@
+                     could be filenames or anything else in an array of
+                     strings.
+     -->
++    <method name="AddLauncherToPanel">
++      <arg name="panel_id" direction="in" type="u" />
++      <arg name="desktop_uri" direction="in" type="s" />
++    </method>
++
+     <method name="AddNewItem">
+       <arg name="plugin_name" direction="in" type="s" />
+       <arg name="arguments" direction="in" type="as" />
+--- a/panel/panel-itembar.c
++++ b/panel/panel-itembar.c
+@@ -593,6 +593,85 @@
+         }
+     }
+ 
++  PanelItembarChild *clock_left = NULL;
++  PanelItembarChild *clock_right = NULL;
++  gint clock_left_length = 0;
++  PanelItembarChild *tasklist = NULL;
++  gint tasklist_length = 0;
++  gint tasklist_reduction = 0;
++  if (IS_HORIZONTAL (itembar) && itembar->nrows == 1)
++    {
++      PanelItembarChild *previous = NULL;
++      gint before = 0;
++      gint previous_length = 0;
++      guint expand_count = 0;
++      gboolean moving_plugin = FALSE;
++      for (lp = itembar->children; lp != NULL; lp = lp->next)
++        {
++          child = lp->data;
++          if (child == NULL)
++            {
++              moving_plugin = TRUE;
++              continue;
++            }
++          if (!gtk_widget_get_visible (child->widget))
++            continue;
++          gtk_widget_get_preferred_width_for_height (child->widget, itembar->size,
++                                                     NULL, &child_len);
++          child_len = MAX (1, child_len);
++          if (child->option == CHILD_OPTION_EXPAND)
++            expand_count++;
++          if (XFCE_IS_PANEL_PLUGIN_PROVIDER (child->widget)
++              && g_strcmp0 (xfce_panel_plugin_provider_get_name (
++                               XFCE_PANEL_PLUGIN_PROVIDER (child->widget)), "tasklist") == 0)
++            {
++              tasklist = child;
++              tasklist_length = child_len;
++            }
++          if (previous != NULL && previous->option == CHILD_OPTION_EXPAND
++              && XFCE_IS_PANEL_PLUGIN_PROVIDER (child->widget)
++              && g_strcmp0 (xfce_panel_plugin_provider_get_name (
++                               XFCE_PANEL_PLUGIN_PROVIDER (child->widget)), "clock") == 0)
++            {
++              GSList *next = lp->next;
++              if (next != NULL && next->data != NULL)
++                {
++                  PanelItembarChild *right = next->data;
++                  if (right->option == CHILD_OPTION_EXPAND
++                      && gtk_widget_get_visible (right->widget))
++                    {
++                      gint right_length;
++                      gtk_widget_get_preferred_width_for_height (right->widget, itembar->size,
++                                                                 NULL, &right_length);
++                      right_length = MAX (1, right_length);
++                      clock_left = previous;
++                      clock_right = right;
++                      const gint desired = (itembar_len - child_len) / 2 - before;
++                      if (tasklist != NULL)
++                        tasklist_reduction = CLAMP (
++                            MAX (previous_length - desired,
++                                 expand_len_req - expand_len_avail),
++                            0, MAX (0, tasklist_length - itembar->size));
++                      clock_left_length = CLAMP (desired + tasklist_reduction,
++                          previous_length, MAX (previous_length,
++                              expand_len_avail + tasklist_reduction - right_length));
++                    }
++                }
++            }
++          if (child->option != CHILD_OPTION_EXPAND)
++            before += child_len;
++          previous = child;
++          previous_length = child_len;
++        }
++      if (expand_count != 2 || moving_plugin || clock_left == NULL
++          || expand_len_avail + tasklist_reduction < expand_len_req)
++        {
++          clock_left = clock_right = NULL;
++          tasklist_reduction = 0;
++        }
++      expand_len_avail += tasklist_reduction;
++    }
++
+   /* whether the expandable items fit on this row; we use this
+    * as a fast-path when there are expanding items on a panel with
+    * not really enough length to expand (ie. items make the panel grow,
+@@ -668,11 +747,22 @@
+       else
+         gtk_widget_get_preferred_height_for_width (child->widget, itembar->size * itembar->nrows, &child_len_min, &child_len);
+ 
++      if (child == tasklist && tasklist_reduction > 0)
++        {
++          child_len -= tasklist_reduction;
++          child_len_min = MIN (child_len_min, child_len);
++        }
++
+       if (G_UNLIKELY (!expand_children_fit && child->option == CHILD_OPTION_EXPAND))
+         {
+           /* equally share the length between the expanding plugins */
+           panel_assert (expand_len_req > 0);
+-          new_len = expand_len_avail * child_len / expand_len_req;
++          if (child == clock_left)
++            new_len = clock_left_length;
++          else if (child == clock_right)
++            new_len = expand_len_avail;
++          else
++            new_len = expand_len_avail * child_len / expand_len_req;
+ 
+           CHILD_MIN_ALLOC_LEN (child_len);
+           CHILD_MIN_ALLOC_LEN (child_len_min);
+--- a/panel/panel-dbus-service.c
++++ b/panel/panel-dbus-service.c
+@@ -64,6 +64,12 @@
+                                  const gchar *plugin_name,
+                                  gchar **arguments,
+                                  PanelDBusService *service);
++static gboolean
++panel_dbus_service_add_launcher_to_panel (XfcePanelExportedService *skeleton,
++                                         GDBusMethodInvocation *invocation,
++                                         guint panel_id,
++                                         const gchar *desktop_uri,
++                                         PanelDBusService *service);
+ static void
+ panel_dbus_service_plugin_event_free (gpointer data);
+ static gboolean
+@@ -137,6 +143,8 @@
+                                                       "/org/xfce/Panel",
+                                                       &error)))
+         {
++          g_signal_connect (service, "handle_add_launcher_to_panel",
++                            G_CALLBACK (panel_dbus_service_add_launcher_to_panel), service);
+           g_signal_connect (service, "handle_add_new_item",
+                             G_CALLBACK (panel_dbus_service_add_new_item), service);
+           g_signal_connect (service, "handle_display_items_dialog",
+@@ -241,6 +249,48 @@
+ 
+ 
+ static gboolean
++panel_dbus_service_add_launcher_to_panel (XfcePanelExportedService *skeleton,
++                                         GDBusMethodInvocation *invocation,
++                                         guint panel_id,
++                                         const gchar *desktop_uri,
++                                         PanelDBusService *service)
++{
++  GFile *file = g_file_new_for_uri (desktop_uri);
++  gchar *name = g_file_get_basename (file);
++  gboolean valid = g_file_is_native (file) && name != NULL
++                   && g_str_has_suffix (name, ".desktop")
++                   && g_file_query_file_type (file, G_FILE_QUERY_INFO_NONE, NULL) == G_FILE_TYPE_REGULAR;
++  g_free (name);
++  g_object_unref (file);
++  if (!valid)
++    {
++      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
++                                             G_DBUS_ERROR_INVALID_ARGS,
++                                             "Choose a local application launcher.");
++      return TRUE;
++    }
++
++  PanelApplication *application = panel_application_get ();
++  PanelWindow *window = panel_application_get_window (application, panel_id);
++  if (window == NULL || panel_application_get_locked (application)
++      || panel_window_get_locked (window))
++    {
++      g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
++                                             G_DBUS_ERROR_ACCESS_DENIED,
++                                             "The requested panel is unavailable or locked.");
++      g_object_unref (application);
++      return TRUE;
++    }
++
++  gchar *arguments[] = { (gchar *) desktop_uri, NULL };
++  panel_application_add_new_item (application, window, "launcher", arguments);
++  g_object_unref (application);
++  xfce_panel_exported_service_complete_add_launcher_to_panel (skeleton, invocation);
++  return TRUE;
++}
++
++
++static gboolean
+ panel_dbus_service_add_new_item (XfcePanelExportedService *skeleton,
+                                  GDBusMethodInvocation *invocation,
+                                  const gchar *plugin_name,

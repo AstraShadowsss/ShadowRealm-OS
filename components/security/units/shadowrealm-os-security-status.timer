@@ -1,0 +1,7 @@
+[Unit]
+Description=Refresh ShadowRealm-OS security widget evidence
+[Timer]
+OnBootSec=10
+OnUnitActiveSec=15
+[Install]
+WantedBy=timers.target

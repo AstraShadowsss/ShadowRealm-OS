@@ -1,0 +1,3 @@
+#!/bin/sh
+# Preserve command arguments and run the maintained GTK/VTE terminal.
+exec /usr/lib/shadowrealm-os/shadow-terminal-gtk-v3 "$@"
