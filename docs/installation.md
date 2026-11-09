@@ -35,4 +35,4 @@ Guest integration is included where available, but shared clipboard and host fol
 
 At the end of the live session, the splash can hide the media-removal prompt. After removing the installer USB, or once the virtual DVD has ejected, press Enter if the splash remains.
 
-For VirtualBox sound, enable Audio and Audio Output in the VM settings. Use Intel HD Audio and the host’s default audio driver (Windows Audio Session/WASAPI on Windows). Microphone input can stay disabled. A null/silent host audio driver cannot play sound through your speakers.
+For VirtualBox sound, enable Audio and Audio Output in the VM settings. Use Intel HD Audio and the host's default audio driver (Windows Audio Session/WASAPI on Windows). Microphone input can stay disabled. A null/silent host audio driver cannot play sound through your speakers.

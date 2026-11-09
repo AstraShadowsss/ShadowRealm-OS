@@ -19,7 +19,7 @@ Checks performed on the AMD64 release build and its disposable VirtualBox test i
 | Installed services | No failed system services observed; NetworkManager, firewall and AppArmor active |
 | AppArmor on installed system | 123 profiles loaded; 21 enforcing at the validation checkpoint |
 | Eight appearance themes | Applied successfully; Neon restored; Gold SR accents and Professional Bluetooth rechecked |
-| Menu icon routing | Project entries use the dock’s 48px artwork; third-party applications resolve native icons |
+| Menu icon routing | Project entries use the dock's 48px artwork; third-party applications resolve native icons |
 | Clock shortcuts | Top-bar click and application desktop-entry launch open GNOME Clocks; legacy Shadow Clock route redirected |
 | Menu, desktop creation, Terminal launcher and Trash | Passed; created folder moved to Trash by GUI drag |
 | Audio slider and mute | Volume and mute controls verified; Windows WASAPI + Intel HD Audio enabled in the test VM, and audible chime playback confirmed by the user |
@@ -66,6 +66,6 @@ account from the retired palette, while preserving its own wallpaper file and
 transparency setting. Linux launcher shebangs are checked for Windows line endings
 before image assembly and again inside the final ISO.
 
-The final asset revision uses component version 0.2.2. The walking-figure wallpaper family was rebuilt from one cleaned master with the approved SR insert; Professional is unbranded. The image checker verifies matching artwork/desktop copies of all eight variants. Signed HTTPS APT acceptance and a downloaded 0.2.2 package hash were verified.
+Desktop uses 0.2.3; artwork and Terminal use 0.2.2. Appearance was tested as a real GTK window on the installed system and final live image: all four pages opened, the eight installed theme entries were present, and Black & White apply followed by Neon restore passed. The walking-figure wallpaper family was rebuilt from one cleaned master with the approved SR insert; Professional is unbranded. The image checker verifies matching artwork/desktop copies of all eight variants. Signed HTTPS APT acceptance and a downloaded 0.2.2 package hash were verified.
 
-Final release SHA256: `34d7bb2153a9183013f50e053cbe314d643e56d5d24d4ab6ab42525f146c6270`. Both cold BIOS and UEFI boots of these exact bytes passed installer preflight, two restored online CPUs, early Btrfs preload, no soft-lockup messages, and signed APT acceptance. UEFI checks used the temporary test SSH connection; BIOS results were observed in the local Terminal and installer. Temporary test access was added only to the volatile live overlay, not the ISO.
+Final release SHA256: `7c53bbca05ff84841b381941c87d8a258800a465347b192a19efd00ae3cb2c73`. Both cold BIOS and UEFI boots of these exact bytes passed installer preflight, two restored online CPUs, early Btrfs preload, no soft-lockup messages, and signed APT acceptance. UEFI checks used the temporary test SSH connection; BIOS and UEFI installer readiness were observed locally; runtime checks used temporary live-session SSH. Temporary test access was added only to the volatile live overlay, not the ISO.

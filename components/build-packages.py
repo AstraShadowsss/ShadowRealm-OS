@@ -5,20 +5,23 @@ libvte-2.91-dev and dpkg-dev installed. No account or desktop is modified.
 """
 import argparse, os, shutil, subprocess, tempfile, sys
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('output',type=Path);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('output',type=Path);p.add_argument('--desktop-only',action='store_true');a=p.parse_args()
 src=a.source.resolve();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
 sys.path.insert(0,str(src))
 from panel_defaults import seed_panel
 version=(src/'ASSET_VERSION').read_text().strip()
+desktop_version=(src/'DESKTOP_VERSION').read_text().strip()
 arch=subprocess.check_output(['dpkg','--print-architecture'],text=True).strip()
 def run(*args):subprocess.run(args,check=True)
 def write(root,name,text,mode=0o644):
  path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(text);path.chmod(mode)
+def package_version(name):return desktop_version if name=='shadowrealm-os-desktop' else version
+
 def control(root,name,depends,description):
  write(root,f'usr/share/doc/{name}/copyright',(src/'LICENSE').read_text())
- write(root,'DEBIAN/control',f'Package: {name}\nVersion: {version}\nSection: x11\nPriority: optional\nArchitecture: {arch}\nMaintainer: ShadowRealm-OS Project <packages@shadowrealm-os.invalid>\nDepends: {depends}\nDescription: {description}\n')
+ write(root,'DEBIAN/control',f'Package: {name}\nVersion: {package_version(name)}\nSection: x11\nPriority: optional\nArchitecture: {arch}\nMaintainer: ShadowRealm-OS Project <packages@shadowrealm-os.invalid>\nDepends: {depends}\nDescription: {description}\n')
 def build(root,name):
- run('dpkg-deb','--root-owner-group','--build',str(root),str(out/f'{name}_{version}_{arch}.deb'))
+ run('dpkg-deb','--root-owner-group','--build',str(root),str(out/f'{name}_{package_version(name)}_{arch}.deb'))
 with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
  root=Path(td)/'desktop';root.mkdir()
  run('tar','-xzf',str(src/'shadowrealm-os-desktop-defaults-source.tar.gz'),'-C',str(root))
@@ -68,6 +71,7 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
  for notice in (root/'usr/share/doc/shadowrealm-os-desktop/vendor-notices').rglob('*'):
   notice.chmod(0o755 if notice.is_dir() else 0o644)
  build(root,'shadowrealm-os-desktop')
+ if a.desktop_only:raise SystemExit(0)
  root=Path(td)/'terminal';binary=root/'usr/lib/shadowrealm-os/shadow-terminal-gtk-v3';binary.parent.mkdir(parents=True)
  flags=subprocess.check_output(['pkg-config','--cflags','--libs','gtk+-3.0','vte-2.91'],text=True).split()
  run('cc','-O2',str(src/'shadow-terminal.c'),'-o',str(binary),*flags)
