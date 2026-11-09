@@ -4,6 +4,9 @@
 
 ### Revised initial build (r2)
 
+- Added a readable update-feed page and package catalog with links from the project website and download overview.
+- Added SourceForge-specific download notes and moved the large third-party source bundle to six verified GitHub Release attachments to respect hosting limits.
+
 - Fixed Appearance startup after the palette replacement; theme controls now read the installed manifest and were tested through every page.
 - Normalized owned UI text and source line endings to prevent encoding artifacts.
 
