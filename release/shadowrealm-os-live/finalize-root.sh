@@ -19,12 +19,13 @@ chroot "$root" apt-get install -y systemd-timesyncd drawing xfce4-screensaver
 rm -rf -- "$root/tmp/shadowrealm-os-final-packages"
 mkdir -p "$root/tmp/shadowrealm-os-final-packages"
 for name in artwork desktop terminal panel security installer-settings experience; do
- file=$(find "$packages" -maxdepth 1 -name "shadowrealm-os-${name}_0.2.0_*.deb" -print -quit);test -s "$file";cp "$file" "$root/tmp/shadowrealm-os-final-packages/"
+ file=$(find "$packages" -maxdepth 1 -name "shadowrealm-os-${name}_*_*.deb" -print | sort -V | tail -n1);test -s "$file";cp "$file" "$root/tmp/shadowrealm-os-final-packages/"
 done
-cp "$packages/shadowrealm-os-release_2026.11-2_all.deb" "$root/tmp/shadowrealm-os-final-packages/"
+cp "$packages/shadowrealm-os-release_2026.11-4_all.deb" "$root/tmp/shadowrealm-os-final-packages/"
 find "$packages" -maxdepth 1 -name '*-1_all.deb' ! -name 'shadowrealm-os-release*' -exec cp {} "$root/tmp/shadowrealm-os-final-packages/" \;
-test "$(find "$root/tmp/shadowrealm-os-final-packages" -name '*.deb' | wc -l)" = 17
+test "$(find "$root/tmp/shadowrealm-os-final-packages" -name '*.deb' | wc -l)" = 18
 chroot "$root" /bin/sh -c 'apt-get install --reinstall -y /tmp/shadowrealm-os-final-packages/*.deb'
+ln -sfn ../usr/lib/os-release "$root/etc/os-release"
 chmod 755 "$root/usr/share/doc/shadowrealm-os-desktop/vendor-notices"
 # Keep the selected VLC/Shutter applications without duplicate menu programs.
 # Retain installed Xfce features when their optional goodies meta-package goes.

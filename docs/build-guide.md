@@ -1,6 +1,6 @@
 # Building ShadowRealm-OS
 
-ShadowRealm-OS is a customized Debian 13 desktop, not the discontinued Linux From Scratch prototype. Its original desktop, artwork, Terminal and nine offline games are maintained here. Debian packages remain managed by APT; sandboxed applications use Flatpak.
+ShadowRealm-OS is a customized Debian 13 desktop. Its original desktop, artwork, Terminal and nine offline games are maintained here. Debian packages remain managed by APT; sandboxed applications use Flatpak.
 
 ## Contents
 
@@ -17,7 +17,7 @@ Use a disposable Debian 13 AMD64 VM with at least 4 GB RAM and 45 GB available d
 
 ```sh
 sudo apt-get update
-sudo apt-get install build-essential dpkg-dev pkg-config python3 python3-apt python3-gi python3-pil gettext libgtk-3-dev libvte-2.91-dev libxfce4ui-2-dev libxfce4util-dev libxfconf-0-dev libexo-2-dev libwnck-3-dev libgarcon-1-dev libgarcon-gtk3-1-dev libdbusmenu-gtk3-dev libgtk-layer-shell-dev libxfce4windowing-0-dev live-build xorriso squashfs-tools cryptsetup lvm2
+sudo apt-get install build-essential dpkg-dev pkg-config python3 python3-apt python3-gi python3-pil gettext libgtk-3-dev libvte-2.91-dev libxfce4ui-2-dev libxfce4util-dev libxfconf-0-dev libexo-2-dev libwnck-3-dev libgarcon-1-dev libgarcon-gtk3-1-dev libdbusmenu-gtk3-dev libgtk-layer-shell-dev libxfce4windowing-0-dev live-build xorriso squashfs-tools cryptsetup lvm2 librsvg2-bin
 mkdir -p outputs
 python3 components/build-packages.py components outputs
 python3 components/build-artwork.py components outputs
@@ -25,13 +25,14 @@ python3 components/build-experience.py components outputs
 python3 components/build-security.py components outputs
 python3 components/build-installer.py components outputs
 python3 components/build-identity.py outputs
+python3 release/build-archive-keyring.py release/shadowrealm-os-archive-keyring.gpg outputs
 bash components/build-panel.sh outputs
 python3 games/build-debs.py outputs
 ```
 
-The games builder produces nine independently removable DEBs in `outputs/`. Do not mix earlier package revisions into that directory. Components currently use version 0.2.0; the distro identity package uses 2026.11-2. Increment versions before publishing an updated package.
+The games builder produces nine independently removable DEBs in `outputs/`. Do not mix earlier package revisions into that directory. Desktop, artwork and Terminal use 0.2.2; unchanged components retain 0.2.0; the distro identity package uses 2026.11-4. Increment versions before publishing an updated package.
 
-The installer configuration package adds the maintained Calamares framework, a ShadowRealm-OS interface, offline GRUB files, optional LUKS encryption and LVM controls. Eight custom packages plus nine game packages are installed.
+The installer configuration package adds the maintained Calamares framework, a ShadowRealm-OS interface, offline GRUB files, optional LUKS encryption and LVM controls. Nine custom packages plus nine game packages are installed.
 
 ## Build the AMD64 installer
 
@@ -55,11 +56,11 @@ Terminal wraps secure Debian VTE and preserves command arguments and working dir
 
 Root security and account operations use narrowly scoped, root-owned helpers and polkit. Account rename migrates login, Home and owned paths while retaining group memberships; test only with disposable accounts and keep recovery access. The account integration test explicitly requires a disposable-test environment variable.
 
-A VirtualBox-specific initramfs hook, GRUB setting and early service select the ACPI clock when available to avoid the unstable TSC seen on this Windows host. It leaves physical hardware's clock selection unchanged.
+A VirtualBox-specific initramfs hook, GRUB setting and early service select the ACPI clock when available. The helper also initializes Btrfs/RAID6/XOR drivers in a temporary single-vCPU window, restoring exactly the CPUs it offlined, to avoid observed VirtualBox/Windows kernel selftest stalls during installer storage probing. It acts only on VirtualBox and leaves physical-machine CPU/clock settings unchanged. The advanced kernel option `shadowrealm.vbox_preload=off` disables the filesystem preload for diagnosis.
 
 ## Update and signing responsibilities
 
-Debian and signed vendor repositories supply their own packages. APT does not automatically update unpublished ShadowRealm-OS custom code. Before offering custom updates publicly, establish and document a signed ShadowRealm-OS repository, maintain its signing key outside this source tree, publish the corresponding source, and test upgrade/rollback from the preceding release. No publishing credentials or signing private keys are supplied.
+Debian and signed vendor repositories supply their own packages. The revised Beta 1 includes the signed ShadowRealm-OS custom repository through the archive-keyring setup package. Maintain its signing key outside this source tree, publish matching source and notices for every updated package, and test upgrades before publishing. See update-repository.md for archive construction, publication order and metadata expiry. No publishing credentials or signing private keys are supplied.
 
 Flatpak applications update separately. Users retain control of reboots, firewall rules, networking, DNS, Tor and VPN connections. Tor Browser and the optional system Tor proxy are distinct applications/services.
 

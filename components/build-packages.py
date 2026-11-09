@@ -9,7 +9,7 @@ p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('o
 src=a.source.resolve();out=a.output.resolve();out.mkdir(parents=True,exist_ok=True)
 sys.path.insert(0,str(src))
 from panel_defaults import seed_panel
-version=(src/'VERSION').read_text().strip()
+version=(src/'ASSET_VERSION').read_text().strip()
 arch=subprocess.check_output(['dpkg','--print-architecture'],text=True).strip()
 def run(*args):subprocess.run(args,check=True)
 def write(root,name,text,mode=0o644):
@@ -22,6 +22,8 @@ def build(root,name):
 with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
  root=Path(td)/'desktop';root.mkdir()
  run('tar','-xzf',str(src/'shadowrealm-os-desktop-defaults-source.tar.gz'),'-C',str(root))
+ walls=root/'usr/share/shadowrealm-os/desktop/wallpapers';walls.mkdir(parents=True,exist_ok=True)
+ run('tar','-xzf',str(src/'shadowrealm-os-walker-wallpapers.tar.gz'),'-C',str(walls))
  seed_panel(root)
  # Seed the complete first-login appearance before xfwm/settings start.
  # Both themes are installed system-wide, so provisioning order cannot cause fallback.

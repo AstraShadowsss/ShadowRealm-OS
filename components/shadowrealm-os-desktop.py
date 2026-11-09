@@ -75,6 +75,56 @@ def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
         target = programs / source.name
         if source.is_file() and not os.path.lexists(target):
             target.symlink_to(source)
+    # Package-owned assets have a separate version from user settings. Refresh
+    # only shipped filenames; never replace unrelated user wallpapers or icons.
+    asset_marker = home / ".local/state/shadowrealm-os/icon-catalog-v3"
+    if marker.is_file() and not asset_marker.is_file():
+        def refresh_owned(source, destination):
+            for original in source.rglob("*"):
+                if original.is_symlink() or not original.is_file():
+                    continue
+                dest = destination / original.relative_to(source)
+                if not dest.parent.resolve().is_relative_to(home.resolve()):
+                    continue
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                fd, temporary = tempfile.mkstemp(prefix=".shadow-assets-", dir=dest.parent)
+                os.close(fd)
+                try:
+                    shutil.copy2(original, temporary)
+                    os.replace(temporary, dest)
+                finally:
+                    Path(temporary).unlink(missing_ok=True)
+        for source, destination in (
+            (payload / "runtime/icons", base / "icons"),
+            (payload / "wallpapers", home / "Pictures/Backgrounds"),
+        ):
+            refresh_owned(source, destination)
+        modes = json.loads((payload / "appearance-modes.json").read_text())
+        for mode, record in modes.items():
+            for category, local, name in (
+                ("icons", home / ".local/share/icons", record["icons"]),
+                ("themes", home / ".themes", record["theme"]),
+            ):
+                refresh_owned(system_share / category / name, local / name)
+            record["logo"] = str(base / "icons" / mode / Path(record["logo"]).name)
+            record["wallpaper"] = str(home / "Pictures/Backgrounds" / Path(record["wallpaper"]).name)
+        (base / "appearance-modes.json").write_text(json.dumps(modes, indent=2) + "\n")
+        selected = cfg / "appearance-mode"
+        if selected.exists() and selected.read_text().strip() == "blue-white":
+            selected.write_text("black-white\n")
+        # Remove only the retired package-provided theme, never arbitrary files.
+        for retired in (home / ".themes/ShadowRealm-OS-BlueWhite",
+                        home / ".local/share/icons/ShadowRealm-OS-BlueWhite",
+                        base / "icons/blue-white"):
+            if retired.is_dir() and not retired.is_symlink():
+                shutil.rmtree(retired)
+        for retired in (home / "Pictures/Backgrounds").glob("ShadowRealm-OS-BlueWhite-*.png"):
+            retired.unlink()
+        current = base / "icons/current"
+        if current.is_symlink() and os.readlink(current) == "blue-white":
+            current.unlink()
+            current.symlink_to("black-white")
+        write_default(asset_marker, "2\n")
     if marker.is_file():
         return base
     copy_defaults(payload / "runtime", base)

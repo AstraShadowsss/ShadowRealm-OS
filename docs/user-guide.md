@@ -4,13 +4,13 @@ Open the application menu at the upper left. Categories group programs by purpos
 
 ## Appearance
 
-Use Control Center → Appearance to choose a coordinated style: Neon, Hacker, Red & Black, Woodland, White, Silver & Gold, Black & Blue, Blue & White or Professional. Wallpaper selection is separate, so changing a picture does not silently change the whole style. Terminal, widget and menu background transparency controls affect supported backgrounds; application text and controls remain readable. Some third-party applications draw their own interface and may not follow every GTK setting.
+Use Control Center → Appearance to choose a coordinated style: Neon, Hacker, Red & Black, Woodland, White, Silver & Gold, Black & Blue, Black & White or Professional. Wallpaper selection is separate, so changing a picture does not silently change the whole style. Terminal, widget and menu background transparency controls affect supported backgrounds; application text and controls remain readable. Some third-party applications draw their own interface and may not follow every GTK setting.
 
 ## Applications and updates
 
 Software tools expose installed applications and available packages. Debian applications are managed with APT; Flatpak applications use Flatpak. Updates need a working network connection. Read the operation summary before removing packages.
 
-Debian and vendor repositories update their respective packages. The custom ShadowRealm-OS components currently have no published signed update repository. A new project release or reviewed replacement DEBs are required for those components; this limitation is part of the beta.
+Debian and vendor repositories update their respective packages. The revised Beta 1 image includes the signed ShadowRealm-OS repository for custom desktop components and games. Open Software & Updates, refresh the package lists, review the offered updates and choose what to install. Flatpak updates are managed separately. The earlier Beta 1 image needs the one-time setup package described in [update repository](update-repository.md).
 
 ## Network and privacy
 

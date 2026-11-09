@@ -23,7 +23,7 @@ def render(name,w,h,content,palette,overlay=''):
 for palette in palettes:
  # Individual icon/terminal/splash assets use alpha, with no opaque black rectangle.
  render('SR-'+palette,512,512,image('sr-logo-neon.png',0,0,512,512),palette)
- tile_bg='#f0efeb' if palette in ('WhiteSilverGold','BlueWhite') else '#10101b'
+ tile_bg='#f0efeb' if palette in ('WhiteSilverGold','BlackWhite') else '#10101b'
  tile=f'<rect x="10" y="10" width="492" height="492" rx="85" fill="{tile_bg}" stroke="{palettes[palette][0]}" stroke-width="12"/>'
  render('Dock-SR-'+palette,512,512,'','Neon',f'<image x="38" y="38" width="436" height="436" href="data:image/png;base64,{base64.b64encode((a.output/("SR-"+palette+".png")).read_bytes()).decode()}"/>')
  # Color the wordmark by alpha rather than remapping its blue pixels to a dark hue.

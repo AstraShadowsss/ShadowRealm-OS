@@ -6,13 +6,17 @@ tools_dir=$(cd -- "$(dirname -- "$0")" && pwd)
 root=$(realpath "$1");base=$(realpath "$2");out=$(realpath -m "$3")
 case "$root" in /var/tmp/shadowrealm-os-iso-build/chroot|/mnt/shadowrealm-build/root) ;; *) exit 2;; esac
 test "$(id -u)" = 0
+test -L "$root/etc/os-release"
+cmp "$root/etc/os-release" "$root/usr/lib/os-release"
 mountpoint -q /mnt/shadowrealm-build || { echo "Mount the ext4 release scratch volume first." >&2; exit 2; }
 test ! -e "$out";test ! -e "$out.partial"
 ! findmnt -rn -o TARGET | grep -F "$root/" >/dev/null
 work=$(mktemp -d -p /mnt/shadowrealm-build iso-stage.XXXXXXXX)
 mkdir -p "$work/live" "$work/isolinux" "$work/boot/grub"
 for name in shadowrealm-os-desktop shadowrealm-os-terminal shadowrealm-os-panel shadowrealm-os-security shadowrealm-os-artwork shadowrealm-os-installer-settings; do
- test "$(dpkg-query --admindir="$root/var/lib/dpkg" -W -f='${Version}' "$name")" = 0.2.0
+ expected=0.2.0
+ case "$name" in shadowrealm-os-desktop|shadowrealm-os-terminal|shadowrealm-os-artwork) expected=0.2.2;; esac
+ test "$(dpkg-query --admindir="$root/var/lib/dpkg" -W -f='${Version}' "$name")" = "$expected"
 done
 test "$(dpkg-query --admindir="$root/var/lib/dpkg" -W -f='${Version}' shadow-solitaire)" = 0.2.0-1
 if awk -F: '$3>=1000 && $3<65534 {bad=1} END {exit bad}' "$root/etc/passwd"; then :;else exit 1;fi
@@ -21,6 +25,8 @@ find "$root/etc/ssh" -maxdepth 1 -name 'ssh_host_*' -delete
 rm -f "$root/etc/ssl/private/ssl-cert-snakeoil.key" "$root/etc/ssl/certs/ssl-cert-snakeoil.pem" "$root/var/lib/shadowrealm-os/first-boot-complete"
 truncate -s 0 "$root/etc/machine-id"
 test ! -e "$root/etc/apt/apt.conf.d/99shadowrealm-os-build-proxy"
+python3 "$tools_dir/prune-old-icon-caches.py" "$root"
+python3 "$tools_dir/check-packaged-assets.py" "$root"
 collector="$tools_dir/../collect-release-notices.py"
 test -f "$collector" || collector="$tools_dir/collect-release-notices.py"
 python3 "$collector" "$root" "$work/LICENSES"

@@ -15,7 +15,7 @@ VERSION_CODENAME=trixie
 ID=debian
 VARIANT="ShadowRealm-OS desktop"
 VARIANT_ID=shadowrealm-os
-BUILD_ID=20261107.2
+BUILD_ID=20261108.1
 ''')
  put(root,'etc/default/grub.d/10-shadowrealm-os.cfg','''GRUB_DISTRIBUTOR=ShadowRealm-OS
 GRUB_DEFAULT=0
@@ -44,6 +44,7 @@ set -e
 case "$1" in prereqs) exit 0;; esac
 . /usr/share/initramfs-tools/hook-functions
 copy_exec /usr/local/libexec/shadowrealm-os-vbox-clock /sbin/shadowrealm-os-vbox-clock
+manual_add_modules btrfs
 ''',0o755)
  put(root,'etc/initramfs-tools/scripts/init-top/shadowrealm-os-vbox-clock','''#!/bin/sh
 case "$1" in prereqs) exit 0;; esac
@@ -95,6 +96,24 @@ clock=/sys/devices/system/clocksource/clocksource0
 if grep -qw acpi_pm "$clock/available_clocksource"; then
  echo acpi_pm > "$clock/current_clocksource"
 fi
+# Some VirtualBox/Windows combinations stall the first RAID6/XOR filesystem
+# selftests when more than one vCPU is online. Initialize that driver before
+# desktop storage probing, temporarily retaining only the boot CPU. Restore
+# exactly the CPUs we offlined, including on module-load failure.
+if ! grep -Fq 'shadowrealm.vbox_preload=off' /proc/cmdline && [ ! -d /sys/module/btrfs ] && command -v modprobe >/dev/null; then
+ offline=""
+ restore_cpus() {
+  for cpu in $offline; do echo 1 > "$cpu" 2>/dev/null || true; done
+ }
+ trap restore_cpus EXIT
+ ready=yes
+ for cpu in /sys/devices/system/cpu/cpu[1-9]*/online; do
+  [ -f "$cpu" ] || continue
+  [ "$(cat "$cpu")" = 1 ] || continue
+  if echo 0 > "$cpu" 2>/dev/null; then offline="$offline $cpu"; else ready=no; break; fi
+ done
+ if [ "$ready" = yes ]; then modprobe btrfs || true; fi
+fi
 ''',0o755)
  put(root,'usr/lib/systemd/system/shadowrealm-os-vbox-clock.service','''[Unit]
 Description=Use the stable timer on VirtualBox Windows hosts
@@ -110,16 +129,19 @@ WantedBy=sysinit.target
 ''')
  put(root,'DEBIAN/postinst','''#!/bin/sh
 set -e
-if [ "$1" = configure ]; then deb-systemd-helper enable shadowrealm-os-first-boot.service shadowrealm-os-vbox-clock.service >/dev/null; fi
+if [ "$1" = configure ]; then
+ deb-systemd-helper enable shadowrealm-os-first-boot.service shadowrealm-os-vbox-clock.service >/dev/null
+ if command -v update-initramfs >/dev/null; then update-initramfs -u -k all; fi
+fi
 ''',0o755)
  put(root,'usr/share/doc/shadowrealm-os-release/copyright' ,(Path(__file__).resolve().parent/'LICENSE').read_text())
  put(root,'DEBIAN/control','''Package: shadowrealm-os-release
-Version: 2026.11-2
+Version: 2026.11-4
 Section: misc
 Priority: optional
 Architecture: all
 Maintainer: ShadowRealm-OS contributors <packages@shadowrealm-os.invalid>
-Depends: base-files, dpkg, network-manager, systemd, init-system-helpers, ssl-cert
+Depends: base-files, dpkg, network-manager, systemd, init-system-helpers, ssl-cert, kmod, initramfs-tools
 Description: ShadowRealm-OS identity and transparent desktop defaults
 ''')
  put(root,'DEBIAN/preinst','''#!/bin/sh
@@ -135,4 +157,4 @@ if [ "$1" = remove ] || [ "$1" = purge ]; then
 fi
 ''',0o755)
  put(root,'DEBIAN/conffiles','/etc/default/grub.d/10-shadowrealm-os.cfg\n/etc/default/grub.d/20-shadowrealm-os-virtualbox.cfg\n/etc/NetworkManager/conf.d/90-shadowrealm-os-privacy.conf\n/etc/xdg/mimeapps.list\n')
- subprocess.run(['dpkg-deb','--root-owner-group','--build',str(root),str(a.output/'shadowrealm-os-release_2026.11-2_all.deb')],check=True)
+ subprocess.run(['dpkg-deb','--root-owner-group','--build',str(root),str(a.output/'shadowrealm-os-release_2026.11-4_all.deb')],check=True)

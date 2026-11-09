@@ -61,6 +61,10 @@ label shadowrealm-os-safe
  menu label ShadowRealm-OS compatibility mode
  kernel /live/vmlinuz
  append initrd=/live/initrd.img boot=live components nomodeset
+label shadowrealm-os-virtualbox
+ menu label ShadowRealm-OS VirtualBox timing compatibility
+ kernel /live/vmlinuz
+ append initrd=/live/initrd.img boot=live components quiet splash clocksource=acpi_pm tsc=unstable
 ''')
 subprocess.run(['grub-mkfont', '-s', '16', '-o', str(work/'boot/grub/shadowrealm-os-font.pf2'), str(root/'usr/share/fonts/truetype/dejavu/DejaVuSans.ttf')], check=True)
 (work/'boot/grub/shadowrealm-os-theme.txt').write_text('''desktop-image: "splash.png"
@@ -86,6 +90,12 @@ title-text: ""
 (work/'boot/grub/grub.cfg').write_text('''search --no-floppy --file --set=root /live/filesystem.squashfs
 set default=0
 set timeout=5
+set shadow_vm_args=""
+insmod smbios
+smbios --type 1 --get-string 5 --set shadow_product
+if [ "$shadow_product" = "VirtualBox" ]; then
+ set shadow_vm_args="clocksource=acpi_pm tsc=unstable"
+fi
 if loadfont /boot/grub/shadowrealm-os-font.pf2; then
  set gfxmode=800x600,auto
  insmod all_video
@@ -94,11 +104,15 @@ if loadfont /boot/grub/shadowrealm-os-font.pf2; then
  set theme=/boot/grub/shadowrealm-os-theme.txt
 fi
 menuentry "Try and install ShadowRealm-OS" {
- linux /live/vmlinuz boot=live components quiet splash
+ linux /live/vmlinuz boot=live components quiet splash $shadow_vm_args
  initrd /live/initrd.img
 }
 menuentry "ShadowRealm-OS compatibility mode" {
- linux /live/vmlinuz boot=live components nomodeset
+ linux /live/vmlinuz boot=live components nomodeset $shadow_vm_args
+ initrd /live/initrd.img
+}
+menuentry "ShadowRealm-OS VirtualBox timing compatibility" {
+ linux /live/vmlinuz boot=live components quiet splash clocksource=acpi_pm tsc=unstable
  initrd /live/initrd.img
 }
 ''')
