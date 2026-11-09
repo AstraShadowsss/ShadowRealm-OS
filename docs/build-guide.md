@@ -30,7 +30,7 @@ bash components/build-panel.sh outputs
 python3 games/build-debs.py outputs
 ```
 
-The games builder produces nine independently removable DEBs in `outputs/`. Do not mix earlier package revisions into that directory. Desktop, artwork and Terminal use 0.2.2; unchanged components retain 0.2.0; the distro identity package uses 2026.11-4. Increment versions before publishing an updated package.
+The games builder produces nine independently removable DEBs in `outputs/`. Do not mix earlier package revisions into that directory. Desktop uses DESKTOP_VERSION 0.2.3; artwork and Terminal use ASSET_VERSION 0.2.2; unchanged components retain 0.2.0; the distro identity package uses 2026.11-4. Increment versions before publishing an updated package.
 
 The installer configuration package adds the maintained Calamares framework, a ShadowRealm-OS interface, offline GRUB files, optional LUKS encryption and LVM controls. Nine custom packages plus nine game packages are installed.
 

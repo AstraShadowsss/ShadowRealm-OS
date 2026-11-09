@@ -7,7 +7,6 @@ gi.require_version('Gtk','3.0');gi.require_version('GdkPixbuf','2.0')
 from gi.repository import Gtk,Gio,GLib,Gdk,GdkPixbuf
 from shadow_appearance_desktop import set_wallpaper
 HOME=pathlib.Path.home();FOLDER=HOME/'Pictures/Backgrounds'
-PALETTES=[('Neon', 'Neon'), ('WhiteSilverGold', 'White, Silver & Gold'), ('RedBlack', 'Red & Black'), ('Woodland', 'Woodland'), ('Hacker', 'Black & Green Hacker'), ('BlackBlue', 'Black & Blue'), ('BlueWhite', 'Blue & White'), ('Professional', 'Professional')]
 COLLECTIONS=[('full-artwork','Full Artwork'),('logo-focused','Logo Collection'),('Circuit-Walker','Circuit Walker'),('seated-city','Seated City'),('circuit-corridor','Circuit Corridor')]
 class Backgrounds(Gtk.Application):
  def __init__(self):
@@ -35,13 +34,13 @@ class Backgrounds(Gtk.Application):
   collections.set_active(0);collections.connect('changed',self.choose_collection);row.pack_start(collections,True,True,0)
   self.wall_palette=Gtk.ComboBoxText()
   self.wall_palette.append('all','All palettes')
-  for identity,label in PALETTES:self.wall_palette.append(identity,label)
+  for identity,label in self.palette_labels:self.wall_palette.append(identity,label)
   current=(HOME/'.config/shadowrealm-os/appearance-mode').read_text().strip()
   self.wall_palette.set_active_id(self.modes.get(current,{}).get('wallpaper_palette','all'))
   self.wall_palette.connect('changed',self.choose_wall_palette)
   row.pack_start(self.wall_palette,True,True,0)
-  color=Gtk.Button(label='Solid Color…');color.connect('clicked',self.choose_solid);row.pack_end(color,False,False,0)
-  custom=Gtk.Button(label='Choose Photo…');custom.connect('clicked',self.choose_custom);row.pack_end(custom,False,False,0)
+  color=Gtk.Button(label='Solid Color...');color.connect('clicked',self.choose_solid);row.pack_end(color,False,False,0)
+  custom=Gtk.Button(label='Choose Photo...');custom.connect('clicked',self.choose_custom);row.pack_end(custom,False,False,0)
   scroll=Gtk.ScrolledWindow();scroll.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.AUTOMATIC);outer.pack_start(scroll,True,True,0)
   self.flow=Gtk.FlowBox();self.flow.set_selection_mode(Gtk.SelectionMode.NONE);self.flow.set_valign(Gtk.Align.START);self.flow.set_min_children_per_line(2);self.flow.set_max_children_per_line(3);self.flow.set_row_spacing(12);self.flow.set_column_spacing(12);scroll.add(self.flow)
   self.status=Gtk.Label(xalign=0,wrap=True);outer.pack_start(self.status,False,False,0)
@@ -52,7 +51,7 @@ class Backgrounds(Gtk.Application):
   desktop=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10,margin=18)
   tabs.append_page(desktop,Gtk.Label(label='Desktop Shortcuts'))
   desktop.pack_start(Gtk.Label(label='Choose which shortcuts appear on the desktop, such as Home and Trash. To change icon colors, use Themes.',xalign=0,wrap=True),False,False,0)
-  options=Gtk.Button(label='Open Desktop Icon Options…')
+  options=Gtk.Button(label='Open Desktop Icon Options...')
   options.set_halign(Gtk.Align.START)
   options.connect('clicked',lambda *_:subprocess.Popen(['/usr/bin/xfdesktop-settings']))
   desktop.pack_start(options,False,False,0)
@@ -87,9 +86,10 @@ class Backgrounds(Gtk.Application):
   page=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10,margin=16);scroll=Gtk.ScrolledWindow();scroll.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.AUTOMATIC);scroll.add(page);tabs.append_page(scroll,Gtk.Label(label='Themes'))
   page.pack_start(Gtk.Label(label='Choose a complete desktop look. Apply Theme switches colors, icons, dock, wallpaper and widgets in one step. Boot and login follow the selected theme.',xalign=0,wrap=True),False,False,0)
   base=HOME/'.local/share/shadow-link';self.modes=json.loads((base/'appearance-modes.json').read_text());current=(HOME/'.config/shadowrealm-os/appearance-mode').read_text().strip();current=current if current in self.modes else 'neon';self.style_choice=current
+  self.palette_labels=[(entry['wallpaper_palette'],entry['label']) for entry in self.modes.values()]
   rows=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=5);page.pack_start(rows,True,True,0);group=None
   self.style_buttons=[]
-  for identity in ('neon','hacker','woodland','red-black','white-silver-gold','black-blue','blue-white','professional'):
+  for identity in self.modes:
    entry=self.modes[identity]
    row=Gtk.Box(spacing=10)
    thumbnail=FOLDER/f"ShadowRealm-OS-{entry['wallpaper_palette']}-logo-focused.png"
@@ -116,7 +116,7 @@ class Backgrounds(Gtk.Application):
  def apply_style(self,*args):
   mode=self.style_choice
   args=['/usr/bin/python3',str(HOME/'.local/share/shadow-link/bin/shadow-appearance-apply'),mode]
-  self.apply_style_button.set_sensitive(False);self.style_status.set_text('Applying theme…')
+  self.apply_style_button.set_sensitive(False);self.style_status.set_text('Applying theme...')
   self.pool=concurrent.futures.ThreadPoolExecutor(max_workers=1)
   future=self.pool.submit(subprocess.run,args,capture_output=True,text=True,timeout=90)
   def finished(result):
@@ -178,7 +178,7 @@ class Backgrounds(Gtk.Application):
   for child in self.flow.get_children():child.destroy()
   self.buttons=[];self.selected=None;self.use.set_sensitive(False);self.status.set_text('Select a background. Your current desktop will stay unchanged until you press Use Wallpaper.')
   group=self.collection_id
-  for palette,label in PALETTES:
+  for palette,label in self.palette_labels:
    if palette=='Professional':continue
    if self.wall_palette.get_active_id() not in ('all',palette):continue
    path=FOLDER/('ShadowRealm-OS-'+palette+'-'+group+'.png');box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=7,margin=6);button=Gtk.Button();button.add(box)
@@ -204,8 +204,11 @@ class Backgrounds(Gtk.Application):
   try:
    set_wallpaper(self.selected);self.status.set_text('Wallpaper applied. Your theme was kept.')
   except Exception as error:self.status.set_text('Could not apply background: '+str(error))
-page='themes'
-if '--transparency' in sys.argv:page='transparency'
-elif '--desktop-icons' in sys.argv:page='icons'
-elif '--desktop-settings' in sys.argv or '--wallpapers' in sys.argv:page='wallpapers'
-Backgrounds().run([sys.argv[0],page])
+def main():
+ page='themes'
+ if '--transparency' in sys.argv:page='transparency'
+ elif '--desktop-icons' in sys.argv:page='icons'
+ elif '--desktop-settings' in sys.argv or '--wallpapers' in sys.argv:page='wallpapers'
+ return Backgrounds().run([sys.argv[0],page])
+
+if __name__=='__main__':raise SystemExit(main())

@@ -4,6 +4,9 @@
 
 ### Revised initial build (r2)
 
+- Fixed Appearance startup after the palette replacement; theme controls now read the installed manifest and were tested through every page.
+- Normalized owned UI text and source line endings to prevent encoding artifacts.
+
 - Replaced Blue & White with Black & White across desktop controls, icons, wallpapers, widgets and window decorations.
 - Expanded current system, dock and panel families to 89 roles per theme; retained the existing dock artwork in the other seven styles.
 - Reconciled the media export with the installed icon families and removed the old branded Professional wallpaper.
