@@ -2,7 +2,7 @@
 
 ## Before you begin
 
-Download the AMD64 ISO and its `SHA256SUMS` from the same release directory. On Windows, run `Get-FileHash -Algorithm SHA256 "path\to\ShadowRealm-OS-2026.11-beta1-r2-amd64.iso"` in PowerShell and compare all 64 characters. On Linux, put both files in one directory and run `sha256sum -c SHA256SUMS`.
+Download the AMD64 ISO and its `SHA256SUMS` from the same release directory. On Windows, run `Get-FileHash -Algorithm SHA256 "path\to\ShadowRealm-OS-2026.11-beta1-r3-amd64.iso"` in PowerShell and compare all 64 characters. On Linux, put both files in one directory and run `sha256sum -c SHA256SUMS`.
 
 Checksums detect a changed or incomplete download. They do not independently authenticate its publisher. This beta does not include a release signature.
 
@@ -16,6 +16,8 @@ Back up the destination computer. If using a USB drive, write the ISO as a disk 
 4. Review the destination disk carefully. Automatic erase-disk installation is the simplest path for a dedicated disk. Optional encryption protects the installed disk while powered off; keep the encryption passphrase safe.
 5. Create your own account and password. Read the installer's final summary before confirming disk changes.
 6. Finish, restart and remove the USB when prompted. With encryption enabled, enter the disk passphrase during boot, then sign in with your account password.
+
+The first sign-in may take longer while your desktop is prepared. Let the wallpaper and widgets finish loading; later sign-ins reuse your saved profile.
 
 The live environment is temporary and automatically signs in. Its account is `user`, password `live`; this is not the password of an installed system. The installer creates the account you specify.
 
@@ -36,3 +38,7 @@ Guest integration is included where available, but shared clipboard and host fol
 At the end of the live session, the splash can hide the media-removal prompt. After removing the installer USB, or once the virtual DVD has ejected, press Enter if the splash remains.
 
 For VirtualBox sound, enable Audio and Audio Output in the VM settings. Use Intel HD Audio and the host's default audio driver (Windows Audio Session/WASAPI on Windows). Microphone input can stay disabled. A null/silent host audio driver cannot play sound through your speakers.
+
+## Withdrawn r2 installations
+
+The r2 installer had a filesystem-root permission defect affecting installed services and login sessions. Use the corrected r3 image for new installations. Existing r2 installations can be repaired without erasing accounts or files; see [the recovery guide](r2-install-recovery.md).
