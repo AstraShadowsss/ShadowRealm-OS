@@ -2,6 +2,13 @@
 
 ## 2026.11 beta 1
 
+### Installer correction (r3, validation in progress)
+
+- Corrected filesystem-root permissions in the ISO build. The r2 root was mode 0700, which prevented D-Bus and other unprivileged services from starting after installation and caused both graphical and console login sessions to fail.
+- Added explicit root ownership/mode checks to ISO generation and validation, plus an installer finalization safeguard.
+- Added a target-mount check before copying the live system, so a failed mount cannot silently fill the live session's temporary filesystem.
+- The known-bad r2 installer download was withdrawn while the corrected image is validated. Existing source downloads remain available.
+
 ### Revised initial build (r2)
 
 - Added a readable update-feed page and package catalog with links from the project website and download overview.

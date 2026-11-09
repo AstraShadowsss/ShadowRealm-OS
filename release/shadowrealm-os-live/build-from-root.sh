@@ -15,7 +15,7 @@ work=$(mktemp -d -p /mnt/shadowrealm-build iso-stage.XXXXXXXX)
 mkdir -p "$work/live" "$work/isolinux" "$work/boot/grub"
 for name in shadowrealm-os-desktop shadowrealm-os-terminal shadowrealm-os-panel shadowrealm-os-security shadowrealm-os-artwork shadowrealm-os-installer-settings; do
  expected=0.2.0
- case "$name" in shadowrealm-os-desktop) expected=0.2.3;; shadowrealm-os-terminal|shadowrealm-os-artwork) expected=0.2.2;; esac
+ case "$name" in shadowrealm-os-installer-settings) expected=0.2.1;; shadowrealm-os-desktop) expected=0.2.3;; shadowrealm-os-terminal|shadowrealm-os-artwork) expected=0.2.2;; esac
  test "$(dpkg-query --admindir="$root/var/lib/dpkg" -W -f='${Version}' "$name")" = "$expected"
 done
 test "$(dpkg-query --admindir="$root/var/lib/dpkg" -W -f='${Version}' shadow-solitaire)" = 0.2.0-1
@@ -30,7 +30,12 @@ python3 "$tools_dir/check-packaged-assets.py" "$root"
 collector="$tools_dir/../collect-release-notices.py"
 test -f "$collector" || collector="$tools_dir/collect-release-notices.py"
 python3 "$collector" "$root" "$work/LICENSES"
-mksquashfs "$root" "$work/live/filesystem.squashfs" -comp zstd -Xcompression-level 3 -processors 2 -no-progress -noappend
+# A private staging directory may be mode 0700. Preserve normal root access
+# in the image: otherwise installed D-Bus and user sessions cannot start.
+chown 0:0 "$root"
+chmod 0755 "$root"
+test "$(stat -c '%a:%u:%g' "$root")" = 755:0:0
+mksquashfs "$root" "$work/live/filesystem.squashfs" -root-mode 0755 -comp zstd -Xcompression-level 3 -processors 2 -no-progress -noappend
 kernel=$(find "$root/boot" -maxdepth 1 -type f -name 'vmlinuz-*' -printf '%f\n' | sort -V | tail -1)
 version=${kernel#vmlinuz-}
 for suffix in '' "-$version"; do

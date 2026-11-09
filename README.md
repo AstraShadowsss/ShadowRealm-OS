@@ -1,3 +1,5 @@
+> **Installer download temporarily withdrawn:** the r2 ISO has a filesystem-root permission error that can prevent the installed login screen and user sessions from starting. A corrected image is being validated. Source archives are not installation images.
+
 # ShadowRealm-OS
 
 A Debian 13 desktop with its own look, built around Xfce and a set of small, integrated desktop tools.
