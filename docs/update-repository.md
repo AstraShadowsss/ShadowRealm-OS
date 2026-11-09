@@ -62,3 +62,7 @@ The signing key expires in November 2028 and needs renewal or a documented rotat
 - Repository-specific package pinning exposed the custom package candidates without replacing Debian's bash package.
 
 These checks cover the repository mechanism. Every future application update still needs its own regression and upgrade tests.
+
+## Browse packages
+
+The [Updates & Packages page](https://shadowrealm-os.sourceforge.io/apt/) lists the current custom DEBs. It is in SourceForge project web space, separate from the ISO download listing. APT reads the signed metadata there; `apt update` refreshes the lists and `apt upgrade` installs available updates.
