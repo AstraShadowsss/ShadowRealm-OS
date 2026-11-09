@@ -1,6 +1,6 @@
 # Release locations
 
-ShadowRealm-OS 2026.11 beta 1 uses revision r2 of the installer image. Beta 1 is the release name; r2 identifies the revised ISO and GitHub tag.
+ShadowRealm-OS 2026.11 beta 1 uses revision r3 of the installer image. Beta 1 is the release name; r3 identifies the corrected installer. The unchanged third-party source parts remain attached to the r2 GitHub tag; do not duplicate their 11.4 GB of data.
 
 | Location | Contents |
 | --- | --- |

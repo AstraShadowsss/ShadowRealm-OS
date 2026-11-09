@@ -21,3 +21,6 @@ The inventory records packages actually included in the image, not every package
 MIT and many bundled free-software licenses permit commercial redistribution under their conditions. The MIT license does not imply that every component has identical redistribution obligations. See the [MIT license](https://opensource.org/license/mit) and [GNU source distribution guidance](https://www.gnu.org/licenses/gpl-faq.html#SourceAndBinaryOnDifferentSites).
 
 VirtualBox is linked as an optional host application, not included in the ISO source repository. Its Extension Pack is a separate product and license. No rights to third-party product names or trademarks are granted here.
+
+
+The r3 installer correction changes original project build/installer code, not the third-party package inputs. The existing six-part third-party archive under the r2 GitHub asset tag also matches r3. The updated custom-source archive and package notice inventories accompany r3 on SourceForge.
