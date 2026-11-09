@@ -2,7 +2,7 @@
 
 A Debian 13 desktop with its own look, built around Xfce and a set of small, integrated desktop tools.
 
-<p align="center"><img src="branding/banner-neon.png" alt="ShadowRealm-OS � SR logo and wordmark" width="880"></p>
+<p align="center"><img src="branding/banner-neon.png" alt="ShadowRealm-OS — SR logo and wordmark" width="880"></p>
 
 **2026.11 beta 1 · AMD64 · live desktop and installer**
 
@@ -72,8 +72,6 @@ System Overview shows resource use; Network shows interface traffic; Processes l
 ![Coordinated wallpapers beyond Seated City](screenshots/wallpaper-styles.png)
 
 ![Walking-figure wallpapers with the current SR jacket emblem](screenshots/walking-theme-styles.png)
-
-The walking-figure collection uses the same approved SR insert in each branded palette. Professional keeps an unbranded jacket.
 
 ## Beta status
 
