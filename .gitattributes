@@ -8,4 +8,5 @@
 *.tar.gz binary
 *.tar.xz binary
 *.png binary
+*.gpg binary
 *.zip binary

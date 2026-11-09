@@ -43,14 +43,15 @@ chroot "$root" apt-get install -y librewolf jami thunderbird guvcview gnome-auth
 rm -rf -- "$root/tmp/shadowrealm-os-packages"
 mkdir -p "$root/tmp/shadowrealm-os-packages"
 for name in artwork desktop terminal panel security installer-settings; do
- file=$(find "$packages" -maxdepth 1 -name "shadowrealm-os-${name}_0.2.0_*.deb" -print -quit)
+ file=$(find "$packages" -maxdepth 1 -name "shadowrealm-os-${name}_*_*.deb" -print | sort -V | tail -n1)
  test -s "$file";cp "$file" "$root/tmp/shadowrealm-os-packages/"
 done
 chroot "$root" /bin/sh -c 'apt-get install -y /tmp/shadowrealm-os-packages/*.deb' 
 # Refresh games from their current package versions, including Spider and the spiral map.
-test "$(find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' | wc -l)" -eq 9
-find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' -exec cp {} "$root/tmp/shadowrealm-os-packages/" \;
+test "$(find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' ! -name 'shadowrealm-os-*' | wc -l)" -eq 9
+find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' ! -name 'shadowrealm-os-*' -exec cp {} "$root/tmp/shadowrealm-os-packages/" \;
 test "$(find "$root/tmp/shadowrealm-os-packages" -name '*_all.deb' | wc -l)" -eq 11
+cp "$packages/shadowrealm-os-archive-keyring_2026.11-1_all.deb" "$root/tmp/shadowrealm-os-packages/"
 chroot "$root" /bin/sh -c 'apt-get install -y /tmp/shadowrealm-os-packages/*.deb' 
 rm -rf -- "$root/tmp/shadowrealm-os-packages"
 chroot "$root" flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo

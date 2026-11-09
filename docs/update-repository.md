@@ -1,30 +1,64 @@
-# Signed update repository — preparation
+# ShadowRealm-OS updates
 
-The published beta does not yet include a ShadowRealm-OS APT feed. This document and the builder prepare that work; no live repository or trusted production signing key has been deployed.
+The revised Beta 1 image includes the signed custom package repository at:
 
-Preparation check: on Debian 13, one existing game DEB was indexed and signed with a disposable Ed25519 key. `gpgv` verified the signature and an isolated `apt-get update` accepted the signed repository. The temporary key and archive were removed afterward. This checks local archive construction, not HTTPS hosting, upgrades or production security policy.
+`https://shadowrealm-os.sourceforge.io/apt`
 
-## Build
+It supplies ShadowRealm-OS desktop components and games. Debian/vendor repositories remain responsible for their packages, and Flatpak applications update separately. Open Software & Updates and refresh to review available APT updates. Updates are not installed automatically by this setup package.
 
-On Debian 13, with `dpkg-deb` and GnuPG installed:
+## Earlier Beta 1 installations
+
+The original image can be connected without reinstalling. Download `shadowrealm-os-archive-keyring_2026.11-1_all.deb` from the Beta 1 release folder, verify it against that folder's SHA256SUMS, then install it:
+
+```sh
+sudo apt install ./shadowrealm-os-archive-keyring_2026.11-1_all.deb
+sudo apt update
+```
+
+This installs the public key, a repository-specific Signed-By entry and package pinning that excludes unrelated packages. Review offered updates through Software & Updates or APT.
+
+Public signing-key fingerprint:
+
+`F4D5 FDF9 049F EF1E B4F0 844B F288 9DF2 870E 9430`
+
+Only the public key belongs in the ISO and repository. Signing private keys and host upload credentials are not included in the source or release files.
+
+To remove this custom update source, use `sudo apt purge shadowrealm-os-archive-keyring`, then refresh APT. This removes its key and repository configuration; installed desktop components remain installed, and Debian/vendor update sources remain separate.
+
+## Maintainer: build and publish
+
+On Debian 13 with dpkg-deb and GnuPG:
 
 ```sh
 python3 release/build-apt-repository.py reviewed-packages new-repository \
-  --signing-key FULL_SIGNING_KEY_FINGERPRINT
+  --signing-key FULL_SIGNING_KEY_FINGERPRINT --valid-days 90
 ```
 
-Supply reviewed custom DEBs only. Increase package versions for every published change. Never replace a published package with different bytes under the same version. The builder refuses existing output directories, unrelated packages, duplicate versions and unsupported architectures. It creates package indexes, immutable by-hash copies, signed Release/InRelease metadata and an exported public key. It never uploads a private key.
+Use reviewed custom DEBs and increase package versions for every published change. Never publish different bytes under an existing package/version filename. Publish matching source and upstream notices with every changed package, including modified GPL components.
 
-Repository metadata expires after 14 days by default. Refresh and sign it before expiry even when packages have not changed. Do not disable APT signature or expiry checks to work around publishing errors.
+The builder creates package indexes, immutable by-hash copies, signed Release/InRelease metadata and an exported public key. It rejects unrelated packages, duplicate package/version/architecture entries and existing output directories.
 
-## Before going live
+With python3-paramiko and a configured SSH host key, the publisher uses SFTP:
 
-1. Choose and test an HTTPS hosting location; SourceForge project web is a candidate, not yet an accepted APT endpoint.
-2. Create the real signing key in controlled storage, document expiry/rotation/revocation, and keep a protected offline backup. A test key must never become the public trust anchor.
-3. Publish matching source and upstream notices for every changed package, including modified GPL components.
-4. Upload immutable packages and by-hash files first. Publish signed metadata last; retain previous by-hash indexes long enough for clients already updating.
-5. In a disposable Debian VM, test APT signature checks, a deliberately corrupted download, missing/expired signatures, version upgrades, interrupted updates and preservation of user settings. Then test the actual HTTPS host with the same checks.
-6. Create a reviewed setup DEB containing the public key, a deb822 `.sources` entry using `Signed-By`, and package-specific pinning. The custom repository must not replace ordinary Debian/vendor packages.
-7. Add that setup package to the next ISO and offer it once to existing beta users. Verify Update Center integration before advertising automatic custom updates.
+```sh
+python3 release/publish-apt-repository.py new-repository \
+  --user YOUR_SOURCEFORGE_USER,shadowrealm-os --identity /path/to/upload-key
+```
 
-The private key belongs outside GitHub, SourceForge and source/release bundles. Never publish a key or enable an update source merely because a repository directory was generated successfully.
+It verifies existing package bytes before reusing a filename, uploads immutable packages/indexes first, replaces metadata atomically and publishes InRelease last. Keep previous packages/by-hash files for clients already updating and for reviewed rollback packages. Package rollback is not automatic and must be tested for the affected component.
+
+## Expiry and key maintenance
+
+**Current metadata expires on 6 February 2027.** Sign and publish refreshed metadata before expiry, even if no package versions changed. Future publication dates change this deadline; inspect Valid-Until in InRelease. The builder defaults to 14 days; production currently uses 90 days. Do not disable signature or expiry checks to work around missed maintenance.
+
+The signing key expires in November 2028 and needs renewal or a documented rotation before then. Maintain protected offline recovery material. Private signing storage must stay outside GitHub, SourceForge and all project/source/release bundles.
+
+## Checks performed
+
+- Disposable-key local repository: signature verification and isolated APT update succeeded.
+- SourceForge HTTPS: APT fetched signed metadata and downloaded a package successfully.
+- A real setup-package upgrade from 2026.11-0 to 2026.11-1 succeeded over signed HTTPS while preserving the existing transparency settings.
+- APT rejected unsigned, signature-altered and expired metadata, and a modified package download.
+- Repository-specific package pinning exposed the custom package candidates without replacing Debian's bash package.
+
+These checks cover the repository mechanism. Every future application update still needs its own regression and upgrade tests.

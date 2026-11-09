@@ -3,11 +3,19 @@
 from pathlib import Path
 import argparse, subprocess, tempfile
 p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('output',type=Path);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
-version=(a.source/'VERSION').read_text().strip()
+version=(a.source/'ASSET_VERSION').read_text().strip()
 def write(root,name,text,mode=0o644):
  f=root/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text(text);f.chmod(mode)
 with tempfile.TemporaryDirectory() as tmp:
  root=Path(tmp);subprocess.run(['tar','-xzf',str(a.source/'shadowrealm-os-artwork-source.tar.gz'),'-C',str(root)],check=True)
+ # Shared walking wallpapers contain the approved SR insert, never the retired S.
+ import tarfile
+ with tarfile.open(a.source/'shadowrealm-os-walker-wallpapers.tar.gz') as walkers:
+  target=root/'usr/share/backgrounds/shadowrealm-os/circuit-walker';target.mkdir(parents=True,exist_ok=True)
+  for member in walkers:
+   if member.isfile() and member.name.endswith('.png'):
+    theme=member.name.removeprefix('ShadowRealm-OS-').removesuffix('-Circuit-Walker.png')
+    (target/('ShadowRealm-OS-'+theme+'.png')).write_bytes(walkers.extractfile(member).read())
  # Keep vendor application icons supplied by their own packages.
  vendors=('proton-*','protonvpn*','thunar','Thunar','org.xfce.Thunar','org.xfce.thunar','org.xfce.filemanager','xfce4-terminal','org.xfce.terminal','xfce4-taskmanager','org.xfce.taskmanager','librewolf','io.gitlab.librewolf-community','thunderbird','org.mozilla.Thunderbird','vlc','net.jami.Jami','jami','libreoffice-*','io.github.Hexchat','hexchat','org.keepassxc.KeePassXC','keepassxc','org.gnome.Snapshot','com.belmoussaoui.Authenticator','guvcview','org.xfce.mousepad','mousepad','org.xfce.ristretto','ristretto','org.xfce.notes','atril','shutter','timeshift','sirikali','gparted','seahorse','org.gnome.clocks','org.gnome.Clocks','xarchiver','galculator','torbrowser-launcher','tor-browser','onboard')
  for theme in (root/'usr/share/icons').glob('ShadowRealm-OS-*'):

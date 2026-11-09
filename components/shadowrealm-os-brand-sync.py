@@ -4,7 +4,7 @@ Unprivileged files supply only a whitelisted palette name, never an asset path.
 """
 import fcntl, hashlib, json, os, pathlib, pwd, stat, subprocess, tempfile
 P=pathlib.Path
-PALETTES={'neon':('Neon','ShadowRealm-OS-Neon'),'white-silver-gold':('WhiteSilverGold','ShadowRealm-OS-White-Silver-Gold'),'red-black':('RedBlack','ShadowRealm-OS-RedBlack'),'woodland':('Woodland','ShadowRealm-OS-Woodland'),'hacker':('Hacker','ShadowRealm-OS-Hacker'),'black-blue':('BlackBlue','ShadowRealm-OS-BlackBlue'),'blue-white':('BlueWhite','ShadowRealm-OS-BlueWhite'),'professional':('Professional','ShadowRealm-OS-Professional')}
+PALETTES={'neon':('Neon','ShadowRealm-OS-Neon'),'white-silver-gold':('WhiteSilverGold','ShadowRealm-OS-White-Silver-Gold'),'red-black':('RedBlack','ShadowRealm-OS-RedBlack'),'woodland':('Woodland','ShadowRealm-OS-Woodland'),'hacker':('Hacker','ShadowRealm-OS-Hacker'),'black-blue':('BlackBlue','ShadowRealm-OS-BlackBlue'),'black-white':('BlackWhite','ShadowRealm-OS-BlackWhite'),'professional':('Professional','ShadowRealm-OS-Professional')}
 def output(*args):return subprocess.check_output(args,text=True,timeout=10).strip()
 def active_palette():
  sid=output('loginctl','show-seat','seat0','-p','ActiveSession','--value')

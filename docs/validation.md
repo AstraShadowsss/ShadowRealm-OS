@@ -1,19 +1,19 @@
 # 2026.11 beta 1 validation
 
-Image: `ShadowRealm-OS-2026.11-beta1-amd64.iso`  
-SHA256: `0a182f8bfeba40084541be37fd335bb8f7db8aebbf64d7e5b47aba569b9fe9c6`
+Image: `ShadowRealm-OS-2026.11-beta1-r2-amd64.iso`
+SHA256: `6b01c968226107850435573cebfc5086460a00405f44bee1023b06c251fc9741`
 
 Checks performed on the AMD64 release build and its disposable VirtualBox test installation:
 
 | Check | Result |
 | --- | --- |
 | ISO internal hashes, BIOS/UEFI boot entries, initramfs and boot maintenance packages | Passed |
-| Fresh first-login appearance | Passed on the preceding boot-tested candidate: xfwm theme ShadowRealm-OS-Neon and GTK4 prefer-dark, without applying a theme manually |
+| Fresh first-login appearance | Passed on revised r2 live boots: xfwm theme ShadowRealm-OS-Neon and GTK4 prefer-dark, without applying a theme manually |
 | Factory privacy scan: saved accounts, private keys, network secrets and history | Passed |
 | Corresponding-source archive | All 3,819 required Debian source inputs present; separate vendor sources retained |
-| Package notice coverage | 2,027 installed packages; 2,218 notice files; no missing package notice records |
-| BIOS live boot | Passed on the preceding candidate; default SR theme, dock and widgets loaded |
-| UEFI live desktop and Calamares installation to a blank virtual disk | Passed; 38 installer jobs completed |
+| Package notice coverage | 2,028 installed packages; 2,219 notice files; no missing package notice records |
+| BIOS live boot | Passed on the revised image; default SR theme, dock and widgets loaded |
+| UEFI live desktop and Calamares installation to a blank virtual disk | Preceding installer/base build: 38 jobs completed; revised image: fresh live boot and installer preflight passed |
 | Encrypted installed system: GRUB unlock, login and sudo | Passed |
 | Desktop shutdown | Passed through the desktop power control |
 | Installed services | No failed system services observed; NetworkManager, firewall and AppArmor active |
@@ -33,12 +33,39 @@ Checks performed on the AMD64 release build and its disposable VirtualBox test i
 | Terminal actions | Visible button acknowledgement verified; shell and secure Debian VTE started successfully |
 | GitHub screenshots | Actual clean desktop, menu, Control Center, Terminal and appearance captures supplied |
 
-The installation test began with the preceding candidate of the same Debian/kernel/installer build, and received the final desktop, artwork, Terminal and experience packages. The final ISO was rebuilt from the clean factory root after those fixes. New installer defaults include the SR account avatar, ten-minute screensaver timeout, explicit Neon window-manager theme and native GTK4 dark preference. A fresh live-account settings window showed the SR avatar. The preceding candidate passed a fresh BIOS live boot with the installed test disk detached. The final image then received menu icon routing, background opacity defaults, clock shortcut routing and project notice corrections; those desktop changes were tested in the installed VM, and the rebuilt ISO passed structural, privacy and internal checksum checks. The final byte-for-byte image was not booted again.
+The preceding installer/base-system build completed a UEFI encrypted installation and received the current desktop packages. The revised image retains that kernel and installer base, adds signed custom updates and VirtualBox startup compatibility, and was checked with fresh default BIOS and UEFI live boots. A full encrypted installation was not repeated for r2.
 
 ## Limits
 
 This is a beta, not a claim that every application and hardware combination is bug-free. No physical-machine, Secure Boot, shared-ESP dual-boot, suspend/resume or real Bluetooth-radio certification was performed. A USB Bluetooth adapter must be available to a VM before radio functions can be tested. GNOME/GTK4 vendor applications retain their native interface; light/dark preference follows the selected theme.
 
-Debian's AppArmor service condition skips enforcement in the live overlay environment; the installed encrypted system was verified enforcing profiles. A signed custom ShadowRealm-OS update repository has not been published. Debian/vendor package updates and custom component maintenance are separate.
+Debian's AppArmor service condition skips enforcement in the live overlay environment; the installed encrypted system was verified enforcing profiles. The revised Beta 1 includes the signed custom update repository. Debian/vendor packages and custom component updates retain their separate maintainers; metadata refresh and key maintenance are documented in update-repository.md.
 
 Notice coverage checks verify supplied files and inventories, not a legal certification of every upstream license. Matching corresponding source and retained notices are supplied with the release.
+
+## Revised Beta 1 (r2)
+
+The revised image passed a fresh UEFI live boot with Neon desktop, widgets, Terminal, Clocks, Software & Updates and the actual ShadowRealm-OS installer launcher. Installer preflight was checked with a blank 32 GB virtual disk. The signed HTTPS repository was accepted by APT in the live system. Standard os-release identification reports ShadowRealm-OS and BUILD_ID=20261108.1. The image uses the standard os-release symlink to its packaged identity; the image checker enforces that match.
+
+Signed repository checks passed: real setup and identity-package upgrades, user-setting preservation, package pinning, and rejection of unsigned/altered/expired metadata and corrupt downloads. The existing encrypted-install test remains the preceding installer/base-system test; a full encrypted installation was not repeated for this metadata/keyring revision. Physical hardware and Secure Boot limits remain as above.
+
+A separate cold BIOS default boot of the same r2 bytes also reached the branded installer ready screen. Both tests confirmed two online CPUs and early automatic Btrfs initialization without soft-lockup messages. The VirtualBox-only helper temporarily offlines secondary CPUs for kernel filesystem selftests and restores their prior state before desktop use.
+
+## Asset and existing-account checks
+
+The packaged catalog contains 89 roles in each of eight themes, with separate
+system tiles, dock artwork and panel glyphs. Catalog checks verify role files,
+vector validity and transparent system-tile corners. The 296 pre-existing
+retained SVG masters were compared unchanged. Black & White replaced the
+retired palette; its widgets, window decorations, dock and Terminal were
+checked on the running desktop. Screenshots show real VM readings during work,
+not default resource consumption.
+
+A disposable profile test passed fresh provisioning and migration of an existing
+account from the retired palette, while preserving its own wallpaper file and
+transparency setting. Linux launcher shebangs are checked for Windows line endings
+before image assembly and again inside the final ISO.
+
+The final asset revision uses component version 0.2.2. The walking-figure wallpaper family was rebuilt from one cleaned master with the approved SR insert; Professional is unbranded. The image checker verifies matching artwork/desktop copies of all eight variants. Signed HTTPS APT acceptance and a downloaded 0.2.2 package hash were verified.
+
+Final release SHA256: `34d7bb2153a9183013f50e053cbe314d643e56d5d24d4ab6ab42525f146c6270`. Both cold BIOS and UEFI boots of these exact bytes passed installer preflight, two restored online CPUs, early Btrfs preload, no soft-lockup messages, and signed APT acceptance. UEFI checks used the temporary test SSH connection; BIOS results were observed in the local Terminal and installer. Temporary test access was added only to the volatile live overlay, not the ISO.

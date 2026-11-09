@@ -14,7 +14,7 @@ static const char *terminal_neon_css="#shadow-root { background: #000000; }"
         ".shadow-info { color: #17edff; font-family: 'DejaVu Sans Mono'; font-size: 12px; }"
         ".shadow-caption { color: #c990e5; font-family: 'DejaVu Sans Mono'; font-size: 11px; }"
         ".shadow-tool { background: #231532; color: #d9faff; border: 1px solid #72477f; padding: 3px 9px; }";
-static const char *terminal_professional_css="#shadow-root,#shadow-header { background: #000; } #shadow-header { border-bottom: 1px solid @theme_selected_bg_color; } .shadow-title { color: @theme_selected_bg_color; font-family: Sans; font-weight: bold; font-size: 18px; } .shadow-info { color: #d2d7dc; font-family: Sans; font-size: 12px; } .shadow-caption { color: #93a8bb; font-size: 11px; } .shadow-tool { background: #263445; color: #f1f5f9; border: 1px solid @theme_selected_bg_color; padding: 4px 9px; }";
+static const char *terminal_professional_css="#shadow-root,#shadow-header { background: #000; } #shadow-header { border-bottom: 1px solid @theme_selected_bg_color; } .shadow-title { color: #f1f5f9; font-family: Sans; font-weight: bold; font-size: 18px; } .shadow-info { color: #d2d7dc; font-family: Sans; font-size: 12px; } .shadow-caption { color: #93a8bb; font-size: 11px; } .shadow-tool { background: #252525; color: #f1f5f9; border: 1px solid @theme_selected_bg_color; padding: 4px 9px; }";
 
 /* ShadowRealm-OS Terminal: maintained GTK/VTE application. */
 typedef struct {

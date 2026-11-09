@@ -24,7 +24,17 @@ if test -n "${SHADOWREALM_OS_AUDIT_FORBIDDEN_TEXT:-}"; then
     privacy_args+=(--forbid-text "$SHADOWREALM_OS_AUDIT_FORBIDDEN_TEXT")
 fi
 python3 "$(dirname "$0")/audit-root-privacy.py" "$rootfs" "${privacy_args[@]}"
+python3 "$(dirname "$0")/check-packaged-assets.py" "$rootfs"
 test -s "$root/live/filesystem.packages"
+test -s "$rootfs/usr/share/keyrings/shadowrealm-os-archive-keyring.gpg"
+test -L "$rootfs/etc/os-release"
+cmp "$rootfs/etc/os-release" "$rootfs/usr/lib/os-release"
+grep -Fq 'NAME="ShadowRealm-OS"' "$rootfs/etc/os-release"
+grep -Fq 'https://shadowrealm-os.sourceforge.io/apt' "$rootfs/etc/apt/sources.list.d/shadowrealm-os.sources"
+test "$(dpkg-query --admindir="$rootfs/var/lib/dpkg" -W -f='${Version}' shadowrealm-os-archive-keyring)" = 2026.11-1
+test "$(dpkg-query --admindir="$rootfs/var/lib/dpkg" -W -f='${Version}' shadowrealm-os-release)" = 2026.11-4
+test "$(dpkg-query --admindir="$rootfs/var/lib/dpkg" -W -f='${Status}' shadowrealm-os-release)" = 'install ok installed'
+grep -Fq restore_cpus "$rootfs/usr/local/libexec/shadowrealm-os-vbox-clock"
 for legacy in pool pool-udeb dists install tools firmware; do
     test ! -e "$root/$legacy"
 done

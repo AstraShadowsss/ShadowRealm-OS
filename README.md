@@ -2,6 +2,8 @@
 
 A Debian 13 desktop with its own look, built around Xfce and a set of small, integrated desktop tools.
 
+<p align="center"><img src="branding/banner-neon.png" alt="ShadowRealm-OS � SR logo and wordmark" width="880"></p>
+
 **2026.11 beta 1 · AMD64 · live desktop and installer**
 
 ![ShadowRealm-OS desktop](screenshots/desktop.png)
@@ -10,7 +12,7 @@ ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal
 
 ## Download and install
 
-[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-amd64.iso/download) · [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) · [Sources and licenses](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
+[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r2-amd64.iso/download) · [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) · [Sources and licenses](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
 
 Check the ISO against `SHA256SUMS` before writing it to a USB drive or attaching it to a virtual machine.
 
@@ -55,11 +57,29 @@ Desktop captures from ShadowRealm-OS, with gameplay and theme galleries below.
 | --- | --- |
 | ![Application menu](screenshots/application-menu.png) | ![Control Center](screenshots/control-center.png) |
 
+### Live desktop panels
+
+![The four desktop widgets, enlarged](screenshots/widgets.png)
+
+System Overview shows resource use; Network shows interface traffic; Processes lists running programs; Shadow Shield summarizes firewall and privacy service status. [What each reading means](docs/widgets.md). The source is included so these local tools can be inspected and maintained.
+
+### Network, security and updates
+
+![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png)
+
+### Wallpaper collection
+
+![Coordinated wallpapers beyond Seated City](screenshots/wallpaper-styles.png)
+
+![Walking-figure wallpapers with the current SR jacket emblem](screenshots/walking-theme-styles.png)
+
+The walking-figure collection uses the same approved SR insert in each branded palette. Professional keeps an unbranded jacket.
+
 ## Beta status
 
 This is an early public release. Installation and desktop checks are documented in [release validation](docs/validation.md). Physical hardware coverage is limited; test your graphics, sound, wireless and suspend behavior from the live desktop. Secure Boot and dual-boot installations are not certified for this beta. Keep a backup and recovery media.
 
-Debian and configured vendor repositories provide updates for their packages. There is no published, signed ShadowRealm-OS package repository yet, so custom desktop component updates require a new release or reviewed DEB packages. Do not assume ordinary APT updates replace this project's custom code.
+Debian and configured vendor repositories provide their package updates. The revised Beta 1 image also includes the signed ShadowRealm-OS repository for custom desktop components and games. Refresh Software & Updates to see available APT updates; installing them remains your choice. Flatpak applications update separately. See [repository details and setup for the earlier image](docs/update-repository.md).
 
 ## Source and licenses
 

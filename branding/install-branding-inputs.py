@@ -4,7 +4,7 @@ from pathlib import Path
 from PIL import Image
 import argparse,tarfile,io,gzip,subprocess,json
 p=argparse.ArgumentParser();p.add_argument('components',type=Path);p.add_argument('assets',type=Path);a=p.parse_args()
-palettes={'woodland':'Woodland','white-silver-gold':'WhiteSilverGold','red-black':'RedBlack','professional':'Professional','neon':'Neon','hacker':'Hacker','blue-white':'BlueWhite','black-blue':'BlackBlue'}
+palettes={'woodland':'Woodland','white-silver-gold':'WhiteSilverGold','red-black':'RedBlack','professional':'Professional','neon':'Neon','hacker':'Hacker','black-white':'BlackWhite','black-blue':'BlackBlue'}
 def palette(name):
  for key,value in palettes.items():
   if key in name.lower() or value.lower() in name.lower():return value
@@ -53,6 +53,8 @@ for filename in ('shadowrealm-os-artwork-source.tar.gz','shadowrealm-os-desktop-
   for m in old:
    if Path(m.name).name.startswith('proton-'):
     continue
+   if m.name.endswith('/logo-focused/ShadowRealm-OS-Professional.png'):
+    continue
    if filename=='shadowrealm-os-artwork-source.tar.gz' and '/branding/Wordmark-' in m.name:
     continue
    data=old.extractfile(m).read() if m.isfile() else None
@@ -65,7 +67,7 @@ for filename in ('shadowrealm-os-artwork-source.tar.gz','shadowrealm-os-desktop-
       if candidate.is_file():replacement=candidate.read_bytes()
     # The dedicated monochrome login wallpaper must not retain the old S.
     if 'Login-BlackGrey' in name:replacement=(a.assets/'ShadowRealm-OS-BlackBlue-logo-focused.png').read_bytes()
-    if replacement is None and (stem in ('logo','orbital-logo','term','start-here','start-here-symbolic','distributor-logo','shadowrealm-os-logo','shadow-dock-launcher','shadow-menu','shadowrealm-os-release-shadow-menu','shadowrealm-os-app-menu','shadowrealm-os-dock-menu') or stem.startswith('ShadowRealm-OS-Circular-')):
+    if replacement is None and (stem in ('logo','shadow-logo','orbital-logo','term','start-here','start-here-symbolic','distributor-logo','shadowrealm-os-logo','shadow-dock-launcher','shadow-menu','shadowrealm-os-release-shadow-menu','shadowrealm-os-app-menu','shadowrealm-os-dock-menu') or stem.startswith('ShadowRealm-OS-Circular-')):
      replacement=logo(data,theme,'Dock-SR' if stem in ('shadow-dock-launcher','shadowrealm-os-dock-menu') else 'SR')
    if data is not None and name.endswith('.png') and replacement is None:
     if stem.startswith(('shadow-','orbital-dock-')):
