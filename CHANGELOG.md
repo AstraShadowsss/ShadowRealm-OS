@@ -1,5 +1,10 @@
 # Release notes
 
+## In preparation: live-media handoff correction (r4)
+
+- Give live-media removal notices a separate persistent display and expose the console during the late live-session shutdown handoff.
+- Preserve r3's root-permission and installer-mount fixes. The current r3 download remains available until the replacement is verified.
+
 ## 2026.11 beta 1
 
 ### Installer correction (r3 — 2026-11-09)

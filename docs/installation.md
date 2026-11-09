@@ -42,3 +42,7 @@ For VirtualBox sound, enable Audio and Audio Output in the VM settings. Use Inte
 ## Withdrawn r2 installations
 
 The r2 installer had a filesystem-root permission defect affecting installed services and login sessions. Use the corrected r3 image for new installations. Existing r2 installations can be repaired without erasing accounts or files; see [the recovery guide](r2-install-recovery.md).
+
+## Leaving the live installer
+
+After choosing Restart, the live system may eject the virtual DVD or ask you to remove the installation media. If it waits after media removal, press **Enter once** to continue. In VirtualBox, the optical drive should be empty before booting the installed disk. Do not reset the VM while installation is still running. R3 can hide this handoff behind its splash; a dedicated display correction is being prepared.
