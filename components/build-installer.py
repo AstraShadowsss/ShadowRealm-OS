@@ -8,7 +8,8 @@ p.add_argument('source', type=Path)
 p.add_argument('output', type=Path)
 a = p.parse_args()
 a.output.mkdir(parents=True, exist_ok=True)
-version = (a.source/'VERSION').read_text().strip()
+version_file = a.source/'INSTALLER_VERSION'
+version = (version_file if version_file.is_file() else a.source/'VERSION').read_text().strip()
 
 def put(root, name, text, mode=0o644):
     path = root/name
@@ -28,6 +29,7 @@ with tempfile.TemporaryDirectory() as tmp:
     text = settings.read_text().replace('branding: debian', 'branding: shadowrealm-os')
     text = text.replace('  - bootloader-config', '  - shadowrealm-os-bootloader-config')
     text = text.replace('  - sources-final', '  - shadowrealm-os-finalize')
+    text = text.replace('  - unpackfs', '  - shadowrealm-os-target-check\n  - unpackfs')
     # The complete system and bootloader files are already in the live image.
     # Do not add a second, older installer/CD package repository to the target.
     text = text.replace('  - sources-media\n', '').replace('  - sources-media-unmount\n', '')
@@ -158,12 +160,28 @@ def run():
     (folder/"shadowrealm-os-permissions").write_text("UMASK=0077\\n")
     return None
 ''',
+        'shadowrealm-os-target-check': '''import pathlib
+import libcalamares
+
+def run():
+    value=libcalamares.globalstorage.value("rootMountPoint")
+    if not isinstance(value,str) or not value:
+        return ("Installation target is not mounted", "No target filesystem was provided. Restart the live session before retrying the installation.")
+    root=pathlib.Path(value).resolve()
+    if root==pathlib.Path("/") or not root.is_mount():
+        return ("Installation target is not mounted", "The target disk could not be mounted. Files have not been copied. Restart the live session before retrying the installation.")
+    return None
+''',
         'shadowrealm-os-finalize': '''import pathlib
 import libcalamares
 def run():
     root=pathlib.Path(libcalamares.globalstorage.value("rootMountPoint"))
     if root==pathlib.Path("/") or not (root/"etc/debian_version").is_file():
         return ("Invalid installation target", "The installer target was not mounted.")
+    # The filesystem root must be traversable by services and user sessions.
+    # Staging directories created by mktemp are private and can otherwise
+    # propagate mode 0700 through an archive into the installed root.
+    root.chmod(0o755)
     sources="""# Debian repositories; package signatures are verified by APT.
 deb https://deb.debian.org/debian trixie main contrib non-free-firmware
 deb-src https://deb.debian.org/debian trixie main contrib non-free-firmware

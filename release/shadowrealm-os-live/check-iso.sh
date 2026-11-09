@@ -19,6 +19,8 @@ mount -o loop,ro "$image" "$root"
 fs="$root/live/filesystem.squashfs"
 test -s "$fs"
 mount -o loop,ro "$fs" "$rootfs"
+# A root-only staging directory makes installed services and logins fail.
+test "$(stat -c '%a:%u:%g' "$rootfs")" = 755:0:0
 privacy_args=()
 if test -n "${SHADOWREALM_OS_AUDIT_FORBIDDEN_TEXT:-}"; then
     privacy_args+=(--forbid-text "$SHADOWREALM_OS_AUDIT_FORBIDDEN_TEXT")
