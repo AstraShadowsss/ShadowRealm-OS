@@ -1,3 +1,5 @@
+> **r2 installer withdrawn — 2026-11-09.** A complete fresh encrypted installation reproduced a mode-0700 filesystem root, D-Bus startup failure and failed login sessions. Earlier live-boot and already-installed VM checks did not detect this defect. Changing the installed root to root:root mode 0755 restored D-Bus, graphical login, password acceptance, networking and the themed desktop. A new r3 ISO must pass its own complete installation test before publication. The prior results below describe earlier checkpoints, not acceptance of the withdrawn installer.
+
 # 2026.11 beta 1 validation
 
 Image: `ShadowRealm-OS-2026.11-beta1-r2-amd64.iso`
