@@ -56,7 +56,13 @@ chroot "$root" /bin/sh -c 'apt-get install -y /tmp/shadowrealm-os-packages/*.deb
 rm -rf -- "$root/tmp/shadowrealm-os-packages"
 chroot "$root" flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 chroot "$root" /usr/sbin/plymouth-set-default-theme shadowrealm-os
-chroot "$root" update-initramfs -u -k all
+# Debian live-tools diverts update-initramfs to a live-media wrapper.
+# Rebuild the image itself rather than silently skipping a chroot update.
+initramfs_tool=/usr/sbin/update-initramfs
+if test -x "$root/usr/sbin/update-initramfs.orig.initramfs-tools"; then
+ initramfs_tool=/usr/sbin/update-initramfs.orig.initramfs-tools
+fi
+chroot "$root" "$initramfs_tool" -u -k all
 systemctl --root="$root" enable NetworkManager.service bluetooth.service shadowrealm-os-firewall.service shadowrealm-os-brand-sync.timer shadowrealm-os-security-status.timer shadow-account-rename.service
 systemctl --root="$root" disable ssh.service ssh.socket tor.service tor@default.service 2>/dev/null || true
 mkdir -p "$root/etc/lightdm/lightdm.conf.d"

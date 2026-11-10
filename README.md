@@ -12,9 +12,9 @@ ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal
 
 ## Download and install
 
-[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r3-amd64.iso/download) · [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) · [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
+[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) · [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) · [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
 
-The r3 installer corrects the installed-login failure in the withdrawn r2 image. Existing r2 installations can be [repaired without erasing files](docs/r2-install-recovery.md).
+The current installer retains the r3 correction for the installed-login failure in the withdrawn r2 image. Existing r2 installations can be [repaired without erasing files](docs/r2-install-recovery.md).
 
 Check the ISO against `SHA256SUMS` before writing it to a USB drive or attaching it to a virtual machine.
 
