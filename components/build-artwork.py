@@ -3,7 +3,8 @@
 from pathlib import Path
 import argparse, subprocess, tempfile
 p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('output',type=Path);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
-version=(a.source/'ASSET_VERSION').read_text().strip()
+version_file=a.source/'ARTWORK_VERSION'
+version=(version_file if version_file.is_file() else a.source/'ASSET_VERSION').read_text().strip()
 def write(root,name,text,mode=0o644):
  f=root/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text(text);f.chmod(mode)
 with tempfile.TemporaryDirectory() as tmp:
@@ -58,23 +59,46 @@ fun password_prompt(prompt, bullets) {
 fun normal_display() { prompt_sprite.SetOpacity(0); }
 Plymouth.SetDisplayPasswordFunction(password_prompt);
 Plymouth.SetDisplayNormalFunction(normal_display);
-message_active = 0;
+# Keep interactive notices separate from service progress, including the late
+# live-medium eject prompt. Callback assignments need explicit global storage.
+notice_sprite = Sprite();
+notice_sprite.SetOpacity(0);
+global.notice_text = "";
 fun display_message(text) {
- if (text != "") { message_active = 1; show_status(text); }
+ if (text == "") return;
+ global.notice_text = text;
+ value = text;
+ if (text == "Please remove the live-medium, close the tray (if any) and press ENTER to continue:")
+  value = "Remove the installation media (USB / DVD / ISO).\\nPress Enter to continue.";
+ image = Image.Text(value, 0.96, 0.96, 0.98, 1, "DejaVu Sans Bold 16");
+ if (image.GetWidth() > Window.GetWidth()-48)
+  image = image.Scale(Window.GetWidth()-48, Math.Int(image.GetHeight()*(Window.GetWidth()-48)/image.GetWidth()));
+ notice_sprite.SetImage(image);
+ notice_sprite.SetPosition(Window.GetWidth()/2-image.GetWidth()/2, Window.GetHeight()-image.GetHeight()-24, 20);
+ notice_sprite.SetOpacity(1);
 }
 fun hide_message(text) {
- message_active = 0;
- if (mode == "shutdown") show_status("Shutting down...");
- else if (mode == "reboot") show_status("Restarting...");
- else show_status("Starting ShadowRealm-OS...");
+ if (text == global.notice_text) {
+  global.notice_text = "";
+  notice_sprite.SetOpacity(0);
+ }
 }
 fun service_status(text) {
- if (!message_active && text != "") show_status(text);
+ if (text != "") show_status(text);
 }
 Plymouth.SetDisplayMessageFunction(display_message);
 Plymouth.SetHideMessageFunction(hide_message);
 Plymouth.SetUpdateStatusFunction(service_status);
 ''')
+ # Late live-media shutdown needs a real console for the eject/read prompt.
+ # Installed systems keep the themed shutdown; this helper exits there.
+ write(root,'usr/local/libexec/shadowrealm-os-live-media-console','''#!/bin/sh
+if ! grep -qw 'boot=live' /proc/cmdline; then exit 0; fi
+/usr/bin/plymouth quit 2>/dev/null || true
+printf '\\nPreparing to leave the live installer.\\nRemove the installation media when it is ejected.\\nIf asked, press Enter once to continue.\\n' > /dev/console
+''',0o755)
+ for unit in ('plymouth-poweroff.service','plymouth-reboot.service','plymouth-halt.service','plymouth-kexec.service'):
+  write(root,'usr/lib/systemd/system/'+unit+'.d/50-shadowrealm-os-live-media.conf','[Service]\nExecStartPost=/usr/local/libexec/shadowrealm-os-live-media-console\n')
  write(root,'usr/share/doc/shadowrealm-os-artwork/copyright','Original ShadowRealm-OS artwork and theme code: MIT; see LICENSE.\nGNOME-derived icons are recolored/adapted from GNOME Project artwork.\nhttps://www.gnome.org\nTheir upstream license terms and credits are preserved in gnome-icon-copyright.\n')
  write(root,'usr/share/doc/shadowrealm-os-artwork/LICENSE',(a.source/'LICENSE').read_text())
  write(root,'usr/share/doc/shadowrealm-os-artwork/gnome-icon-copyright',(a.source/'adwaita-COPYRIGHT').read_text())

@@ -4,7 +4,7 @@
 
 A Debian 13 and Xfce desktop with coordinated themes, integrated controls and a live AMD64 installer. **2026.11 beta 1.**
 
-[Download the ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r3-amd64.iso/download) · [Checksums & licenses](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/) · [Custom source & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/Sources/) · [Third-party sources (GitHub)](https://github.com/AstraShadowsss/ShadowRealm-OS/releases/tag/2026.11-beta1-r2) · [Project website](https://shadowrealm-os.sourceforge.io/) · [Source and documentation](https://github.com/AstraShadowsss/ShadowRealm-OS)
+[Download the ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) · [Checksums & licenses](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/) · [Custom source & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/Sources/) · [Third-party sources (GitHub)](https://github.com/AstraShadowsss/ShadowRealm-OS/releases/tag/2026.11-beta1-r2) · [Project website](https://shadowrealm-os.sourceforge.io/) · [Source and documentation](https://github.com/AstraShadowsss/ShadowRealm-OS)
 
 - Eight coordinated styles, independent wallpapers and an editable dock.
 - Four local desktop panels for resources, interface traffic, processes and security-service status.
@@ -30,3 +30,6 @@ Verify the ISO against SHA256SUMS before writing a USB drive or attaching it in 
 
 
 The r3 installer corrects the installed-login permission failure in the withdrawn r2 ISO. A complete fresh encrypted installation and graphical login passed. Existing installations can use the recovery guide in the GitHub documentation.
+
+
+R4 makes the live-media restart/removal instructions visible. Let the live-session shutdown finish, remove the installation media when requested, then press Enter once if prompted. Normal installed restarts keep their themed splash.

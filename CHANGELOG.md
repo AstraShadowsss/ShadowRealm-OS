@@ -1,9 +1,10 @@
 # Release notes
 
-## In preparation: live-media handoff correction (r4)
+## 2026.11 beta 1 r4 — live-media handoff (2026-11-09)
 
 - Give live-media removal notices a separate persistent display and expose the console during the late live-session shutdown handoff.
-- Preserve r3's root-permission and installer-mount fixes. The current r3 download remains available until the replacement is verified.
+- Rebuild early boot artwork with the underlying initramfs tool when Debian's live wrapper is present.
+- Preserve r3's root-permission and installer-mount fixes. The r4 ISO replaces r3 after targeted live-boot and handoff verification. The installer, account, partitioning and network code are unchanged.
 
 ## 2026.11 beta 1
 

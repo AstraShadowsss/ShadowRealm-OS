@@ -38,7 +38,13 @@ rm -rf -- "$root/tmp/shadowrealm-os-final-packages"
 mkdir -p "$root/etc/initramfs-tools/conf.d"
 printf 'RESUME=none\n' > "$root/etc/initramfs-tools/conf.d/resume"
 chroot "$root" /usr/sbin/plymouth-set-default-theme shadowrealm-os
-chroot "$root" update-initramfs -u -k all
+# Debian live-tools diverts update-initramfs to a live-media wrapper.
+# Rebuild the image itself rather than silently skipping a chroot update.
+initramfs_tool=/usr/sbin/update-initramfs
+if test -x "$root/usr/sbin/update-initramfs.orig.initramfs-tools"; then
+ initramfs_tool=/usr/sbin/update-initramfs.orig.initramfs-tools
+fi
+chroot "$root" "$initramfs_tool" -u -k all
 systemctl --root="$root" enable systemd-timesyncd.service apparmor.service NetworkManager.service shadowrealm-os-brand-sync.timer shadowrealm-os-security-status.timer shadowrealm-os-firewall.service
 # Restore native vendor app icons and defaults, keeping ShadowRealm-OS system artwork.
 test -f "$root/usr/share/applications/librewolf.desktop"

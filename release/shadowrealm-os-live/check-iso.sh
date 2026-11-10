@@ -28,6 +28,12 @@ fi
 python3 "$(dirname "$0")/audit-root-privacy.py" "$rootfs" "${privacy_args[@]}"
 python3 "$(dirname "$0")/check-packaged-assets.py" "$rootfs"
 test -s "$root/live/filesystem.packages"
+test -x "$rootfs/usr/local/libexec/shadowrealm-os-live-media-console"
+grep -Fq 'notice_sprite' "$rootfs/usr/share/plymouth/themes/shadowrealm-os/shadowrealm-os.script"
+grep -Fq 'boot=live' "$rootfs/usr/local/libexec/shadowrealm-os-live-media-console"
+for unit in plymouth-poweroff.service plymouth-reboot.service; do
+ grep -Fq 'ExecStartPost=/usr/local/libexec/shadowrealm-os-live-media-console' "$rootfs/usr/lib/systemd/system/$unit.d/50-shadowrealm-os-live-media.conf"
+done
 test -s "$rootfs/usr/share/keyrings/shadowrealm-os-archive-keyring.gpg"
 test -L "$rootfs/etc/os-release"
 cmp "$rootfs/etc/os-release" "$rootfs/usr/lib/os-release"

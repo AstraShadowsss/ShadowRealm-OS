@@ -2,7 +2,7 @@
 
 ## Before you begin
 
-Download the AMD64 ISO and its `SHA256SUMS` from the same release directory. On Windows, run `Get-FileHash -Algorithm SHA256 "path\to\ShadowRealm-OS-2026.11-beta1-r3-amd64.iso"` in PowerShell and compare all 64 characters. On Linux, put both files in one directory and run `sha256sum -c SHA256SUMS`.
+Download the AMD64 ISO and its `SHA256SUMS` from the same release directory. On Windows, run `Get-FileHash -Algorithm SHA256 "path\to\ShadowRealm-OS-2026.11-beta1-r4-amd64.iso"` in PowerShell and compare all 64 characters. On Linux, put both files in one directory and run `sha256sum -c SHA256SUMS`.
 
 Checksums detect a changed or incomplete download. They do not independently authenticate its publisher. This beta does not include a release signature.
 
@@ -45,4 +45,4 @@ The r2 installer had a filesystem-root permission defect affecting installed ser
 
 ## Leaving the live installer
 
-After choosing Restart, the live system may eject the virtual DVD or ask you to remove the installation media. If it waits after media removal, press **Enter once** to continue. In VirtualBox, the optical drive should be empty before booting the installed disk. Do not reset the VM while installation is still running. R3 can hide this handoff behind its splash; a dedicated display correction is being prepared.
+After choosing Restart, the live system may eject the virtual DVD or ask you to remove the installation media. If it waits after media removal, press **Enter once** to continue. In VirtualBox, the optical drive should be empty before booting the installed disk. Do not reset the VM while installation is still running. R4 explicitly switches the late live-media handoff to a readable console. Let any media-unmount job finish, then follow the removal/Enter prompt. Normal installed-system boot and shutdown retain their SR splash.

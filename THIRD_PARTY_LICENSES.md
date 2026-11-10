@@ -24,3 +24,5 @@ VirtualBox is linked as an optional host application, not included in the ISO so
 
 
 The r3 installer correction changes original project build/installer code, not the third-party package inputs. The existing six-part third-party archive under the r2 GitHub asset tag also matches r3. The updated custom-source archive and package notice inventories accompany r3 on SourceForge.
+
+The r4 change is original project splash/handoff code; the existing third-party source parts are unchanged. Updated custom source includes this correction.
