@@ -89,3 +89,4 @@ This repository contains the custom source, configurations, artwork masters and 
 
 [Report a bug](https://github.com/AstraShadowsss/ShadowRealm-OS/issues) · [SourceForge](https://sourceforge.net/projects/shadowrealm-os/)
 
+Created and maintained by AstraShadows
