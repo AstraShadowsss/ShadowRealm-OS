@@ -35,51 +35,39 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 - Customizable login backgrounds, optional original session chimes and three screensaver animations with standard XFCE locking.
 - Nine offline games, including Shadow Pinball, Skull Invaders, Shadow Runner, Circuit Chase, Snake, Shadow Spider Solitaire, Neon Ascent, Neon Breaker and Marble Reactor. Scores and settings stay local.
 
+**Desktop update 0.2.11** is available in Software & Updates. It adds separate Clock and Calendar widgets, local notes and dock auto-fit. [Release notes](CHANGELOG.md)
+
 ## Screenshots
 
-Desktop captures from ShadowRealm-OS, with gameplay and theme galleries below.
+### Wallpaper collection
 
-### Seated City themes
+![Red and Black, Black and Blue, Neon, and Hacker with four different wallpapers](screenshots/wallpaper-styles.png)
 
-![Six styles with the seated-figure wallpaper and Terminal](screenshots/seated-theme-styles.png)
+### Seated City
 
-### Professional
-
-![Professional desktop with Terminal](screenshots/professional.png)
-
-### Games
-
-![The nine games in action](screenshots/games-in-action.png)
-
-### Applications and settings
-
-| Application menu | Control Center |
-| --- | --- |
-| ![Application menu](screenshots/application-menu.png) | ![Control Center](screenshots/control-center.png) |
-
-### Live desktop panels
-
-![The four desktop widgets, enlarged](screenshots/widgets.png)
-
-System Overview shows resource use; Network shows interface traffic; Processes lists running programs; Shadow Shield summarizes firewall and privacy service status. [What each reading means](docs/widgets.md). The source is included so these local tools can be inspected and maintained.
-
-### Network, security and updates
-
-![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png)
+![Six colors of the Seated City wallpaper](screenshots/seated-theme-styles.png)
 
 ### Control Center
 
 ![Searchable Control Center in Neon](screenshots/control-center-neon.png)
 
-![Control Center and desktop in Professional](screenshots/control-center-professional.png)
+![The same Control Center in Professional](screenshots/control-center-professional.png)
 
-![Widget settings and calendar in Professional](screenshots/widget-settings-professional.png)
+### Widgets and system tools
 
-### Wallpaper collection
+![Separate Clock, Calendar and Notes widgets alongside their settings](screenshots/widget-settings-professional.png)
 
-![Coordinated wallpapers beyond Seated City](screenshots/wallpaper-styles.png)
+![System Overview, Network, Processes and Shadow Shield](screenshots/widgets.png)
 
-![Walking-figure wallpapers with the current SR jacket emblem](screenshots/walking-theme-styles.png)
+![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png)
+
+[Desktop widgets guide](docs/widgets.md)
+
+### Apps and games
+
+![Application menu](screenshots/application-menu.png)
+
+![The nine games in action](screenshots/games-in-action.png)
 
 ## Shadow Games for Android
 

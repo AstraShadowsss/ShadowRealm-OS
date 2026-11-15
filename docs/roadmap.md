@@ -8,12 +8,12 @@ ShadowRealm-OS is a Debian 13 and Xfce desktop with a recognizable visual identi
 - Run a clean r4 installation and check first login, disk unlock when encrypted, graphical startup, Terminal, updates and normal shutdown. Record exact images and environments.
 - Make first login consistently show the intended desktop. Test the display, audio, Wi-Fi, Bluetooth and suspend behavior on representative hardware. Verify Secure Boot separately.
 
-## Control Center and professional theme
+## Desktop and system controls
 
-- Give the Control Center clear sections for Appearance, Desktop, Devices, Network, Privacy & Security, Accounts, and Software & Updates. Use the existing tools and eliminate duplicate routes where they add confusion.
+Desktop 0.2.11 includes searchable settings, the updated Professional theme, movable and resizable widgets, independent Clock and Calendar, saved Notes, and a dock auto-fit control. These are available through signed APT updates.
 - Show current state at the point of action. Explain whether Bluetooth is off or an adapter is missing and why an administrative action failed. Provide visible keyboard focus, readable toggle labels, and clear confirmation for changes that can interrupt connectivity.
-- Use a consistent layout across Professional and Neon. Refine spacing, type, selection and focus states in Professional. Check small displays and larger text, then check the same screens in both themes.
-- Complete dock editing and widget customization. Keep desktop shortcuts reorderable and removable. Add optional clock and calendar displays before externally backed weather or search.
+- Check the settings on smaller displays and with larger text. Carry the same focus and status conventions into the remaining system windows.
+- Add direct drag-and-drop dock editing. Keep all launchers removable. Add local search and make any online weather lookups optional.
 
 ## Transparency and optional tools
 
@@ -29,10 +29,9 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 | Work | First deliverable | How to check it |
 | --- | --- | --- |
 | First login | Apply the branded wallpaper early and show a clear state while optional setup finishes | Time a first login and a later login on a fresh account |
-| Control Center | Redesign the landing page and carry over the existing settings | Find common tasks by keyboard and mouse in Professional and Neon at small and large scales |
+| Control Center | Check keyboard navigation, smaller displays, and large text across themes | Find and open common tools without clipped controls |
 | Dock | Drag launchers to reorder them in place. Drop shortcuts from the desktop or Applications menu at the desired position. Expand the dock as items are added. | Verify drop placement, launching, removal, and saved order across logins and upgrades |
-| Widgets | Add per-widget colors, readable scaling, placement and opacity controls | Text stays legible and independently configurable across themes |
-| Clock and calendar | Add optional desktop widgets that use local time and the existing calendar workflow | Check time zone, date rollover, sizing and keyboard access |
+| Widgets | Check multi-monitor placement, time-zone changes, and large text | Widgets remain reachable after monitor changes, and user layouts and notes persist |
 | Weather and search | Add a manual weather location and local app search, then evaluate file and online providers | Show which requests leave the device and allow the user to turn them off |
 | First-run transparency | Summarize installed software, services and update sources with links to detail | Users can dismiss the screen, reopen it, and reach the relevant controls |
 | Privacy controls | Audit outbound connections and add clear DNS, MAC randomization, permission and metadata controls where useful | Record what changes per connection, after reconnect and after reboot |
