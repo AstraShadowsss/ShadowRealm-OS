@@ -75,6 +75,10 @@ System Overview shows resource use; Network shows interface traffic; Processes l
 
 ![Walking-figure wallpapers with the current SR jacket emblem](screenshots/walking-theme-styles.png)
 
+## Shadow Games for Android
+
+Play nine offline games with touch controls on Android. [Download the APK](https://github.com/AstraShadowsss/ShadowRealm-OS/releases/tag/shadow-games-android-v1.0.0) or see the [installation guide and screenshots](docs/shadow-games-android.md).
+
 ## Beta status
 
 This is an early public release. Installation and desktop checks are documented in [release validation](docs/validation.md). Physical hardware coverage is limited; test your graphics, sound, wireless and suspend behavior from the live desktop. Secure Boot and dual-boot installations are not certified for this beta. Keep a backup and recovery media.
