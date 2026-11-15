@@ -1,6 +1,6 @@
 # Desktop widgets
 
-The desktop widgets show local system data. The clock and calendar is optional and uses the computer’s time zone.
+The desktop widgets show local system data. Clock, Calendar, and Notes are optional widgets. Clock and Calendar follow the computer’s local time.
 
 | Panel | What it shows |
 | --- | --- |
@@ -8,7 +8,9 @@ The desktop widgets show local system data. The clock and calendar is optional a
 | Network / Live | An active IPv4 interface and address, plus received and sent traffic in KiB/s. This is local interface traffic, not an Internet speed test. |
 | Processes | Process ID, command name, CPU and memory percentages from Linux process statistics. Scroll to see additional rows. Process CPU is the average reported by `ps`, rather than the same interval as the overview CPU bar. |
 | Shadow Shield | Firewall status, AppArmor status, detected VPN interface and Tor service status. |
-| Clock & calendar | Local time, current month and today’s date. Enable it in Shadow Widgets. |
+| Clock | Local time in hours and minutes. |
+| Calendar | The current month with today highlighted. |
+| Notes | A saved note. Click the body of the widget to edit it. Notes are stored locally in your account. |
 
 Open Network for connections, custom DNS and airplane mode. Open Shadow Shield for firewall rules and privacy controls, including VPN/Tor tools. Software & Updates manages installed APT software and available updates; Flatpak updates are separate.
 

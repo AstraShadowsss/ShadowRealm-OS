@@ -47,10 +47,13 @@ static void widgets_read(void)
 static gboolean widget_enabled(int i)
 {
     GError *error = NULL;
-    gboolean enabled = g_key_file_get_boolean(widget_config, "Widgets", widget_keys[i], &error);
+    const char *key = i == WIDGET_CLOCK ? "Clock" : widget_keys[i];
+    gboolean enabled = g_key_file_get_boolean(widget_config, "Widgets", key, &error);
     if (error) {
         g_error_free(error);
-        return i != WIDGET_CLOCK;
+        if (i == WIDGET_CLOCK || i == WIDGET_CALENDAR)
+            return g_key_file_get_boolean(widget_config, "Widgets", widget_keys[WIDGET_CLOCK], NULL);
+        return i < WIDGET_CLOCK;
     }
     return enabled;
 }
@@ -162,7 +165,8 @@ static void widget_settings(void)
         GtkWidget *enabled = gtk_check_button_new_with_label(widget_names[i]);
         gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(enabled), widget_enabled(i));
         gtk_widget_set_hexpand(enabled, TRUE);
-        g_signal_connect(enabled, "toggled", G_CALLBACK(widget_toggle), (gpointer)key);
+        const char *visibility_key = i == WIDGET_CLOCK ? "Clock" : key;
+        g_signal_connect(enabled, "toggled", G_CALLBACK(widget_toggle), (gpointer)visibility_key);
         gtk_grid_attach(GTK_GRID(grid), enabled, 0, i + 1, 1, 1);
 
         GtkWidget *colors = gtk_button_new_with_label("Edit colors…");

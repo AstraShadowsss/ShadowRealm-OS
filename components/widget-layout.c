@@ -161,8 +161,12 @@ static gboolean widget_button_press(GtkWidget *card, GdkEventButton *event, gpoi
     if (event->button != 1 || event->type != GDK_BUTTON_PRESS || widget_drag.index >= 0)
         return FALSE;
     gboolean resize = widget_resize_hit(card, event->x, event->y);
-    if (!resize && event->y > 38 * widget_scale[index])
-        return FALSE;
+    if (!resize && event->y > 38 * widget_scale[index]) {
+        if (index != WIDGET_NOTES)
+            return FALSE;
+        edit_widget_notes();
+        return TRUE;
+    }
     widget_drag.index = index;
     gtk_window_get_position(GTK_WINDOW(cardwindows[index]), &widget_drag.x, &widget_drag.y);
     widget_drag.width = gtk_widget_get_allocated_width(card);
@@ -178,7 +182,8 @@ static gboolean widget_motion(GtkWidget *card, GdkEventMotion *event, gpointer d
     int index = GPOINTER_TO_INT(data);
     if (widget_drag.index != index) {
         const char *name = widget_resize_hit(card, event->x, event->y) ? "nwse-resize" :
-                           event->y <= 38 * widget_scale[index] ? "move" : NULL;
+                           event->y <= 38 * widget_scale[index] ? "move" :
+                           index == WIDGET_NOTES ? "pointer" : NULL;
         GdkCursor *cursor = name ? gdk_cursor_new_from_name(gtk_widget_get_display(card), name) : NULL;
         gdk_window_set_cursor(gtk_widget_get_window(card), cursor);
         g_clear_object(&cursor);
@@ -240,7 +245,9 @@ static void widget_input(GtkWidget *card, int index)
     gpointer data = GINT_TO_POINTER(index);
     gtk_widget_add_events(card, GDK_BUTTON_PRESS_MASK | GDK_BUTTON_RELEASE_MASK |
                                  GDK_POINTER_MOTION_MASK);
-    gtk_widget_set_tooltip_text(card, "Drag the header to move or the bottom-right corner to resize.");
+    gtk_widget_set_tooltip_text(card, index == WIDGET_NOTES ?
+        "Click to edit notes. Drag the header to move or the corner to resize." :
+        "Drag the header to move or the bottom-right corner to resize.");
     g_signal_connect(card, "button-press-event", G_CALLBACK(widget_button_press), data);
     g_signal_connect(card, "button-release-event", G_CALLBACK(widget_button_release), data);
     g_signal_connect(card, "motion-notify-event", G_CALLBACK(widget_motion), data);

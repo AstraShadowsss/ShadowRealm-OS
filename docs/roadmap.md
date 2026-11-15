@@ -30,7 +30,7 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 | --- | --- | --- |
 | First login | Apply the branded wallpaper early and show a clear state while optional setup finishes | Time a first login and a later login on a fresh account |
 | Control Center | Redesign the landing page and carry over the existing settings | Find common tasks by keyboard and mouse in Professional and Neon at small and large scales |
-| Dock | Finish sizing, placement, reorder, pinning, hiding, indicators and reset | Changes persist across logins and upgrades, and any launcher can be removed |
+| Dock | Drag launchers to reorder them in place. Drop shortcuts from the desktop or Applications menu at the desired position. Expand the dock as items are added. | Verify drop placement, launching, removal, and saved order across logins and upgrades |
 | Widgets | Add per-widget colors, readable scaling, placement and opacity controls | Text stays legible and independently configurable across themes |
 | Clock and calendar | Add optional desktop widgets that use local time and the existing calendar workflow | Check time zone, date rollover, sizing and keyboard access |
 | Weather and search | Add a manual weather location and local app search, then evaluate file and online providers | Show which requests leave the device and allow the user to turn them off |

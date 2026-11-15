@@ -1,5 +1,6 @@
 #define _DEFAULT_SOURCE
 #include <gtk/gtk.h>
+#include <pango/pangocairo.h>
 #include <sys/prctl.h>
 #include <gio/gdesktopappinfo.h>
 #include <sys/statvfs.h>
@@ -33,13 +34,13 @@ enum { PROCESS_VISIBLE=6, PROCESS_MAX=256 };
 static ProcessRow process_rows[PROCESS_MAX];
 static int process_count, process_offset;
 static unsigned long long lasttotal,lastidle;
-enum { WIDGET_CLOCK = 4, WIDGET_COUNT };
-static const int widget_heights[WIDGET_COUNT] = {151, 145, 197, 163, 238};
+enum { WIDGET_CLOCK = 4, WIDGET_CALENDAR, WIDGET_NOTES, WIDGET_COUNT };
+static const int widget_heights[WIDGET_COUNT] = {151, 145, 197, 163, 94, 196, 164};
 static GtkWidget *cards[WIDGET_COUNT], *cardwindows[WIDGET_COUNT];
 enum { WIDGET_BORDER, WIDGET_TEXT, WIDGET_BAR, WIDGET_GRAPH, WIDGET_COLOR_COUNT };
 static const char *widget_color_keys[] = {"Accent", "TextColor", "BarColor", "GraphColor"};
-static const char *widget_keys[] = {"System", "Network", "Processes", "Security", "ClockCalendar"};
-static const char *widget_names[] = {"System overview", "Network", "Processes", "Shadow Shield", "Clock & calendar"};
+static const char *widget_keys[] = {"System", "Network", "Processes", "Security", "ClockCalendar", "Calendar", "Notes"};
+static const char *widget_names[] = {"System overview", "Network", "Processes", "Shadow Shield", "Clock", "Calendar", "Notes"};
 static GdkRGBA widget_colors[WIDGET_COUNT][WIDGET_COLOR_COUNT];
 static gboolean widget_has_color[WIDGET_COUNT][WIDGET_COLOR_COUNT];
 static double widget_scale[WIDGET_COUNT];
@@ -108,6 +109,15 @@ static void frame(cairo_t*c,double w,double h,const char*title,int widget){
   line(c,w-9-i*4,h-15,w-15-i*4,h-9,"baa3ce",1);
 }
 static void bar(cairo_t*c,int y,const char*name,double value){char b[24];txt(c,14,y,12,name,"f5e9ff",0);color(c,"39243f",1);cairo_rectangle(c,68,y-11,124,12);cairo_fill(c);widget_color(c,WIDGET_BAR,"f114dd",1);cairo_rectangle(c,69,y-10,fmin(122,1.22*value),10);cairo_fill(c);for(int i=0;i<122;i+=7)line(c,69+i,y-10,69+i,y,"080710",.8);snprintf(b,sizeof b,"%3.0f%%",value);txt(c,203,y,12,b,"00f4ff",1);}
+static void draw_widget_clock(cairo_t *canvas)
+{
+    GDateTime *now = g_date_time_new_now_local();
+    gchar *time = g_date_time_format(now, "%I:%M %p");
+    txt(canvas, 16, 73, 26, time[0] == '0' ? time + 1 : time, "f5e9ff", 1);
+    g_free(time);
+    g_date_time_unref(now);
+}
+
 static void draw_widget_calendar(cairo_t *canvas)
 {
     GDateTime *now = g_date_time_new_now_local();
@@ -117,17 +127,15 @@ static void draw_widget_calendar(cairo_t *canvas)
     GDateTime *first = g_date_time_new_local(year, month, 1, 12, 0, 0);
     int offset = g_date_time_get_day_of_week(first) - 1;
     int days = g_date_get_days_in_month((GDateMonth)month, (GDateYear)year);
-    gchar *time = g_date_time_format(now, "%I:%M %p");
     gchar *date = g_date_time_format(now, "%B %Y");
-    txt(canvas, 16, 69, 24, time[0] == '0' ? time + 1 : time, "f5e9ff", 1);
-    txt(canvas, 17, 91, 12, date, "c7b4d6", 0);
+    txt(canvas, 17, 59, 12, date, "c7b4d6", 0);
     const char *weekdays[] = {"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"};
     for (int column = 0; column < 7; column++)
-        txt(canvas, 23 + column * 33, 117, 10, weekdays[column], "c7b4d6", 0);
+        txt(canvas, 23 + column * 33, 80, 10, weekdays[column], "c7b4d6", 0);
     for (int day = 1; day <= days; day++) {
         int cell = offset + day - 1;
         int x = 23 + (cell % 7) * 33;
-        int y = 137 + (cell / 7) * 17;
+        int y = 98 + (cell / 7) * 15;
         char label[4];
         g_snprintf(label, sizeof label, "%2d", day);
         if (day == today) {
@@ -135,13 +143,13 @@ static void draw_widget_calendar(cairo_t *canvas)
         }
         txt(canvas, x, y, 11, label, day == today ? "00efff" : "f5e9ff", day == today);
     }
-    g_free(time);
     g_free(date);
     g_date_time_unref(first);
     g_date_time_unref(now);
 }
+#include "widget-notes.c"
 static gboolean draw(GtkWidget*w,cairo_t*c,gpointer p){int k=GPOINTER_TO_INT(p);drawing_widget=k;double scale=widget_scale[k]>0?widget_scale[k]:1;double ww=gtk_widget_get_allocated_width(w)/scale,hh=gtk_widget_get_allocated_height(w)/scale;cairo_set_operator(c,CAIRO_OPERATOR_SOURCE);cairo_set_source_rgba(c,0,0,0,0);cairo_paint(c);cairo_set_operator(c,CAIRO_OPERATOR_OVER);cairo_scale(c,scale,scale);
- const char *names[]={"SYSTEM OVERVIEW","NETWORK // LIVE","PROCESSES","SHADOW SHIELD","CLOCK & CALENDAR"};char process_title[40];
+ const char *names[]={"SYSTEM OVERVIEW","NETWORK // LIVE","PROCESSES","SHADOW SHIELD","CLOCK","CALENDAR","NOTES"};char process_title[40];
  if(k==2&&process_count){
   g_snprintf(process_title,sizeof process_title,"PROCESSES  %d-%d/%d",
              process_offset+1,MIN(process_count,process_offset+PROCESS_VISIBLE),process_count);
@@ -151,7 +159,9 @@ static gboolean draw(GtkWidget*w,cairo_t*c,gpointer p){int k=GPOINTER_TO_INT(p);
  if(k==1){char rates[80];txt(c,15,61,12,iftext,"f8f0ff",1);txt(c,15,81,12,iptext,"00f0ff",1);snprintf(rates,sizeof rates,"DOWN  %.1f KiB/s",net_down_kib);txt(c,15,105,11,rates,"f5e9ff",0);snprintf(rates,sizeof rates,"UP    %.1f KiB/s",net_up_kib);txt(c,15,128,11,rates,"f5e9ff",0);}
  if(k==2){double pid_right=55,name_x=66,cpu_right=ww-66,mem_right=ww-15;txt_right(c,pid_right,58,11,"PID","f4eaff",1);txt(c,name_x,58,11,"NAME","f4eaff",1);txt_right(c,cpu_right,58,11,"CPU%","f4eaff",1);txt_right(c,mem_right,58,11,"MEM%","f4eaff",1);for(int i=0;i<PROCESS_VISIBLE&&i+process_offset<process_count;i++){ProcessRow*r=&process_rows[i+process_offset];char pid[24],name[15],pc[24],pm[24];snprintf(pid,sizeof pid,"%d",r->pid);snprintf(name,sizeof name,"%.14s",r->name);snprintf(pc,sizeof pc,"%.1f",r->cpu);snprintf(pm,sizeof pm,"%.1f",r->mem);const char*co=i%2?"f2e4fa":"19ebf5";double y=80+i*18;txt_right(c,pid_right,y,10,pid,co,0);txt(c,name_x,y,10,name,co,0);txt_right(c,cpu_right,y,10,pc,co,0);txt_right(c,mem_right,y,10,pm,co,0);}}
  if(k==3){txt(c,15,61,11,"FIREWALL","f2e9f8",0);txt(c,15,79,11,firewall_status,"e5bb6a",1);txt(c,15,102,11,policy_status,"c7b4d6",0);char vp[64];snprintf(vp,sizeof vp,"VPN: %.28s",vpn);txt(c,15,124,10,vp,"00dce9",0);txt(c,15,146,10,tor_status,"c7b4d6",0);}
- if(k==WIDGET_CLOCK)draw_widget_calendar(c);
+ if(k==WIDGET_CLOCK)draw_widget_clock(c);
+ if(k==WIDGET_CALENDAR)draw_widget_calendar(c);
+ if(k==WIDGET_NOTES)draw_widget_notes(c);
  return FALSE;}
 static void refresh_stats(void){FILE*f=fopen("/proc/stat","r");unsigned long long u,n,s,id,iw,irq,si,st;if(f){if(fscanf(f,"cpu %llu %llu %llu %llu %llu %llu %llu %llu",&u,&n,&s,&id,&iw,&irq,&si,&st)==8){unsigned long long t=u+n+s+id+iw+irq+si+st,ii=id+iw;if(lasttotal&&t>lasttotal)cpu=100.*(1.-(double)(ii-lastidle)/(t-lasttotal));lasttotal=t;lastidle=ii;}fclose(f);}unsigned long mt=0,ma=0,ss=0,sf=0,v;char b[256],key[64];f=fopen("/proc/meminfo","r");if(f){while(fgets(b,sizeof b,f)){if(sscanf(b,"%63s %lu",key,&v)==2){if(!strcmp(key,"MemTotal:"))mt=v;if(!strcmp(key,"MemAvailable:"))ma=v;if(!strcmp(key,"SwapTotal:"))ss=v;if(!strcmp(key,"SwapFree:"))sf=v;}}fclose(f);}ram=mt?100.*(mt-ma)/mt:0;ram_used_mib=(mt-ma)/1024.;ram_total_mib=mt/1024.;swp=ss?100.*(ss-sf)/ss:0;struct statvfs fs;if(!statvfs("/",&fs)&&fs.f_blocks)diskpct=100.*(fs.f_blocks-fs.f_bfree)/fs.f_blocks;
  active_if[0]=0;strcpy(iptext,"NO ADDRESS");strcpy(iftext,"OFFLINE");strcpy(vpn,"NO ACTIVE INTERFACE");struct ifaddrs*a=NULL;if(!getifaddrs(&a)){for(struct ifaddrs*i=a;i;i=i->ifa_next){if(!i->ifa_addr||i->ifa_addr->sa_family!=AF_INET||!(i->ifa_flags&IFF_UP)||(i->ifa_flags&IFF_LOOPBACK))continue;if(!strncmp(i->ifa_name,"tun",3)||!strncmp(i->ifa_name,"wg",2)||!strncmp(i->ifa_name,"tap",3)){snprintf(vpn,sizeof vpn,"%s UP",i->ifa_name);continue;}snprintf(active_if,sizeof active_if,"%s",i->ifa_name);snprintf(iftext,sizeof iftext,"%s // UP",i->ifa_name);inet_ntop(AF_INET,&((struct sockaddr_in*)i->ifa_addr)->sin_addr,iptext,sizeof iptext);}freeifaddrs(a);}

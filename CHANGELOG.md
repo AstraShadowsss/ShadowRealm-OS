@@ -1,5 +1,11 @@
 # Release notes
 
+## Desktop update 0.2.11 (2026-11-15)
+
+- Split Clock and Calendar into independently positioned and configurable widgets.
+- Add a Notes widget for saving local notes.
+- Add a dock control that fits its length to the installed launchers.
+
 ## Desktop update 0.2.10 (2026-11-15)
 
 - Move widgets by dragging their headers and resize them from the bottom-right corner. Each widget remembers its layout and can be reset from its context menu.
