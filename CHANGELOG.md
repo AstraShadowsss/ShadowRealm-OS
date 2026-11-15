@@ -2,6 +2,8 @@
 
 ## In development
 
+- Start live widgets independently of the initial theme and wallpaper copy.
+
 - Apply the shipped wallpaper before first-login profile setup copies themes, icons and wallpapers. Preserve wallpaper choices already saved by the user.
 
 ## 2026.11 beta 1 r4 — live-media handoff (2026-11-09)

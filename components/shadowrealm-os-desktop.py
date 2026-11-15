@@ -30,6 +30,22 @@ COMMANDS = {
 }
 
 
+def copy_file_default(source, destination):
+    if os.path.lexists(destination):
+        return
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    fd, temporary = tempfile.mkstemp(prefix=".shadow-default-", dir=destination.parent)
+    os.close(fd)
+    try:
+        shutil.copy2(source, temporary)
+        try:
+            os.link(temporary, destination)
+        except FileExistsError:
+            pass
+    finally:
+        Path(temporary).unlink(missing_ok=True)
+
+
 def copy_defaults(source, target):
     for path in sorted(source.rglob("*")):
         if source.name == "runtime" and path.relative_to(source).parts[0] == "bin":
@@ -39,18 +55,8 @@ def copy_defaults(source, target):
         dest = target / path.relative_to(source)
         if path.is_dir():
             dest.mkdir(parents=True, exist_ok=True)
-        elif not os.path.lexists(dest):
-            dest.parent.mkdir(parents=True, exist_ok=True)
-            fd, temporary = tempfile.mkstemp(prefix=".shadow-default-", dir=dest.parent)
-            os.close(fd)
-            try:
-                shutil.copy2(path, temporary)
-                try:
-                    os.link(temporary, dest)
-                except FileExistsError:
-                    pass
-            finally:
-                Path(temporary).unlink(missing_ok=True)
+        else:
+            copy_file_default(path, dest)
 
 
 def write_default(path, text):
@@ -183,12 +189,32 @@ def seed_wallpaper(home, base, *, early=False):
     return bool(properties)
 
 
+def launch_widgets(home, payload=PAYLOAD):
+    # The separate first-login action still provisions the complete account.
+    # Live status panels need their launcher and logo, not the theme catalog.
+    base = home / ".local/share/shadow-link"
+    runtime = payload / "runtime"
+    copy_file_default(runtime / "logo.png", base / "logo.png")
+    local_bin = base / "bin"
+    package_bin = runtime / "bin"
+    binary = local_bin / "shadow-link"
+    if not binary.is_file():
+        binary = package_bin / "shadow-link"
+    os.environ["PATH"] = os.pathsep.join(
+        [str(local_bin), str(package_bin), os.environ.get("PATH", "/usr/bin:/bin")]
+    )
+    os.execv(binary, [str(binary), "--widgets"])
+
+
 def main():
     if os.geteuid() == 0:
         raise SystemExit("Start ShadowRealm-OS Desktop as your regular account.")
     action = sys.argv[1] if len(sys.argv) == 2 else ""
     if action not in COMMANDS and action != "prepare":
         raise SystemExit("Choose a valid ShadowRealm-OS desktop action.")
+    if action == "widgets":
+        launch_widgets(Path.home())
+        return
     if action == "prepare":
         # The packaged wallpaper is already usable while the profile's
         # wallpapers, themes and icons are being copied into the home folder.
