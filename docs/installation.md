@@ -39,10 +39,6 @@ At the end of the live session, the splash can hide the media-removal prompt. Af
 
 For VirtualBox sound, enable Audio and Audio Output in the VM settings. Use Intel HD Audio and the host's default audio driver (Windows Audio Session/WASAPI on Windows). Microphone input can stay disabled. A null/silent host audio driver cannot play sound through your speakers.
 
-## Withdrawn r2 installations
-
-The r2 installer had a filesystem-root permission defect affecting installed services and login sessions. Use the corrected r3 image for new installations. Existing r2 installations can be repaired without erasing accounts or files; see [the recovery guide](r2-install-recovery.md).
-
 ## Leaving the live installer
 
 After choosing Restart, the live system may eject the virtual DVD or ask you to remove the installation media. If it waits after media removal, press **Enter once** to continue. In VirtualBox, the optical drive should be empty before booting the installed disk. Do not reset the VM while installation is still running. R4 explicitly switches the late live-media handoff to a readable console. Let any media-unmount job finish, then follow the removal/Enter prompt. Normal installed-system boot and shutdown retain their SR splash.

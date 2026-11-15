@@ -20,5 +20,3 @@ R4 retains r3's kernel, installer 0.2.1, account code and root-permission/mount 
 ## Limits
 
 This is a beta. Physical hardware, Secure Boot, shared-ESP dual boot, suspend/resume and real Bluetooth-radio certification remain unperformed. First sign-in prepares per-user artwork and can briefly show the Xfce background. Matching source and third-party notices accompany the release; notice-file coverage is not legal certification.
-
-Existing r2 installations with the root-permission defect can be repaired without erasure using [the recovery guide](r2-install-recovery.md). Signed APT publication is separate from ISO publication; the existing feed was not replaced by this installer-media update.

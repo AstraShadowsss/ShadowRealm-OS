@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {% seo %}
+  <style>
+    :root { color-scheme: dark; }
+    body { margin: 0; background: #080a10; color: #e8edf5; font: 17px/1.65 system-ui, sans-serif; }
+    main { max-width: 880px; margin: auto; padding: 32px 24px 70px; overflow-wrap: anywhere; }
+    nav { display: flex; align-items: center; flex-wrap: wrap; gap: 12px 24px; padding-bottom: 20px; border-bottom: 1px solid #273044; }
+    nav a:first-child { font-weight: 700; }
+    a { color: #68e5f2; }
+    a:focus-visible { outline: 3px solid #ff66d8; outline-offset: 4px; }
+    h1, h2, h3 { line-height: 1.2; }
+    h1 { font-size: clamp(30px, 5vw, 45px); }
+    img { max-width: 100%; height: auto; border-radius: 12px; }
+    pre, code, th { background: #10151f; }
+    pre { padding: 16px; overflow: auto; border-radius: 8px; overflow-wrap: normal; }
+    :not(pre) > code { padding: .12em .3em; border-radius: 4px; }
+    table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+    th, td { border: 1px solid #273044; padding: 8px 12px; text-align: left; }
+    blockquote { margin-left: 0; padding-left: 1rem; border-left: 3px solid #4bd6e7; color: #bdcadc; }
+    hr { border: 0; border-top: 1px solid #273044; }
+  </style>
+</head>
+<body>
+  <main>
+    <nav aria-label="Site navigation">
+      <a href="{{ '/' | relative_url }}">ShadowRealm-OS</a>
+      <a href="{{ '/docs/installation.html' | relative_url }}">Installation</a>
+      <a href="https://shadowrealm-os.sourceforge.io/apt/">Updates</a>
+      <a href="https://github.com/AstraShadowsss/ShadowRealm-OS">GitHub</a>
+    </nav>
+    {{ content }}
+  </main>
+</body>
+</html>

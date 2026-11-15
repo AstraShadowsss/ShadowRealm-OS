@@ -14,8 +14,6 @@ ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal
 
 [Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) · [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) · [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
 
-The current installer retains the r3 correction for the installed-login failure in the withdrawn r2 image. Existing r2 installations can be [repaired without erasing files](docs/r2-install-recovery.md).
-
 Check the ISO against `SHA256SUMS` before writing it to a USB drive or attaching it to a virtual machine.
 
 The AMD64 ISO starts a live desktop so you can try it before installing. Open **Install ShadowRealm-OS** to install to a disk. The installer supports BIOS and UEFI systems and offers disk encryption. Back up your files first; choosing to erase a disk deletes its contents.
