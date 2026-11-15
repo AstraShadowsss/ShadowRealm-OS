@@ -2,9 +2,13 @@
 
 Open the application menu at the upper left. Categories group programs by purpose; favorites and dock entries can be edited. Third-party applications keep their own names and icons. Desktop right-click actions create folders, documents and launchers; Trash uses the normal desktop file services.
 
+## Control Center
+
+Open **Shadow Control Center** to browse settings by section. Press **Ctrl+F** to find a setting by name or description. Use **Desktop → Dock** to change its size and visibility. **Edit dock launchers and position** opens the dock’s panel preferences. Use the **Items** tab there to add, reorder or remove launchers.
+
 ## Appearance
 
-Use Control Center → Appearance to choose a coordinated style: Neon, Hacker, Red & Black, Woodland, White, Silver & Gold, Black & Blue, Black & White or Professional. Wallpaper selection is separate, so changing a picture does not silently change the whole style. Terminal, widget and menu background transparency controls affect supported backgrounds; application text and controls remain readable. Some third-party applications draw their own interface and may not follow every GTK setting.
+Use Control Center → Appearance → Themes and wallpapers to choose a coordinated style: Neon, Hacker, Red & Black, Woodland, White, Silver & Gold, Black & Blue, Black & White or Professional. Wallpaper selection is separate, so changing a picture does not silently change the whole style. Terminal, widget and menu background transparency controls affect supported backgrounds; application text and controls remain readable. Some third-party applications draw their own interface and may not follow every GTK setting.
 
 ## Applications and updates
 

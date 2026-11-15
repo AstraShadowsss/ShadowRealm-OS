@@ -83,12 +83,10 @@ class Software(Gtk.Application):
   if hasattr(self,'window'):self.window.present();return
   self.window=Gtk.ApplicationWindow(application=self,title='Software & Updates');self.window.set_icon_name("shadowrealm-os-app-software");self.window.set_default_size(920,650)
   sys.path.insert(0,str(HOME/'.local/share/shadow-link/bin'))
-  try:
-   from shadow_effects import attach
-   attach(self.window)
-  except ImportError:pass
+  from shadow_effects import attach, heading
+  attach(self.window)
   outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12,margin=18);self.window.add(outer)
-  title=Gtk.Label(xalign=0);title.set_markup('<span size="x-large" weight="bold">Software &amp; Updates</span>');outer.pack_start(title,False,False,0)
+  outer.pack_start(heading('Software & Updates'),False,False,0)
   notice=Gtk.Label(label='Debian maintains native packages, security fixes, and the kernel. Flatpak manages its apps and runtimes separately.',xalign=0,wrap=True);notice.set_width_chars(1);notice.set_max_width_chars(72);outer.pack_start(notice,False,False,0)
   tabs=Gtk.Notebook();outer.pack_start(tabs,True,True,0)
   self.apps,self.appview,installed_page=self.table(tabs,'Installed',['Application','Version','Source'],[str,str,str,str,bool])

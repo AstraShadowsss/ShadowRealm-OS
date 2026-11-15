@@ -20,10 +20,10 @@ class Backgrounds(Gtk.Application):
  def activate(self,*args):
   if hasattr(self,'window'):self.window.present();return
   self.window=Gtk.ApplicationWindow(application=self,title='Appearance');self.window.set_icon_name("shadowrealm-os-app-appearance");self.window.set_default_size(900,680);self.window.set_position(Gtk.WindowPosition.CENTER)
-  from shadow_effects import attach
+  from shadow_effects import attach, heading
   attach(self.window)
   shell=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12,margin=16);self.window.add(shell)
-  title=Gtk.Label(xalign=0);title.set_markup('<span size="x-large" weight="bold">Appearance</span>');shell.pack_start(title,False,False,0)
+  shell.pack_start(heading('Appearance'),False,False,0)
   tabs=Gtk.Notebook();self.tabs=tabs;shell.pack_start(tabs,True,True,0);self.build_style(tabs)
   outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=12,margin=14);tabs.append_page(outer,Gtk.Label(label='Wallpapers'))
   outer.pack_start(Gtk.Label(label='Pick a wallpaper. Colors, icons, and window borders stay as they are.',xalign=0,wrap=True),False,False,0)

@@ -67,6 +67,12 @@ System Overview shows resource use; Network shows interface traffic; Processes l
 
 ![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png)
 
+### Control Center
+
+![Searchable Control Center in Neon](screenshots/control-center-neon.png)
+
+![Control Center and desktop in Professional](screenshots/control-center-professional.png)
+
 ### Wallpaper collection
 
 ![Coordinated wallpapers beyond Seated City](screenshots/wallpaper-styles.png)

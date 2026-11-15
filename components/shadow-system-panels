@@ -5,7 +5,7 @@ import ctypes
 ctypes.CDLL(None).prctl(15,('Shadow Network' if '--network' in __import__('sys').argv else 'BluetoothPanel' if '--bluetooth' in __import__('sys').argv else 'Shadow Shield').encode(),0,0,0)
 import gi
 gi.require_version('Gtk','3.0');gi.require_version('GdkPixbuf','2.0')
-from gi.repository import Gtk,GLib,GdkPixbuf,Gio
+from gi.repository import Gtk,GLib,Gio
 POOL=concurrent.futures.ThreadPoolExecutor(max_workers=3)
 HOME=pathlib.Path.home();BASE=HOME/'.local/share/shadow-link'
 def cmd(*args):
@@ -43,21 +43,20 @@ class Panel(Gtk.Application):
   if hasattr(self,'window'):self.window.present();return
   title={'shield':'Shadow Shield','network':'Shadow Network','bluetooth':'Shadow Bluetooth'}[self.mode]
   self.window=Gtk.ApplicationWindow(application=self,title=title);self.window.set_default_size(730,600)
-  from shadow_effects import attach
+  from shadow_effects import attach, heading
   attach(self.window)
-  outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14,margin=20);self.window.add(outer);header=Gtk.Box(spacing=14);outer.pack_start(header,False,False,0)
-  self.logo=Gtk.Image();header.pack_start(self.logo,False,False,0);label=Gtk.Label(xalign=0);label.set_markup('<span size="x-large" weight="bold">'+title+'</span>');header.pack_start(label,True,True,0)
+  outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14,margin=20);self.window.add(outer);outer.pack_start(heading(title),False,False,0)
   self.tabs=Gtk.Notebook();outer.pack_start(self.tabs,True,True,0);self.status=Gtk.Label(xalign=0,wrap=True);outer.pack_end(self.status,False,False,0)
-  getattr(self,'build_'+self.mode)();self.brand();Gtk.Settings.get_default().connect('notify::gtk-theme-name',lambda *_:self.brand());self.window.show_all();self.refresh();GLib.timeout_add_seconds(4,self.refresh)
+  getattr(self,'build_'+self.mode)();self.brand()
+  settings=Gtk.Settings.get_default()
+  brand_handler=settings.connect('notify::gtk-theme-name',lambda *_:self.brand())
+  self.window.show_all();self.refresh()
+  timer=GLib.timeout_add_seconds(4,self.refresh)
+  def stop(_window):
+   settings.disconnect(brand_handler)
+   GLib.source_remove(timer)
+  self.window.connect('destroy',stop)
  def brand(self):
-  logo = BASE/'logo.png'
-  try:
-   if logo.is_file():
-    self.logo.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(str(logo),52,52,True))
-   else:
-    self.logo.set_from_icon_name('preferences-system',Gtk.IconSize.DIALOG)
-  except (GLib.Error, OSError):
-   self.logo.set_from_icon_name('preferences-system',Gtk.IconSize.DIALOG)
   try:mode=(HOME/'.config/shadowrealm-os/appearance-mode').read_text().strip()
   except OSError:mode='neon'
   for icon in (BASE/'icons'/mode/('shadow-'+self.mode+'.png'),BASE/'icons'/('shadow-'+self.mode+'.png')):
@@ -67,11 +66,16 @@ class Panel(Gtk.Application):
  def button(self,box,label,callback):
   b=Gtk.Button(label=label);b.connect('clicked',callback);box.pack_start(b,False,False,0);return b
  def async_run(self,fn,done):
+  window=self.window
   future=POOL.submit(fn)
   def finished(f):
    try:value=f.result();error=None
    except Exception as e:value=None;error=str(e)
-   GLib.idle_add(done,value,error)
+   def apply():
+    if self.get_active_window() is window:
+     done(value,error)
+    return GLib.SOURCE_REMOVE
+   GLib.idle_add(apply)
   future.add_done_callback(finished)
  def action(self,args):
   self.status.set_text('Applying change…')

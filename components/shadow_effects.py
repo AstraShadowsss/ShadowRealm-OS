@@ -3,7 +3,7 @@ from pathlib import Path
 import json,subprocess
 import gi
 gi.require_version('Gtk','3.0')
-from gi.repository import Gtk,Gio
+from gi.repository import GdkPixbuf, Gio, GLib, Gtk, Pango
 _provider=None
 _controls=None
 _monitor=None
@@ -46,6 +46,39 @@ def attach(window):
  Gtk.StyleContext.add_provider_for_screen(window.get_screen(),_provider,Gtk.STYLE_PROVIDER_PRIORITY_USER)
  Gtk.StyleContext.add_provider_for_screen(window.get_screen(),_controls,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION+10)
  _monitor=Gio.File.new_for_path(str(folder)).monitor_directory(Gio.FileMonitorFlags.NONE,None);_monitor.connect('changed',refresh)
+def heading(title, subtitle=None):
+    row = Gtk.Box(spacing=14)
+    image = Gtk.Image()
+    image.set_valign(Gtk.Align.CENTER)
+
+    def refresh(*_):
+        try:
+            path = Path.home() / ".local/share/shadow-link/logo.png"
+            logo = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), 52, 52, True)
+            image.set_from_pixbuf(logo)
+        except GLib.Error:
+            image.set_from_icon_name("preferences-system-symbolic", Gtk.IconSize.DIALOG)
+
+    refresh()
+    settings = Gtk.Settings.get_default()
+    handler = settings.connect("notify::gtk-theme-name", refresh)
+    row.connect("destroy", lambda *_: settings.disconnect(handler))
+    row.pack_start(image, False, False, 0)
+    labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+    label = Gtk.Label(label=title, xalign=0, wrap=True)
+    attrs = Pango.AttrList()
+    attrs.insert(Pango.attr_scale_new(1.4))
+    attrs.insert(Pango.attr_weight_new(Pango.Weight.BOLD))
+    label.set_attributes(attrs)
+    labels.pack_start(label, False, False, 0)
+    if subtitle:
+        note = Gtk.Label(label=subtitle, xalign=0, wrap=True)
+        note.get_style_context().add_class("dim-label")
+        labels.pack_start(note, False, False, 0)
+    row.pack_start(labels, True, True, 0)
+    return row
+
+
 def panel_opacity(panel,value):
  def set_value(prop,values,types):
   args=['xfconf-query','-c','xfce4-panel','-p',f'/panels/panel-{panel}/'+prop]

@@ -28,11 +28,11 @@ class Account(Gtk.Application):
         self.window = Gtk.ApplicationWindow(application=self, title="User Account")
         self.window.set_default_size(520, 405)
         self.window.set_icon_name("system-users")
-        from shadow_effects import attach
+        from shadow_effects import attach, heading
         attach(self.window)
         box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin=22)
         self.window.add(box)
-        box.pack_start(Gtk.Label(label="Profile and sign-in", xalign=0), False, False, 0)
+        box.pack_start(heading("User Account", "Profile and sign-in"), False, False, 0)
         user = pwd.getpwuid(UID)
         box.pack_start(Gtk.Label(label=f"Login username: {user.pw_name}", xalign=0), False, False, 0)
         self.avatar = Gtk.Image.new_from_icon_name("avatar-default", Gtk.IconSize.DIALOG)

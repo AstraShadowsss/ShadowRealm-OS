@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """Install ShadowRealm-OS defaults for an individual desktop account."""
+import hashlib
 import json
 import fcntl
 import tempfile
@@ -132,6 +133,23 @@ def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
             current.unlink()
             current.symlink_to("black-white")
         write_default(asset_marker, "2\n")
+    professional = Path("ShadowRealm-OS-Professional/gtk-3.0/gtk.css")
+    local_theme = home / ".themes" / professional
+    shipped_theme = system_share / "themes" / professional
+    # Update copies of the previous factory stylesheet. Keep local edits.
+    factory_hash = "fc2a4d0085f1dc9a3ce46303082ab1b77497e61b81172b67b4c8c763fe25faa7"
+    if (local_theme.is_file() and shipped_theme.is_file() and
+            local_theme.resolve().is_relative_to(home.resolve())):
+        installed = local_theme.read_bytes()
+        updated = shipped_theme.read_bytes()
+        if installed != updated and hashlib.sha256(installed).hexdigest() == factory_hash:
+            with tempfile.NamedTemporaryFile(dir=local_theme.parent, delete=False) as temp:
+                temp.write(updated)
+                os.chmod(temp.name, 0o644)
+            try:
+                os.replace(temp.name, local_theme)
+            finally:
+                Path(temp.name).unlink(missing_ok=True)
     if marker.is_file():
         return base
     copy_defaults(payload / "runtime", base)

@@ -26,14 +26,13 @@ class Audio(Gtk.Application):
  def activate(self,app):
   if hasattr(self,'window'):self.window.present();return
   w=self.window=Gtk.ApplicationWindow(application=self,title='Shadow Audio');w.set_default_size(680,570);w.set_position(Gtk.WindowPosition.CENTER)
-  from shadow_effects import attach
+  from shadow_effects import attach, heading
   attach(w)
   w.set_icon_name("shadowrealm-os-app-audio")
   css=Gtk.CssProvider();css.load_from_data(b'scale.shadow-volume trough { min-height: 8px; background-color: alpha(@theme_fg_color,0.18); border: 1px solid alpha(@theme_fg_color,0.4); border-radius: 5px; } scale.shadow-volume slider { min-width: 18px; min-height: 18px; background-image: none; background-color: @theme_selected_bg_color; border: 1px solid @theme_fg_color; border-radius: 10px; margin: -6px; } scale.shadow-volume highlight { min-height: 8px; background-color: @theme_selected_bg_color; }')
   Gtk.StyleContext.add_provider_for_screen(w.get_screen(),css,Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
   outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=16,margin=22);w.add(outer)
-  title=Gtk.Label(xalign=0);title.set_markup('<span size="x-large" weight="bold">Shadow Audio</span>');outer.pack_start(title,False,False,0)
-  outer.pack_start(Gtk.Label(label='Choose devices and control sound for the whole system or individual apps.',xalign=0,wrap=True),False,False,0)
+  outer.pack_start(heading('Shadow Audio','Choose devices and control sound for the system or individual apps.'),False,False,0)
   tabs=Gtk.Notebook();outer.pack_start(tabs,True,True,0)
   self.controls={}
   for kind,name,note in [('sink','Output','Sound plays through the selected output device.'),('source','Microphone','Choose the input used by recording and calling apps.')]:
@@ -54,13 +53,24 @@ class Audio(Gtk.Application):
   self.empty=Gtk.Label(label='No applications are playing sound.');self.appsbox.pack_start(self.empty,False,False,12)
   self.status=Gtk.Label(xalign=0,wrap=True);outer.pack_start(self.status,False,False,0)
   b=Gtk.Button(label='Refresh devices');b.connect('clicked',lambda *_:self.refresh());outer.pack_start(b,False,False,0)
-  w.show_all();self.refresh();GLib.timeout_add_seconds(2,self.refresh)
+  w.show_all();self.refresh()
+  timer=GLib.timeout_add_seconds(2,self.refresh)
+  def stop(_window):
+   GLib.source_remove(timer)
+   for source in self.pending.values():GLib.source_remove(source)
+   self.pending.clear()
+  w.connect('destroy',stop)
  def submit(self,fn,done):
+  window=self.window
   future=POOL.submit(fn)
   def completed(f):
    try:value=f.result();error=None
    except Exception as e:value=None;error=str(e)
-   GLib.idle_add(done,value,error)
+   def apply():
+    if self.get_active_window() is window:
+     done(value,error)
+    return GLib.SOURCE_REMOVE
+   GLib.idle_add(apply)
   future.add_done_callback(completed)
  def act(self,*args):
   self.touch=time.monotonic();self.status.set_text('Applying change…')

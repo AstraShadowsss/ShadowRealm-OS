@@ -9,6 +9,8 @@ def write(root,name,text,mode=0o644):
  f=root/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text(text);f.chmod(mode)
 with tempfile.TemporaryDirectory() as tmp:
  root=Path(tmp);subprocess.run(['tar','-xzf',str(a.source/'shadowrealm-os-artwork-source.tar.gz'),'-C',str(root)],check=True)
+ professional=root/'usr/share/themes/ShadowRealm-OS-Professional/gtk-3.0/gtk.css'
+ professional.write_bytes((a.source/'professional-gtk.css').read_bytes())
  # Shared walking wallpapers contain the approved SR insert, never the retired S.
  import tarfile
  with tarfile.open(a.source/'shadowrealm-os-walker-wallpapers.tar.gz') as walkers:

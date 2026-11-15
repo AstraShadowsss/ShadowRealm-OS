@@ -1,5 +1,14 @@
 # Release notes
 
+## Desktop update 0.2.8 and artwork update 0.2.4 (2026-11-15)
+
+- Organize Control Center into searchable settings sections and give Dock and Panel separate entries.
+- Add dock size and visibility controls, with access to the launcher editor.
+- Match the headers of the built-in settings windows and refine the Professional theme with softer colors, clearer controls and more consistent spacing.
+- Fix refresh callbacks in Audio and Network that could run after their window closed.
+
+These updates are distributed through the signed APT repository.
+
 ## Desktop update 0.2.6
 
 - Depend directly on the NetworkManager applet and connection editor and declare the XFCE desktop components used at runtime.

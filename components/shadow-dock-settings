@@ -1,2 +1,82 @@
-#!/bin/sh
-exec xfce4-panel --preferences=2
+#!/usr/bin/python3
+"""Edit the dock through the current Xfce session."""
+import subprocess
+import gi
+
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+from shadow_effects import attach, heading
+
+CHANNEL = ["xfconf-query", "-c", "xfce4-panel"]
+DOCK = "/panels/panel-2"
+
+
+def query(key, *args):
+    return subprocess.run(CHANNEL + ["-p", f"{DOCK}/{key}", *args],
+                          capture_output=True, text=True, timeout=5)
+
+
+class DockSettings(Gtk.Application):
+    def __init__(self):
+        super().__init__(application_id="org.shadowrealm_os.Dock")
+        self.connect("activate", self.open)
+
+    def open(self, _app):
+        if self.get_active_window():
+            self.get_active_window().present()
+            return
+        window = Gtk.ApplicationWindow(application=self, title="Dock")
+        window.set_icon_name("shadowrealm-os-app-appearance")
+        window.set_default_size(490, 330)
+        attach(window)
+        body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, margin=20)
+        window.add(body)
+        body.pack_start(heading("Dock", "Size, visibility and launchers"), False, False, 0)
+
+        size = query("size")
+        visibility = query("autohide-behavior")
+        size_control = Gtk.SpinButton.new_with_range(16, 128, 1)
+        size_control.set_value(int(size.stdout.strip()) if size.returncode == 0 else 54)
+        behavior = Gtk.ComboBoxText()
+        for value in ("Always visible", "Hide when a window overlaps", "Reveal at the screen edge"):
+            behavior.append_text(value)
+        behavior.set_active(int(visibility.stdout.strip()) if visibility.returncode == 0 else 0)
+
+        form = Gtk.Grid(column_spacing=16, row_spacing=12)
+        body.pack_start(form, False, False, 0)
+        for row, (text, control) in enumerate((("Size in pixels", size_control), ("Visibility", behavior))):
+            label = Gtk.Label(label=text, xalign=0, mnemonic_widget=control)
+            control.set_hexpand(True)
+            form.attach(label, 0, row, 1, 1)
+            form.attach(control, 1, row, 1, 1)
+
+        edit = Gtk.Button(label="Edit dock launchers and position…")
+        edit.connect("clicked", self.preferences)
+        body.pack_start(edit, False, False, 0)
+        body.pack_start(Gtk.Label(label="Use Items in Panel Preferences to add, remove or reorder launchers.",
+                                  xalign=0, wrap=True), False, False, 0)
+        self.status = Gtk.Label(xalign=0, wrap=True)
+        body.pack_end(self.status, False, False, 0)
+        if size.returncode != 0:
+            form.set_sensitive(False)
+            edit.set_sensitive(False)
+            self.status.set_text("The dock panel is unavailable in this session.")
+        size_control.connect("value-changed", self.change, "size", "uint", Gtk.SpinButton.get_value_as_int)
+        behavior.connect("changed", self.change, "autohide-behavior", "uint", Gtk.ComboBox.get_active)
+        window.show_all()
+
+    def change(self, widget, key, kind, value):
+        try:
+            result = query(key, "--create", "--type", kind, "--set", str(value(widget)))
+            self.status.set_text("" if result.returncode == 0 else result.stderr.strip())
+        except (OSError, subprocess.TimeoutExpired) as error:
+            self.status.set_text(str(error))
+
+    def preferences(self, _button):
+        try:
+            subprocess.Popen(["xfce4-panel", "--preferences=2"])
+        except OSError as error:
+            self.status.set_text(str(error))
+
+
+raise SystemExit(DockSettings().run())
