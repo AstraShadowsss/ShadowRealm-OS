@@ -33,7 +33,12 @@ enum { PROCESS_VISIBLE=6, PROCESS_MAX=256 };
 static ProcessRow process_rows[PROCESS_MAX];
 static int process_count, process_offset;
 static unsigned long long lasttotal,lastidle;
-static GtkWidget *cards[4],*cardwindows[4];
+enum { WIDGET_CLOCK = 4, WIDGET_COUNT };
+static const int widget_heights[WIDGET_COUNT] = {151, 145, 197, 163, 238};
+static GtkWidget *cards[WIDGET_COUNT], *cardwindows[WIDGET_COUNT];
+static GdkRGBA widget_accents[WIDGET_COUNT];
+static gboolean widget_has_accent[WIDGET_COUNT];
+static int widget_opacity[WIDGET_COUNT];
 static void widgets_read(void);
 static gboolean widget_enabled(int i);
 static int widget_integer(const char*key,int fallback);
@@ -58,11 +63,11 @@ static void color(cairo_t *c,const char *s,double a){
   else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9",s))s=light?"f2f2f2":"52b4ff";
   else if(strstr("f5e9ff f4eaff f2e4fa f8f0ff f2e9f8 c7b4d6 baa3ce",s))s=light?"eeeeee":"edf5ff";
  }else if(professional_mode){
-  if(!strcmp(s,"04040b")||!strcmp(s,"080710"))s=professional_mode==7?"f4f4f4":professional_mode==6?"202124":professional_mode==2?"f5f4ef":professional_mode==3?"100b0d":professional_mode==4?"19271c":professional_mode==5?"050a07":"111827";
+  if(!strcmp(s,"04040b")||!strcmp(s,"080710"))s=professional_mode==7?"f4f4f4":professional_mode==6?"202124":professional_mode==2?"f5f4ef":professional_mode==3?"100b0d":professional_mode==4?"19271c":professional_mode==5?"050a07":"172521";
   else if((professional_mode==2||professional_mode==7)&&!strcmp(s,"e5bb6a"))s="7b571c";
   else if(!strcmp(s,"39243f"))s=professional_mode==7?"d9dadd":professional_mode==6?"44474d":professional_mode==2?"d9e0e8":"293548";
-  else if(strstr("fa12ed f04fff fc52f9 fc36ed f114dd",s))s=professional_mode>=6?plain_accent:professional_mode==2?"a78236":professional_mode==3?"e24b4b":professional_mode==4?"efbf49":professional_mode==5?"40f879":"7496bd";
-  else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9 04eaf5",s))s=professional_mode>=6?plain_accent:professional_mode==2?"8e6b2c":professional_mode==3?"f5bbbb":professional_mode==4?"8bd445":professional_mode==5?"a5ffc0":"b0cee5";
+  else if(strstr("fa12ed f04fff fc52f9 fc36ed f114dd",s))s=professional_mode>=6?plain_accent:professional_mode==2?"a78236":professional_mode==3?"e24b4b":professional_mode==4?"efbf49":professional_mode==5?"40f879":"9ec6b7";
+  else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9 04eaf5",s))s=professional_mode>=6?plain_accent:professional_mode==2?"8e6b2c":professional_mode==3?"f5bbbb":professional_mode==4?"8bd445":professional_mode==5?"a5ffc0":"b8d6c9";
   else if(strstr("f5e9ff f4eaff f2e4fa f8f0ff f2e9f8",s))s=professional_mode==7?"25272a":professional_mode==6?"e6e7e9":professional_mode==2?"172535":"edf2f7";
   else if(strstr("c7b4d6 baa3ce",s))s=professional_mode==7?"52565d":professional_mode==6?"c6c8cd":professional_mode==2?"42566c":"d0dae7";
  }
@@ -70,25 +75,60 @@ static void color(cairo_t *c,const char *s,double a){
 static void txt(cairo_t*c,double x,double y,double size,const char*s,const char*co,int bold){color(c,co,1);cairo_select_font_face(c,"DejaVu Sans Mono",CAIRO_FONT_SLANT_NORMAL,bold?CAIRO_FONT_WEIGHT_BOLD:CAIRO_FONT_WEIGHT_NORMAL);cairo_set_font_size(c,size);cairo_move_to(c,x,y);cairo_show_text(c,s);}
 static void txt_right(cairo_t*c,double right,double y,double size,const char*text,const char*co,int bold){cairo_text_extents_t ext;cairo_select_font_face(c,"DejaVu Sans Mono",CAIRO_FONT_SLANT_NORMAL,bold?CAIRO_FONT_WEIGHT_BOLD:CAIRO_FONT_WEIGHT_NORMAL);cairo_set_font_size(c,size);cairo_text_extents(c,text,&ext);txt(c,right-ext.x_advance,y,size,text,co,bold);}
 static void line(cairo_t*c,double x,double y,double xx,double yy,const char*co,double w){color(c,co,1);cairo_set_line_width(c,w);cairo_move_to(c,x,y);cairo_line_to(c,xx,yy);cairo_stroke(c);}
-static void frame(cairo_t*c,double w,double h,const char*title){
- color(c,"04040b",widget_background_alpha);cairo_move_to(c,12,1);cairo_line_to(c,w-12,1);cairo_line_to(c,w-1,12);cairo_line_to(c,w-1,h-12);cairo_line_to(c,w-12,h-1);cairo_line_to(c,12,h-1);cairo_line_to(c,1,h-12);cairo_line_to(c,1,12);cairo_close_path(c);cairo_fill_preserve(c);
- color(c,"fa12ed",.3);cairo_set_line_width(c,professional_mode?1:5);cairo_stroke_preserve(c);color(c,"f04fff",1);cairo_set_line_width(c,1.7);cairo_stroke(c);
+static void frame(cairo_t*c,double w,double h,const char*title,int widget){
+ double opacity=widget_opacity[widget]<0 ? widget_background_alpha : widget_opacity[widget]/100.;
+ color(c,"04040b",opacity);cairo_move_to(c,12,1);cairo_line_to(c,w-12,1);cairo_line_to(c,w-1,12);cairo_line_to(c,w-1,h-12);cairo_line_to(c,w-12,h-1);cairo_line_to(c,12,h-1);cairo_line_to(c,1,h-12);cairo_line_to(c,1,12);cairo_close_path(c);cairo_fill_preserve(c);
+ color(c,"fa12ed",.3);cairo_set_line_width(c,professional_mode?1:5);cairo_stroke_preserve(c);if(widget_has_accent[widget])gdk_cairo_set_source_rgba(c,&widget_accents[widget]);else color(c,"f04fff",1);
+ cairo_set_line_width(c,1.7);cairo_stroke(c);
  line(c,18,5,w-28,5,"fc52f9",1);line(c,20,h-5,w-20,h-5,"00efff",1.5);line(c,w-5,18,w-5,h-20,"00efff",1);
  if(brand){gdk_cairo_set_source_pixbuf(c,brand,10,10);cairo_paint(c);}txt(c,39,27,12,title,"fc36ed",1);line(c,12,37,w-12,37,"04eaf5",1);
  for(int i=0;i<39;i++){double v1=history[i],v2=history[i+1];line(c,w-63+i*.9,27-v1*.12,w-63+(i+1)*.9,27-v2*.12,i%2?"00eafa":"fc36ed",.9);}
 }
 static void bar(cairo_t*c,int y,const char*name,double value){char b[24];txt(c,14,y,12,name,"f5e9ff",0);color(c,"39243f",1);cairo_rectangle(c,68,y-11,124,12);cairo_fill(c);color(c,"f114dd",1);cairo_rectangle(c,69,y-10,fmin(122,1.22*value),10);cairo_fill(c);for(int i=0;i<122;i+=7)line(c,69+i,y-10,69+i,y,"080710",.8);snprintf(b,sizeof b,"%3.0f%%",value);txt(c,203,y,12,b,"00f4ff",1);}
+static void draw_widget_calendar(cairo_t *canvas)
+{
+    GDateTime *now = g_date_time_new_now_local();
+    int year = g_date_time_get_year(now);
+    int month = g_date_time_get_month(now);
+    int today = g_date_time_get_day_of_month(now);
+    GDateTime *first = g_date_time_new_local(year, month, 1, 12, 0, 0);
+    int offset = g_date_time_get_day_of_week(first) - 1;
+    int days = g_date_get_days_in_month((GDateMonth)month, (GDateYear)year);
+    gchar *time = g_date_time_format(now, "%I:%M %p");
+    gchar *date = g_date_time_format(now, "%B %Y");
+    txt(canvas, 16, 69, 24, time[0] == '0' ? time + 1 : time, "f5e9ff", 1);
+    txt(canvas, 17, 91, 12, date, "c7b4d6", 0);
+    const char *weekdays[] = {"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"};
+    for (int column = 0; column < 7; column++)
+        txt(canvas, 23 + column * 33, 117, 10, weekdays[column], "c7b4d6", 0);
+    for (int day = 1; day <= days; day++) {
+        int cell = offset + day - 1;
+        int x = 23 + (cell % 7) * 33;
+        int y = 137 + (cell / 7) * 17;
+        char label[4];
+        g_snprintf(label, sizeof label, "%2d", day);
+        if (day == today) {
+            line(canvas, x, y + 3, x + 14, y + 3, "00efff", 1.5);
+        }
+        txt(canvas, x, y, 11, label, day == today ? "00efff" : "f5e9ff", day == today);
+    }
+    g_free(time);
+    g_free(date);
+    g_date_time_unref(first);
+    g_date_time_unref(now);
+}
 static gboolean draw(GtkWidget*w,cairo_t*c,gpointer p){int k=GPOINTER_TO_INT(p);double ww=gtk_widget_get_allocated_width(w)/scale,hh=gtk_widget_get_allocated_height(w)/scale;cairo_set_operator(c,CAIRO_OPERATOR_SOURCE);cairo_set_source_rgba(c,0,0,0,0);cairo_paint(c);cairo_set_operator(c,CAIRO_OPERATOR_OVER);cairo_scale(c,scale,scale);
- const char *names[]={"SYSTEM OVERVIEW","NETWORK // LIVE","PROCESSES","SHADOW SHIELD"};char process_title[40];
+ const char *names[]={"SYSTEM OVERVIEW","NETWORK // LIVE","PROCESSES","SHADOW SHIELD","CLOCK & CALENDAR"};char process_title[40];
  if(k==2&&process_count){
   g_snprintf(process_title,sizeof process_title,"PROCESSES  %d-%d/%d",
              process_offset+1,MIN(process_count,process_offset+PROCESS_VISIBLE),process_count);
  }
- frame(c,ww,hh,k==2&&process_count?process_title:names[k]);
+ frame(c,ww,hh,k==2&&process_count?process_title:names[k],k);
  if(k==0){bar(c,61,"CPU",cpu);bar(c,85,"RAM",ram);bar(c,109,"SWAP",swp);bar(c,133,"DISK",diskpct);}
  if(k==1){char rates[80];txt(c,15,61,12,iftext,"f8f0ff",1);txt(c,15,81,12,iptext,"00f0ff",1);snprintf(rates,sizeof rates,"DOWN  %.1f KiB/s",net_down_kib);txt(c,15,105,11,rates,"f5e9ff",0);snprintf(rates,sizeof rates,"UP    %.1f KiB/s",net_up_kib);txt(c,15,128,11,rates,"f5e9ff",0);}
  if(k==2){double pid_right=55,name_x=66,cpu_right=ww-66,mem_right=ww-15;txt_right(c,pid_right,58,11,"PID","f4eaff",1);txt(c,name_x,58,11,"NAME","f4eaff",1);txt_right(c,cpu_right,58,11,"CPU%","f4eaff",1);txt_right(c,mem_right,58,11,"MEM%","f4eaff",1);for(int i=0;i<PROCESS_VISIBLE&&i+process_offset<process_count;i++){ProcessRow*r=&process_rows[i+process_offset];char pid[24],name[15],pc[24],pm[24];snprintf(pid,sizeof pid,"%d",r->pid);snprintf(name,sizeof name,"%.14s",r->name);snprintf(pc,sizeof pc,"%.1f",r->cpu);snprintf(pm,sizeof pm,"%.1f",r->mem);const char*co=i%2?"f2e4fa":"19ebf5";double y=80+i*18;txt_right(c,pid_right,y,10,pid,co,0);txt(c,name_x,y,10,name,co,0);txt_right(c,cpu_right,y,10,pc,co,0);txt_right(c,mem_right,y,10,pm,co,0);}}
  if(k==3){txt(c,15,61,11,"FIREWALL","f2e9f8",0);txt(c,15,79,11,firewall_status,"e5bb6a",1);txt(c,15,102,11,policy_status,"c7b4d6",0);char vp[64];snprintf(vp,sizeof vp,"VPN: %.28s",vpn);txt(c,15,124,10,vp,"00dce9",0);txt(c,15,146,10,tor_status,"c7b4d6",0);}
+ if(k==WIDGET_CLOCK)draw_widget_calendar(c);
  return FALSE;}
 static void refresh_stats(void){FILE*f=fopen("/proc/stat","r");unsigned long long u,n,s,id,iw,irq,si,st;if(f){if(fscanf(f,"cpu %llu %llu %llu %llu %llu %llu %llu %llu",&u,&n,&s,&id,&iw,&irq,&si,&st)==8){unsigned long long t=u+n+s+id+iw+irq+si+st,ii=id+iw;if(lasttotal&&t>lasttotal)cpu=100.*(1.-(double)(ii-lastidle)/(t-lasttotal));lasttotal=t;lastidle=ii;}fclose(f);}unsigned long mt=0,ma=0,ss=0,sf=0,v;char b[256],key[64];f=fopen("/proc/meminfo","r");if(f){while(fgets(b,sizeof b,f)){if(sscanf(b,"%63s %lu",key,&v)==2){if(!strcmp(key,"MemTotal:"))mt=v;if(!strcmp(key,"MemAvailable:"))ma=v;if(!strcmp(key,"SwapTotal:"))ss=v;if(!strcmp(key,"SwapFree:"))sf=v;}}fclose(f);}ram=mt?100.*(mt-ma)/mt:0;ram_used_mib=(mt-ma)/1024.;ram_total_mib=mt/1024.;swp=ss?100.*(ss-sf)/ss:0;struct statvfs fs;if(!statvfs("/",&fs)&&fs.f_blocks)diskpct=100.*(fs.f_blocks-fs.f_bfree)/fs.f_blocks;
  active_if[0]=0;strcpy(iptext,"NO ADDRESS");strcpy(iftext,"OFFLINE");strcpy(vpn,"NO ACTIVE INTERFACE");struct ifaddrs*a=NULL;if(!getifaddrs(&a)){for(struct ifaddrs*i=a;i;i=i->ifa_next){if(!i->ifa_addr||i->ifa_addr->sa_family!=AF_INET||!(i->ifa_flags&IFF_UP)||(i->ifa_flags&IFF_LOOPBACK))continue;if(!strncmp(i->ifa_name,"tun",3)||!strncmp(i->ifa_name,"wg",2)||!strncmp(i->ifa_name,"tap",3)){snprintf(vpn,sizeof vpn,"%s UP",i->ifa_name);continue;}snprintf(active_if,sizeof active_if,"%s",i->ifa_name);snprintf(iftext,sizeof iftext,"%s // UP",i->ifa_name);inet_ntop(AF_INET,&((struct sockaddr_in*)i->ifa_addr)->sin_addr,iptext,sizeof iptext);}freeifaddrs(a);}
@@ -106,8 +146,8 @@ static void refresh_stats(void){FILE*f=fopen("/proc/stat","r");unsigned long lon
  if(f)pclose(f);
  process_offset=CLAMP(process_offset,0,MAX(0,process_count-PROCESS_VISIBLE));
 }
-static gboolean tick(gpointer unused){double previous_opacity=widget_background_alpha;char*opacity_path=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","transparency.ini",NULL);GKeyFile*opacity=g_key_file_new();if(g_key_file_load_from_file(opacity,opacity_path,G_KEY_FILE_NONE,NULL)&&g_key_file_has_key(opacity,"Appearance","widget-opacity",NULL))widget_background_alpha=CLAMP(g_key_file_get_integer(opacity,"Appearance","widget-opacity",NULL),0,100)/100.;g_key_file_unref(opacity);g_free(opacity_path);if(fabs(previous_opacity-widget_background_alpha)>.001)for(int i=0;i<4;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);appearance_read();static gint64 previous=0;widgets_read();reflow_widgets();gint64 now=g_get_monotonic_time();int interval=CLAMP(widget_integer("RefreshSeconds",2),1,15);if(now-previous>=interval*1000000LL){refresh_stats();previous=now;char tip[160];snprintf(tip,sizeof tip,"RAM: %.0f MiB used of %.0f MiB (%.1f%%). Updated every %d seconds.",ram_used_mib,ram_total_mib,ram,interval);if(cards[0])gtk_widget_set_tooltip_text(cards[0],tip);gchar*sec=NULL;if(g_file_get_contents("/run/shadowrealm-os/security-status",&sec,NULL,NULL)){g_strlcpy(firewall_status,strstr(sec,"firewall=active")?"ACTIVE":"INACTIVE",sizeof firewall_status);g_strlcpy(policy_status,strstr(sec,"apparmor=enforcing")?"APPARMOR: ENFORCING":strstr(sec,"apparmor=enabled")?"APPARMOR: ENABLED":strstr(sec,"apparmor=available")?"APPARMOR: NO POLICY":"APPARMOR: NOT ACTIVE",sizeof policy_status);g_strlcpy(tor_status,strstr(sec,"tor=running")?"TOR: SERVICE RUNNING":strstr(sec,"tor=stopped")?"TOR: STOPPED":"TOR: NOT INSTALLED",sizeof tor_status);char*vi=strstr(sec,"vpn_interface=");if(vi){vi+=14;char*end=strchr(vi,'\n');int length=end?end-vi:strlen(vi);if(length>0)snprintf(vpn,sizeof vpn,"%.*s CONNECTED",MIN(length,20),vi);}g_free(sec);}for(int i=0;i<4;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);}return G_SOURCE_CONTINUE;}
-static void reflow_widgets(void){GdkDisplay*d=gdk_display_get_default();GdkMonitor*m=gdk_display_get_primary_monitor(d);if(!m)m=gdk_display_get_monitor(d,0);GdkRectangle r;gdk_monitor_get_geometry(m,&r);int h[]={151,145,197,163},total=0;for(int i=0;i<4;i++)if(widget_enabled(i))total+=h[i]+12;scale=fmin(1.2,fmax(.68,(r.height-125)/685.))*CLAMP(widget_integer("ScalePercent",100),70,120)/100.;if(total)scale=fmin(scale,(r.height-125)/(double)total);int y=r.y+51,margin=CLAMP(widget_integer("RightMargin",12),0,150);for(int i=0;i<4;i++)if(cardwindows[i]){if(!widget_enabled(i)){gtk_widget_hide(cardwindows[i]);continue;}gtk_widget_set_size_request(cards[i],270*scale,h[i]*scale);gtk_window_resize(GTK_WINDOW(cardwindows[i]),270*scale,h[i]*scale);gtk_window_move(GTK_WINDOW(cardwindows[i]),r.x+r.width-270*scale-margin,y);gtk_widget_show(cardwindows[i]);y+=(h[i]+12)*scale;}}
+static gboolean tick(gpointer unused){double previous_opacity=widget_background_alpha;char*opacity_path=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","transparency.ini",NULL);GKeyFile*opacity=g_key_file_new();if(g_key_file_load_from_file(opacity,opacity_path,G_KEY_FILE_NONE,NULL)&&g_key_file_has_key(opacity,"Appearance","widget-opacity",NULL))widget_background_alpha=CLAMP(g_key_file_get_integer(opacity,"Appearance","widget-opacity",NULL),0,100)/100.;g_key_file_unref(opacity);g_free(opacity_path);if(fabs(previous_opacity-widget_background_alpha)>.001)for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);appearance_read();static gint64 previous=0;widgets_read();reflow_widgets();gint64 now=g_get_monotonic_time();int interval=CLAMP(widget_integer("RefreshSeconds",2),1,15);if(now-previous>=interval*1000000LL){refresh_stats();previous=now;char tip[160];snprintf(tip,sizeof tip,"RAM: %.0f MiB used of %.0f MiB (%.1f%%). Updated every %d seconds.",ram_used_mib,ram_total_mib,ram,interval);if(cards[0])gtk_widget_set_tooltip_text(cards[0],tip);gchar*sec=NULL;if(g_file_get_contents("/run/shadowrealm-os/security-status",&sec,NULL,NULL)){g_strlcpy(firewall_status,strstr(sec,"firewall=active")?"ACTIVE":"INACTIVE",sizeof firewall_status);g_strlcpy(policy_status,strstr(sec,"apparmor=enforcing")?"APPARMOR: ENFORCING":strstr(sec,"apparmor=enabled")?"APPARMOR: ENABLED":strstr(sec,"apparmor=available")?"APPARMOR: NO POLICY":"APPARMOR: NOT ACTIVE",sizeof policy_status);g_strlcpy(tor_status,strstr(sec,"tor=running")?"TOR: SERVICE RUNNING":strstr(sec,"tor=stopped")?"TOR: STOPPED":"TOR: NOT INSTALLED",sizeof tor_status);char*vi=strstr(sec,"vpn_interface=");if(vi){vi+=14;char*end=strchr(vi,'\n');int length=end?end-vi:strlen(vi);if(length>0)snprintf(vpn,sizeof vpn,"%.*s CONNECTED",MIN(length,20),vi);}g_free(sec);}for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);}return G_SOURCE_CONTINUE;}
+static void reflow_widgets(void){GdkDisplay*d=gdk_display_get_default();GdkMonitor*m=gdk_display_get_primary_monitor(d);if(!m)m=gdk_display_get_monitor(d,0);GdkRectangle r;gdk_monitor_get_geometry(m,&r);int total=0;for(int i=0;i<WIDGET_COUNT;i++)if(widget_enabled(i))total+=widget_heights[i]+12;scale=fmin(1.2,fmax(.68,(r.height-125)/685.))*CLAMP(widget_integer("ScalePercent",100),70,120)/100.;if(total)scale=fmin(scale,(r.height-125)/(double)total);int y=r.y+51,margin=CLAMP(widget_integer("RightMargin",12),0,150);for(int i=0;i<WIDGET_COUNT;i++)if(cardwindows[i]){if(!widget_enabled(i)){gtk_widget_hide(cardwindows[i]);continue;}gtk_widget_set_size_request(cards[i],270*scale,widget_heights[i]*scale);gtk_window_resize(GTK_WINDOW(cardwindows[i]),270*scale,widget_heights[i]*scale);gtk_window_move(GTK_WINDOW(cardwindows[i]),r.x+r.width-270*scale-margin,y);gtk_widget_show(cardwindows[i]);y+=(widget_heights[i]+12)*scale;}}
 static gboolean process_scroll(GtkWidget *widget,GdkEventScroll *event,gpointer unused){
  (void)unused;
  double dy=0;
@@ -121,7 +161,7 @@ static gboolean process_scroll(GtkWidget *widget,GdkEventScroll *event,gpointer 
  (void)widget;gtk_widget_queue_draw(cards[2]);
  return TRUE;
 }
-static void widgets(void){widgets_read();GdkDisplay*d=gdk_display_get_default();GdkMonitor*m=gdk_display_get_primary_monitor(d);if(!m)m=gdk_display_get_monitor(d,0);GdkRectangle r;gdk_monitor_get_geometry(m,&r);scale=fmin(1.2,fmax(.68,(r.height-125)/685.));int h[]={151,145,197,163};int y=r.y+51;for(int i=0;i<4;i++){GtkWidget*w=gtk_window_new(GTK_WINDOW_TOPLEVEL);cardwindows[i]=w;gtk_window_set_title(GTK_WINDOW(w),"Shadow Link · Live Status");gtk_window_set_decorated(GTK_WINDOW(w),FALSE);gtk_window_set_resizable(GTK_WINDOW(w),FALSE);gtk_window_set_skip_taskbar_hint(GTK_WINDOW(w),TRUE);gtk_window_set_skip_pager_hint(GTK_WINDOW(w),TRUE);gtk_window_set_accept_focus(GTK_WINDOW(w),FALSE);gtk_window_set_type_hint(GTK_WINDOW(w),GDK_WINDOW_TYPE_HINT_NORMAL);gtk_window_set_keep_below(GTK_WINDOW(w),TRUE);gtk_window_stick(GTK_WINDOW(w));GdkVisual*v=gdk_screen_get_rgba_visual(gtk_widget_get_screen(w));if(v)gtk_widget_set_visual(w,v);gtk_widget_set_app_paintable(w,TRUE);cards[i]=gtk_drawing_area_new();
+static void widgets(void){widgets_read();GdkDisplay*d=gdk_display_get_default();GdkMonitor*m=gdk_display_get_primary_monitor(d);if(!m)m=gdk_display_get_monitor(d,0);GdkRectangle r;gdk_monitor_get_geometry(m,&r);scale=fmin(1.2,fmax(.68,(r.height-125)/685.));int y=r.y+51;for(int i=0;i<WIDGET_COUNT;i++){GtkWidget*w=gtk_window_new(GTK_WINDOW_TOPLEVEL);cardwindows[i]=w;gtk_window_set_title(GTK_WINDOW(w),"Shadow Link · Live Status");gtk_window_set_decorated(GTK_WINDOW(w),FALSE);gtk_window_set_resizable(GTK_WINDOW(w),FALSE);gtk_window_set_skip_taskbar_hint(GTK_WINDOW(w),TRUE);gtk_window_set_skip_pager_hint(GTK_WINDOW(w),TRUE);gtk_window_set_accept_focus(GTK_WINDOW(w),FALSE);gtk_window_set_type_hint(GTK_WINDOW(w),GDK_WINDOW_TYPE_HINT_NORMAL);gtk_window_set_keep_below(GTK_WINDOW(w),TRUE);gtk_window_stick(GTK_WINDOW(w));GdkVisual*v=gdk_screen_get_rgba_visual(gtk_widget_get_screen(w));if(v)gtk_widget_set_visual(w,v);gtk_widget_set_app_paintable(w,TRUE);cards[i]=gtk_drawing_area_new();
  if(i==2){
   gtk_widget_add_events(w,GDK_SCROLL_MASK|GDK_SMOOTH_SCROLL_MASK);
   g_signal_connect(w,"scroll-event",G_CALLBACK(process_scroll),NULL);
@@ -129,7 +169,7 @@ static void widgets(void){widgets_read();GdkDisplay*d=gdk_display_get_default();
   g_signal_connect(cards[i],"scroll-event",G_CALLBACK(process_scroll),NULL);
   gtk_widget_set_tooltip_text(cards[i],"Scroll to see more processes.");
  }
- gtk_widget_set_size_request(cards[i],270*scale,h[i]*scale);gtk_container_add(GTK_CONTAINER(w),cards[i]);g_signal_connect(cards[i],"draw",G_CALLBACK(draw),GINT_TO_POINTER(i));gtk_window_move(GTK_WINDOW(w),r.x+r.width-270*scale-12,y);y+=(h[i]+12)*scale;gtk_widget_show_all(w);}tick(NULL);g_timeout_add_seconds(1,tick,NULL);}
+ gtk_widget_set_size_request(cards[i],270*scale,widget_heights[i]*scale);gtk_container_add(GTK_CONTAINER(w),cards[i]);g_signal_connect(cards[i],"draw",G_CALLBACK(draw),GINT_TO_POINTER(i));gtk_window_move(GTK_WINDOW(w),r.x+r.width-270*scale-12,y);y+=(widget_heights[i]+12)*scale;gtk_widget_show_all(w);}tick(NULL);g_timeout_add_seconds(1,tick,NULL);}
 typedef struct {char *name,*command,*category;GAppInfo*info;char*category_override;} App;
 static int menu_scale_percent(void);
 static GPtrArray*appdata;static GtkWidget*list,*searchbox;

@@ -73,6 +73,8 @@ System Overview shows resource use; Network shows interface traffic; Processes l
 
 ![Control Center and desktop in Professional](screenshots/control-center-professional.png)
 
+![Widget settings and calendar in Professional](screenshots/widget-settings-professional.png)
+
 ### Wallpaper collection
 
 ![Coordinated wallpapers beyond Seated City](screenshots/wallpaper-styles.png)

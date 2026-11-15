@@ -101,6 +101,15 @@ def matching_icons(mode,base,files):
     subprocess.run(['gtk-update-icon-cache','-f','-t',str(icon_dir.parent.parent)],stdout=subprocess.DEVNULL,check=True)
 
 def set_widgets(professional,base):
+    if professional:
+        import configparser
+        config = configparser.ConfigParser(interpolation=None)
+        directory = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+        try:
+            config.read(directory / "shadow-link-widgets.ini")
+            professional = not config.getboolean("Widgets", "Professional", fallback=False)
+        except (OSError, ValueError, configparser.Error):
+            pass
     entry=Path.home()/'.config/autostart/shadow-link.desktop'
     if not entry.exists():
         system=Path('/etc/xdg/autostart/shadow-link.desktop')

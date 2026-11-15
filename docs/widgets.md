@@ -1,20 +1,17 @@
 # Desktop widgets
 
-The four small panels are live status displays, backed by local Linux data. They are part of the custom desktop source in `components/shadow-link-dock.c`; GitHub contains their source and screenshots, not a separate online monitoring service.
+The desktop widgets show local system data. The clock and calendar is optional and uses the computer’s time zone.
 
 | Panel | What it shows |
 | --- | --- |
 | System Overview | CPU activity between samples; RAM in use based on MemAvailable; swap use; root filesystem space in use. These are percentages, not a security score. |
 | Network / Live | An active IPv4 interface and address, plus received and sent traffic in KiB/s. This is local interface traffic, not an Internet speed test. |
 | Processes | Process ID, command name, CPU and memory percentages from Linux process statistics. Scroll to see additional rows. Process CPU is the average reported by `ps`, rather than the same interval as the overview CPU bar. |
-| Shadow Shield | Firewall status/policy, detected VPN interface and Tor service status. An active VPN interface or running Tor service alone does not prove every application is protected. |
+| Shadow Shield | Firewall status, AppArmor status, detected VPN interface and Tor service status. |
+| Clock & calendar | Local time, current month and today’s date. Enable it in Shadow Widgets. |
 
-Open Network for connections, custom DNS and airplane mode. Open Shadow Shield for firewall rules and privacy controls, including VPN/Tor tools. Software & Updates manages installed APT software and available updates; Flatpak updates are separate. None of these widgets uploads its readings to GitHub.
+Open Network for connections, custom DNS and airplane mode. Open Shadow Shield for firewall rules and privacy controls, including VPN/Tor tools. Software & Updates manages installed APT software and available updates; Flatpak updates are separate.
 
-Appearance controls the coordinated palette. Widget settings control which panels are visible, their sizing and placement. Background transparency changes the supported panel background while keeping text readable.
+Open **Control Center → Desktop → Widgets** to show or hide each widget and adjust its border color and background opacity. Select **Theme** to restore the active theme’s border color. Leave opacity at **−1** to use the shared value from Appearance. Professional hides desktop widgets by default. Enable **Show widgets in the Professional theme** to display the ones you selected.
 
 The source asset archives include 89 common system roles in each of eight palettes. System tiles, dock artwork and panel glyphs are separate families. Standard inherited icons cover additional names; third-party application icons remain supplied by their own packages.
-
-## If the Processes card stays empty
-
-One r4 community screenshot showed the card headers without rows. If yours stays empty after several refreshes, report whether you were in the live session or an installed system, the ISO revision, and whether this happens after signing in again. In Terminal, run `LC_ALL=C ps -eo pid=,pcpu=,pmem=,comm= --sort=-pcpu | head -10` and say whether it printed rows or an error. Remove any process names or other details you prefer to keep private before sharing output.

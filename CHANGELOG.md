@@ -1,5 +1,11 @@
 # Release notes
 
+## Desktop update 0.2.9 (2026-11-15)
+
+- Add an optional desktop clock and monthly calendar.
+- Set border color, background opacity and visibility for each widget.
+- Enable widgets in Professional through an explicit preference.
+
 ## Desktop update 0.2.8 and artwork update 0.2.4 (2026-11-15)
 
 - Organize Control Center into searchable settings sections and give Dock and Panel separate entries.

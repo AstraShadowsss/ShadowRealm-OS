@@ -228,6 +228,14 @@ def main():
     if os.geteuid() == 0:
         raise SystemExit("Start ShadowRealm-OS Desktop as your regular account.")
     action = sys.argv[1] if len(sys.argv) == 2 else ""
+    if action == "sync-widgets":
+        home = Path.home()
+        mode = home / ".config/shadowrealm-os/appearance-mode"
+        sys.path.insert(0, str(PAYLOAD / "runtime/bin"))
+        from shadow_whole_theme import set_widgets
+        set_widgets(mode.is_file() and mode.read_text().strip() == "professional",
+                    home / ".local/share/shadow-link")
+        return
     if action not in COMMANDS and action != "prepare":
         raise SystemExit("Choose a valid ShadowRealm-OS desktop action.")
     if action == "widgets":
