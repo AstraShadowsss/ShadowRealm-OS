@@ -1,5 +1,10 @@
 # Release notes
 
+## Desktop update 0.2.10 (2026-11-15)
+
+- Move widgets by dragging their headers and resize them from the bottom-right corner. Each widget remembers its layout and can be reset from its context menu.
+- Set separate colors for borders, text and numbers, usage bars, and history graphs.
+
 ## Desktop update 0.2.9 (2026-11-15)
 
 - Add an optional desktop clock and monthly calendar.

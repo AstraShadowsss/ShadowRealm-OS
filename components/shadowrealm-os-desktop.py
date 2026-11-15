@@ -27,6 +27,7 @@ COMMANDS = {
     "bluetooth": ("shadow-link", "--bluetooth"),
     "menu": ("shadow-link", "--menu"),
     "widgets": ("shadow-link", "--widgets"),
+    "widget-settings": ("shadow-link", "--widget-settings"),
     "session": ("shadow-xfce-session",),
 }
 

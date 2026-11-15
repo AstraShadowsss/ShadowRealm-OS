@@ -12,6 +12,8 @@ The desktop widgets show local system data. The clock and calendar is optional a
 
 Open Network for connections, custom DNS and airplane mode. Open Shadow Shield for firewall rules and privacy controls, including VPN/Tor tools. Software & Updates manages installed APT software and available updates; Flatpak updates are separate.
 
-Open **Control Center → Desktop → Widgets** to show or hide each widget and adjust its border color and background opacity. Select **Theme** to restore the active theme’s border color. Leave opacity at **−1** to use the shared value from Appearance. Professional hides desktop widgets by default. Enable **Show widgets in the Professional theme** to display the ones you selected.
+Open **Control Center → Desktop → Widgets** to show or hide each widget and adjust its background opacity. **Edit colors** controls the border, text and numbers, CPU history graph, and usage bars where available. Select **Use theme** next to a color to restore the theme’s value. Leave opacity at **−1** to use the shared value from Appearance. Professional hides desktop widgets by default. Enable **Show widgets in the Professional theme** to display the ones you selected.
 
 The source asset archives include 89 common system roles in each of eight palettes. System tiles, dock artwork and panel glyphs are separate families. Standard inherited icons cover additional names; third-party application icons remain supplied by their own packages.
+
+Drag a widget by its header to move it. Drag the bottom-right corner to resize it. Each widget keeps its position and size. Right-click a widget and select **Reset position and size** to return it to the automatic layout.
