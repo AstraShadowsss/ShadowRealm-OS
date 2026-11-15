@@ -1,6 +1,7 @@
 task-xfce-desktop
 network-manager
-network-manager-gnome
+network-manager-applet
+nm-connection-editor
 network-manager-openvpn-gnome
 wireguard-tools
 pipewire-audio

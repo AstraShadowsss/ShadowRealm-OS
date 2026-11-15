@@ -1,5 +1,12 @@
 # Release notes
 
+## Desktop update 0.2.6
+
+- Depend directly on the NetworkManager applet and connection editor and declare the XFCE desktop components used at runtime.
+- Mark the custom desktop as manually installed on newly built images and check APT upgrade and autoremove plans for desktop-stack removals.
+
+See the [desktop package investigation](docs/desktop-upgrade-investigation.md).
+
 ## Desktop update 0.2.5 (2026-11-15)
 
 - Start live widgets independently of the initial theme and wallpaper copy.

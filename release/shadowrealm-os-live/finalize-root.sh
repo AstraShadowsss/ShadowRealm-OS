@@ -30,7 +30,7 @@ chmod 755 "$root/usr/share/doc/shadowrealm-os-desktop/vendor-notices"
 # Keep the selected VLC/Shutter applications without duplicate menu programs.
 # Retain installed Xfce features when their optional goodies meta-package goes.
 mapfile -t xfce_tools < <(chroot "$root" dpkg-query -W -f='${binary:Package} ${db:Status-Status}\n' 'xfce4-*' | awk '$2=="installed" {print $1}')
-chroot "$root" apt-mark manual "${xfce_tools[@]}"
+chroot "$root" apt-mark manual shadowrealm-os-desktop "${xfce_tools[@]}"
 chroot "$root" apt-get purge -y light-locker parole xfce4-screenshooter debian-installer-launcher
 # Keep boot maintenance tools after the installer package is removed.
 chroot "$root" apt-mark manual grub2-common grub-pc-bin grub-efi-amd64-bin

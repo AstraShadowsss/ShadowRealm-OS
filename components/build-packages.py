@@ -11,6 +11,7 @@ sys.path.insert(0,str(src))
 from panel_defaults import seed_panel
 version=(src/'ASSET_VERSION').read_text().strip()
 desktop_version=(src/'DESKTOP_VERSION').read_text().strip()
+desktop_depends=(src/'DESKTOP_DEPENDS').read_text().strip()
 arch=subprocess.check_output(['dpkg','--print-architecture'],text=True).strip()
 def run(*args):subprocess.run(args,check=True)
 def write(root,name,text,mode=0o644):
@@ -65,7 +66,7 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
  # The current wrapper launches the separately built, system-owned Terminal.
  shutil.copyfile(src/'shadow-terminal',runtime/'shadow-terminal');(runtime/'shadow-terminal').chmod(0o755)
  (runtime/'shadow-terminal-gtk-v3').unlink(missing_ok=True)
- control(root,'shadowrealm-os-desktop','shadowrealm-os-artwork, shadowrealm-os-terminal, shadowrealm-os-panel, python3, python3-apt, python3-gi, python3-pil, gir1.2-gtk-3.0, gir1.2-gdkpixbuf-2.0, libgtk-3-0t64, xfconf, thunar, accountsservice, flatpak, network-manager, network-manager-gnome, pulseaudio-utils','ShadowRealm-OS desktop controls, appearance and account defaults')
+ control(root,'shadowrealm-os-desktop',desktop_depends,'ShadowRealm-OS desktop controls, appearance and account defaults')
  shutil.copytree(src/'vendor-notices',root/'usr/share/doc/shadowrealm-os-desktop/vendor-notices')
  (root/'usr/share/doc/shadowrealm-os-desktop/vendor-notices').chmod(0o755)
  for notice in (root/'usr/share/doc/shadowrealm-os-desktop/vendor-notices').rglob('*'):
