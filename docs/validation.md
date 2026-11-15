@@ -1,5 +1,7 @@
 # 2026.11 beta 1 r4 validation
 
+On 15 November 2026, a fresh VirtualBox live boot from the local r4 release ISO showed populated PID, command, CPU and memory rows. This check addresses the reported empty Processes card in the live configuration tested. A clean installed-session check and investigation of the reported environment are ongoing.
+
 Image: `ShadowRealm-OS-2026.11-beta1-r4-amd64.iso`  
 SHA256: `4ba996ac5c690d88cfb5d8b401b9fdf6ec0984b7d2cf03d9c5c73837e5355655`
 

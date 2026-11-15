@@ -24,6 +24,8 @@ Verify the ISO against SHA256SUMS before writing a USB drive or attaching it in 
 - [Installation and VirtualBox setup](https://github.com/AstraShadowsss/ShadowRealm-OS/blob/main/docs/installation.md)
 - [System requirements and known limits](https://github.com/AstraShadowsss/ShadowRealm-OS/blob/main/docs/system-requirements.md)
 - [Desktop guide](https://github.com/AstraShadowsss/ShadowRealm-OS/blob/main/docs/user-guide.md)
+- [Project roadmap](https://github.com/AstraShadowsss/ShadowRealm-OS/blob/main/docs/roadmap.md)
+- [Processes widget troubleshooting](https://github.com/AstraShadowsss/ShadowRealm-OS/blob/main/docs/widgets.md#if-the-processes-card-stays-empty)
 - [Matching source downloads and instructions](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/Sources/)
 
 ![ShadowRealm-OS desktop](https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/desktop.png)

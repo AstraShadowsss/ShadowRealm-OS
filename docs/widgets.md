@@ -14,3 +14,7 @@ Open Network for connections, custom DNS and airplane mode. Open Shadow Shield f
 Appearance controls the coordinated palette. Widget settings control which panels are visible, their sizing and placement. Background transparency changes the supported panel background while keeping text readable.
 
 The source asset archives include 89 common system roles in each of eight palettes. System tiles, dock artwork and panel glyphs are separate families. Standard inherited icons cover additional names; third-party application icons remain supplied by their own packages.
+
+## If the Processes card stays empty
+
+One r4 community screenshot showed the card headers without rows. If yours stays empty after several refreshes, report whether you were in the live session or an installed system, the ISO revision, and whether this happens after signing in again. In Terminal, run `LC_ALL=C ps -eo pid=,pcpu=,pmem=,comm= --sort=-pcpu | head -10` and say whether it printed rows or an error. Remove any process names or other details you prefer to keep private before sharing output.

@@ -79,6 +79,8 @@ System Overview shows resource use; Network shows interface traffic; Processes l
 
 This is an early public release. Installation and desktop checks are documented in [release validation](docs/validation.md). Physical hardware coverage is limited; test your graphics, sound, wireless and suspend behavior from the live desktop. Secure Boot and dual-boot installations are not certified for this beta. Keep a backup and recovery media.
 
+See the [project roadmap](docs/roadmap.md) for the Control Center redesign, desktop customization, and optional tools. If the Processes card stays empty, the [widget guide](docs/widgets.md#if-the-processes-card-stays-empty) explains what to include in a report.
+
 Debian and configured vendor repositories provide their package updates. The revised Beta 1 image also includes the signed ShadowRealm-OS repository for custom desktop components and games. Refresh Software & Updates to see available APT updates; installing them remains your choice. Flatpak applications update separately. See [repository details and setup for the earlier image](docs/update-repository.md).
 
 ## Source and licenses
