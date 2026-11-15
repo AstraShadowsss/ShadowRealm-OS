@@ -1,5 +1,7 @@
 # 2026.11 beta 1 r4 validation
 
+First-login wallpaper follow-up: a development change was checked in the installed r4 Xfce session using a temporary empty profile and the real Xfce wallpaper settings. It applied the packaged wallpaper from disk without requiring any wallpaper copies in that profile. Timing from first sign-in and verification of a packaged update remain pending.
+
 On 15 November 2026, the r4 ISO matched its published SHA-256. A fresh VirtualBox live boot and a clean unencrypted UEFI installation both showed PID, command, CPU and memory rows. The installer finished, the media removal prompt appeared, and the installed account reached the themed desktop and opened Terminal. The first login temporarily showed the stock Xfce wallpaper before the branded desktop and widgets appeared. The blank Processes card was not reproduced in these tests.
 
 Image: `ShadowRealm-OS-2026.11-beta1-r4-amd64.iso`  

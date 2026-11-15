@@ -6,6 +6,7 @@ import tempfile
 import time
 import os
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -156,11 +157,10 @@ def provision(home, payload=PAYLOAD, system_share=Path("/usr/share")):
         return _provision_unlocked(home, payload, system_share)
 
 
-def seed_wallpaper(home, base):
+def seed_wallpaper(home, base, *, early=False):
     marker = home / ".local/state/shadowrealm-os/desktop-wallpaper-v1"
     if marker.is_file():
         return True
-    sys.path.insert(0, str(base / "bin"))
     from shadow_appearance_desktop import query, set_wallpaper, wallpaper_properties
 
     properties = wallpaper_properties()
@@ -170,9 +170,14 @@ def seed_wallpaper(home, base):
         if not current or Path(current).is_relative_to("/usr/share/backgrounds/xfce") or Path(current).is_relative_to("/usr/share/desktop-base"):
             defaults.append(prop)
     if defaults:
-        modes = json.loads((base / "appearance-modes.json").read_text())
-        mode = (home / ".config/shadowrealm-os/appearance-mode").read_text().strip()
-        set_wallpaper(modes[mode]["wallpaper"], defaults)
+        selection = home / ".config/shadowrealm-os/appearance-mode"
+        mode = selection.read_text().strip() if selection.is_file() else "neon"
+        manifest = (PAYLOAD if early else base) / "appearance-modes.json"
+        modes = json.loads(manifest.read_text())
+        wallpaper = Path(modes[mode]["wallpaper"])
+        if early:
+            wallpaper = PAYLOAD / "wallpapers" / wallpaper.name
+        set_wallpaper(wallpaper, defaults)
     if properties:
         write_default(marker, "1\n")
     return bool(properties)
@@ -184,6 +189,15 @@ def main():
     action = sys.argv[1] if len(sys.argv) == 2 else ""
     if action not in COMMANDS and action != "prepare":
         raise SystemExit("Choose a valid ShadowRealm-OS desktop action.")
+    if action == "prepare":
+        # The packaged wallpaper is already usable while the profile's
+        # wallpapers, themes and icons are being copied into the home folder.
+        # Display discovery may still be unavailable at this point.
+        sys.path.insert(0, str(PAYLOAD / "runtime/bin"))
+        try:
+            seed_wallpaper(Path.home(), PAYLOAD, early=True)
+        except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
+            print(f"Desktop wallpaper startup will retry after setup: {error}", file=sys.stderr)
     base = provision(Path.home())
     if action == "prepare":
         # Keep Print consistent with the installed screenshot application.
@@ -197,15 +211,18 @@ def main():
                 set_property('xfce4-keyboard-shortcuts', '/commands/custom/Print', '/usr/bin/shutter -s')
             write_default(shortcut_marker, '1\n')
         for attempt in range(30):
-            if seed_wallpaper(Path.home(), base):
-                break
+            try:
+                if seed_wallpaper(Path.home(), base):
+                    break
+            except (RuntimeError, subprocess.SubprocessError):
+                pass
             time.sleep(0.5)
         # Installation is offered only in the temporary live session.
         if Path('/run/live/medium/live/filesystem.squashfs').is_file():
             shortcut = Path.home() / 'Desktop/Install ShadowRealm-OS.desktop'
             # Trust only the unchanged launcher supplied by the installed package.
             # Xfce 4.20 checks a content SHA256, not GNOME's boolean alone.
-            import hashlib, subprocess
+            import hashlib
             packaged = Path('/usr/share/applications/org.shadowrealm_os.install.desktop')
             if packaged.is_file():
                 content = packaged.read_bytes()
