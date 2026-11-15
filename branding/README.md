@@ -1,6 +1,6 @@
 # Brand assets
 
-The approved SR monogram and shared ShadowRealm-OS wordmark are raster masters. Preserve their geometry, spelling and letter spacing. The monogram master and background plates were prepared with the built-in image generator from the supplied design; palette composition uses the editable SVG templates in build-branding.py.
+The SR monogram, wordmark and background plates are raster masters. Palette composition uses the editable SVG templates in `build-branding.py`. See [Artwork masters](ARTWORK.md) for the logo and wallpaper details.
 
 Use Debian 13 with librsvg2-bin and python3-pil. From the repository root:
 
