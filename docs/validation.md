@@ -15,7 +15,11 @@ Artwork 0.2.3 separates interactive splash notices from service-status text. In 
 
 The exact r4 image passed internal checksums, BIOS/UEFI boot-entry checks, root permission checks, factory privacy and all eight theme catalogs. A fresh live boot and actual late live-media shutdown/restart handoff were checked, including visible instructions and Enter continuation. Current notice coverage accounts for 2,028 packages and 2,219 notice files.
 
-R4 retains r3's kernel, installer 0.2.1, account code and root-permission/mount safeguards. The complete 39-job encrypted installation, original-password graphical login, sudo, Terminal, active system services and normal desktop shutdown were verified on r3 immediately before this artwork-only revision; that full installation was not repeated for r4. These results must not be presented as physical-hardware or Secure Boot certification.
+## Encrypted UEFI installation
+
+A fresh VirtualBox install from the checksum-verified r4 ISO used Calamares automatic partitioning with encryption enabled. Calamares completed, the media-removal prompt was readable, and pressing Enter once continued to GRUB. A brief live-media unmount warning appeared before restart. The installed system accepted the disk passphrase, reached the graphical login screen, and accepted the account password. The root filesystem was mounted on a LUKS mapper, the branded desktop and live widgets loaded, and no system units were in the failed state before updating.
+
+On that encrypted installation, **Software & Updates → System Updates → Install Debian Updates** completed with exit code 0. The transaction applied 58 upgrades, installed one new kernel package and removed zero packages. ShadowRealm-OS desktop advanced from 0.2.3 to 0.2.11 and artwork from 0.2.3 to 0.2.4. The package audit was clean, the desktop package was marked manually installed, and no system units were in the failed state. Restarting from the desktop accepted the disk and account passwords again. Terminal and the live widgets worked on the updated kernel, 6.12.117+deb13-amd64, with the root filesystem still encrypted.
 
 ## Limits
 

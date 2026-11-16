@@ -4,7 +4,7 @@ Open the application menu at the upper left. Categories group programs by purpos
 
 ## Control Center
 
-Open **Shadow Control Center** to browse settings by section. Press **Ctrl+F** to find a setting by name or description. Use **Desktop → Dock** to change its size and visibility. **Fit dock to launchers** lets the dock expand as items are added. **Edit dock launchers and position** opens the dock’s panel preferences. Use the **Items** tab there to add, reorder or remove launchers.
+Open **Shadow Control Center** to browse settings by section. Press **Ctrl+F** to find a setting by name or description. Use **Desktop → Dock** to change its size and visibility. **Fit dock to launchers** lets the dock expand as items are added. **Edit dock launchers and position** opens the dock’s panel preferences. Use the **Items** tab there to add, reorder or remove launchers. In the Applications menu, right-click an app and select **Pin to Dock** to add it.
 
 ## Appearance
 

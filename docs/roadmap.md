@@ -5,7 +5,7 @@ ShadowRealm-OS is a Debian 13 and Xfce desktop with a recognizable visual identi
 ## Beta reliability
 
 - Investigate the community report of an empty Processes widget. Compare the exact published r4 live session and a fresh installed account across several refreshes, locales and restarts. Check on physical hardware when available.
-- Run a clean r4 installation and check first login, disk unlock when encrypted, graphical startup, Terminal, updates and normal shutdown. Record exact images and environments.
+- Repeat the clean live and installed checks on additional VirtualBox configurations and physical hardware. The [validation notes](validation.md) cover the tested r4 unencrypted and encrypted UEFI installations.
 - Make first login consistently show the intended desktop. Test the display, audio, Wi-Fi, Bluetooth and suspend behavior on representative hardware. Verify Secure Boot separately.
 
 ## Desktop and system controls
