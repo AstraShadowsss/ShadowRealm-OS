@@ -10,17 +10,18 @@ ShadowRealm-OS is a Debian 13 and Xfce desktop with a recognizable visual identi
 
 ## Desktop and system controls
 
-Desktop 0.2.12 includes searchable settings, the updated Professional theme, movable and resizable widgets, independent Clock and Calendar, saved Notes, and a dock auto-fit control. These are available through signed APT updates.
+Desktop 0.2.13 includes Local Search, searchable settings, the updated Professional theme, movable and resizable widgets, independent Clock and Calendar, saved Notes, and a dock auto-fit control. These are available through signed APT updates.
 - Show current state at the point of action. Explain whether Bluetooth is off or an adapter is missing and why an administrative action failed. Provide visible keyboard focus, readable toggle labels, and clear confirmation for changes that can interrupt connectivity.
 - Check the settings on smaller displays and with larger text. Carry the same focus and status conventions into the remaining system windows.
 - Keep the dock's drag-and-drop behavior consistent on smaller displays. Add local search and make any online weather lookups optional.
 
 ## Implementation order
 
-1. Desktop search for local files and settings alongside the existing application search.
-2. An opt-in weather widget with a manually chosen location and a clear provider setting.
-3. Privacy controls and an optional rootless container setup.
-4. Optional gaming support, including Steam, Proton, Vulkan and controllers.
+Local Search is available in desktop 0.2.13.
+
+1. An opt-in weather widget with a manually chosen location and a clear provider setting.
+2. Privacy controls and an optional rootless container setup.
+3. Optional gaming support, including Steam, Proton, Vulkan and controllers.
 
 Installer guidance, first-run transparency and hardware validation are tracked separately.
 
@@ -42,7 +43,7 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 | Control Center | Check keyboard navigation, smaller displays, and large text across themes | Find and open common tools without clipped controls |
 | Dock | Check physical multi-monitor and hot-plug behavior. Small screen and auto-hide passed in VirtualBox. | Verify drop placement, launching, removal, and saved order across logins and upgrades |
 | Widgets | Check multi-monitor placement, time-zone changes, and large text | Widgets remain reachable after monitor changes, and user layouts and notes persist |
-| Local search | Find files and settings from the desktop using explicitly chosen folders | Test file names, settings, exclusions, canceling and keyboard navigation with networking disabled |
+| Local Search follow-up | Check keyboard navigation and canceling on larger folders | Repeat the Xfce workflow with networking disabled and inspect accessibility |
 | Weather | Add an opt-in widget with manual location and a visible provider | Confirm requests stop when disabled and handle offline and unknown-location states clearly |
 | Installer guidance | Explain disk choices, encryption and first boot inside the installer | Test the explanation in fresh encrypted and unencrypted installs and confirm it appears before disk changes |
 | First-run transparency | Summarize installed software, services and update sources with links to detail | Users can dismiss the screen, reopen it, and reach the relevant controls |
