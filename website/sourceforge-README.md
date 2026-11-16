@@ -30,8 +30,4 @@ Verify the ISO against SHA256SUMS before writing a USB drive or attaching it in 
 
 ![ShadowRealm-OS desktop](https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/desktop.png)
 
-
-The r3 installer corrects the installed-login permission failure in the withdrawn r2 ISO. A complete fresh encrypted installation and graphical login passed. Existing installations can use the recovery guide in the GitHub documentation.
-
-
-R4 makes the live-media restart/removal instructions visible. Let the live-session shutdown finish, remove the installation media when requested, then press Enter once if prompted. Normal installed restarts keep their themed splash.
+At the end of installation, wait for the media-removal prompt, remove the USB drive or eject the virtual disc, then press Enter. The current r4 image passed a fresh encrypted UEFI installation in VirtualBox, including a signed update and encrypted restart. [Validation results](https://astrashadowsss.github.io/ShadowRealm-OS/docs/validation.html).
