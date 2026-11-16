@@ -50,7 +50,7 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
  write(root,'usr/share/glib-2.0/schemas/90-shadowrealm-os.gschema.override',"[org.gnome.desktop.interface]\ncolor-scheme='prefer-dark'\n")
  runtime=root/'usr/share/shadowrealm-os/desktop/runtime/bin'
  runtime.mkdir(parents=True,exist_ok=True)
- names='shadow-account shadow_account_preflight.py shadow_airplane.py shadow-appearance shadow-appearance-apply shadow_appearance_desktop.py shadow-audio-panel shadow-browser shadow-dock-settings shadow_effects.py shadow-files shadow_network_tools.py shadow-notes shadow-screenshot shadow-software shadow-system-panels shadow-terminal shadow-trash shadow_whole_theme.py'.split()
+ names='local-file-search.py shadow-account shadow_account_preflight.py shadow_airplane.py shadow-appearance shadow-appearance-apply shadow_appearance_desktop.py shadow-audio-panel shadow-browser shadow-dock-settings shadow_effects.py shadow-files shadow_network_tools.py shadow-notes shadow-screenshot shadow-software shadow-system-panels shadow-terminal shadow-trash shadow_whole_theme.py'.split()
  for name in names:
   target=runtime/name
   shutil.copyfile(src/name,target);target.chmod(0o644 if target.suffix=='.py' else 0o755)
@@ -61,6 +61,7 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
   shutil.copyfile(src/name,runtime/name);(runtime/name).chmod(0o755)
  shutil.copyfile(src/'shadowrealm-os-desktop.py',root/'usr/bin/shadowrealm-os-desktop')
  (root/'usr/bin/shadowrealm-os-desktop').chmod(0o755)
+ write(root,'usr/share/applications/org.shadowrealm_os.local-search.desktop','[Desktop Entry]\nType=Application\nName=Local Search\nComment=Find files and desktop settings\nExec=shadowrealm-os-desktop search\nIcon=system-search\nCategories=Utility;FileTools;\n')
  write(root,'etc/skel/.config/shadowrealm-os/transparency.ini','[Appearance]\nterminal-opacity=84\nwidget-opacity=88\nwindow-opacity=100\nmenu-opacity=100\npanel-opacity=100\ndock-opacity=0\n')
  write(root,'etc/xdg/autostart/shadow-link.desktop','[Desktop Entry]\nType=Application\nName=ShadowRealm-OS Widgets\nExec=shadowrealm-os-desktop widgets\nOnlyShowIn=XFCE;\nNoDisplay=true\n')
  write(root,'etc/xdg/autostart/shadowrealm-os-session.desktop','[Desktop Entry]\nType=Application\nName=ShadowRealm-OS Desktop Session\nExec=shadowrealm-os-desktop session\nOnlyShowIn=XFCE;\nNoDisplay=true\n')

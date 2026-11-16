@@ -1,5 +1,9 @@
 # Release notes
 
+## Desktop update 0.2.13
+
+- Add Local Search for file names in a folder you choose. Open matches with their normal applications or send the same query to Control Center to find a setting.
+
 ## Desktop 0.2.12 and panel 0.2.1
 
 - Keep neighboring widgets in place when moving or resizing a widget.

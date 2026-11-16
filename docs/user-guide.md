@@ -2,6 +2,10 @@
 
 Open the application menu at the upper left. Categories group programs by purpose; favorites and dock entries can be edited. Third-party applications keep their own names and icons. Desktop right-click actions create folders, documents and launchers; Trash uses the normal desktop file services.
 
+## Local Search
+
+Open **Local Search** from the Applications menu. Choose a folder and search by file name, then double-click a result or press Enter on a selected row to open it. **Find Settings** opens Control Center with the same query. The file search runs on demand without an index and skips hidden files and symbolic links.
+
 ## Control Center
 
 Open **Shadow Control Center** to browse settings by section. Press **Ctrl+F** to find a setting by name or description. Use **Desktop → Dock** to change its size and visibility. **Fit dock to launchers** lets the dock expand as items are added. **Edit dock launchers and position** opens the dock’s panel preferences. Use the **Items** tab there to add, reorder or remove launchers. In the Applications menu, right-click an app and select **Pin to Dock** to add it. You can also drag a launcher along the dock to reorder it. Drag an application from the menu or a shortcut from the desktop onto the dock, then choose **Create Launcher**.

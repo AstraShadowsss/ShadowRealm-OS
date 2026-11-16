@@ -25,6 +25,10 @@ On that encrypted installation, **Software & Updates → System Updates → Inst
 
 Panel 0.2.1 reordered launchers at 800 × 600 and accepted a desktop shortcut while the dock was set to always hide. The shortcut appeared in the dock configuration after confirming its placement. In a separate XRandR layout with two logical regions, the dock stayed on the primary region and could reveal and reorder launchers. A second independent VirtualBox output did not activate in this live session. Physical multi-monitor and hot-plug checks remain open.
 
+## Local Search
+
+Desktop 0.2.13 built and installed over the r4 baseline in a disposable Debian 13/Xfce live session. The package audit was clean. The application menu launched Local Search, a test file in Documents appeared and opened in Mousepad, and Find Settings passed the query to the existing Control Center. A search against the live filesystem also verified that ordinary files are found when their filesystem metadata differs from the parent directory.
+
 ## Limits
 
 This is a beta. Physical hardware, Secure Boot, shared-ESP dual boot, suspend/resume and real Bluetooth-radio certification remain unperformed. First sign-in prepares per-user artwork and can briefly show the Xfce background. Matching source and third-party notices accompany the release; notice-file coverage is not legal certification.

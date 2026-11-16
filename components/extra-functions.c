@@ -180,6 +180,9 @@ static void controls(void)
     g_signal_connect(window, "key-press-event", G_CALLBACK(control_search_shortcut), search);
     gtk_widget_show_all(window);
     gtk_widget_hide(empty);
+    const char *initial_query = g_getenv("SHADOWREALM_SETTINGS_QUERY");
+    if (initial_query && *initial_query)
+        gtk_entry_set_text(GTK_ENTRY(search), initial_query);
     gtk_widget_grab_focus(search);
 }
 static char*shield_text(void){GString*s=g_string_new("SHADOW SHIELD / LOCAL SECURITY INVENTORY\n\n");char b[4096];FILE*f;char*nft=g_find_program_in_path("nft");g_string_append_printf(s,"Firewall tooling:  %s\n",nft?"nft present; rules need administrator verification":"nft not installed");g_free(nft);g_string_append(s,"Firewall status:   NOT VERIFIED\n\n");f=fopen("/sys/module/apparmor/parameters/enabled","r");if(f){if(fgets(b,sizeof b,f))g_string_append_printf(s,"AppArmor kernel:   %s\n",b[0]=='Y'?"enabled; policy enforcement not verified":"not enabled");fclose(f);}else g_string_append(s,"AppArmor kernel:   unavailable / not verified\n");f=fopen("/sys/fs/selinux/enforce","r");if(f){int ch=fgetc(f);fclose(f);g_string_append_printf(s,"SELinux:           %s\n",ch=='1'?"enforcing":"permissive");}else g_string_append(s,"SELinux:           not detected\n");g_string_append(s,"Disk encryption:   NOT VERIFIED\n");refresh_stats();g_string_append_printf(s,"Network interface: %s\nLocal IP address:  %s\n",iftext,iptext);g_string_append_printf(s,"VPN interface:     %s\n",vpn);g_string_append(s,"Tor readiness:     NOT VERIFIED\n\nVPN interface detection does not verify traffic routing.\nThis page reports evidence, not a security guarantee.\nNo firewall or account settings are changed here.\n");return g_string_free(s,FALSE);}

@@ -13,6 +13,7 @@ from pathlib import Path
 
 PAYLOAD = Path("/usr/share/shadowrealm-os/desktop")
 COMMANDS = {
+    "search": ("local-file-search.py", "--gui"),
     "clock": ("gnome-clocks",),
     "control-center": ("shadow-link", "--control-center"),
     "appearance": ("shadow-appearance",),
@@ -314,6 +315,8 @@ def main():
     command, *args = COMMANDS[action]
     binary = base / "bin" / command
     os.environ["PATH"] = str(base / "bin") + ":" + os.environ.get("PATH", "/usr/bin:/bin")
+    if binary.suffix == ".py":
+        os.execv(sys.executable, [sys.executable, str(binary), *args])
     os.execv(binary, [str(binary), *args])
 
 
