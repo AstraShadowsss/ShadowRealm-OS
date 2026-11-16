@@ -55,6 +55,10 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 ### Widgets and system tools
 
+| Clock | Calendar | Notes |
+| --- | --- | --- |
+| ![Clock widget showing the time](screenshots/widget-clock.png) | ![Calendar widget showing the month](screenshots/widget-calendar.png) | ![Notes widget showing saved notes](screenshots/widget-notes.png) |
+
 ![Separate Clock, Calendar and Notes widgets alongside their settings](screenshots/widget-settings-professional.png)
 
 ![System Overview, Network, Processes and Shadow Shield](screenshots/widgets.png)
