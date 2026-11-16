@@ -15,8 +15,18 @@ Desktop 0.2.12 includes searchable settings, the updated Professional theme, mov
 - Check the settings on smaller displays and with larger text. Carry the same focus and status conventions into the remaining system windows.
 - Keep the dock's drag-and-drop behavior consistent on smaller displays. Add local search and make any online weather lookups optional.
 
+## Implementation order
+
+1. Desktop search for local files and settings alongside the existing application search.
+2. An opt-in weather widget with a manually chosen location and a clear provider setting.
+3. Privacy controls and an optional rootless container setup.
+4. Optional gaming support, including Steam, Proton, Vulkan and controllers.
+
+Installer guidance, first-run transparency and hardware validation are tracked separately.
+
 ## Transparency and optional tools
 
+- Add short installer guidance before partitioning. Explain what each disk option changes, when encryption asks for a separate passphrase, and how to remove the installation media before the first boot.
 - Design a dismissible first-run screen that summarizes what is installed, which services are active, and what network access users should expect. Link to the full package list and explain update sources.
 - Extend the existing Shadow Shield where useful. Test DNS and MAC privacy settings against real connection behavior and show the limits of each setting.
 - Offer optional gaming, development and container profiles with clear package sources, service changes and uninstall behavior. Evaluate Steam, Proton and Linux controller support independently of the built-in games. Evaluate rootless containers as an optional development setup.
@@ -30,9 +40,11 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 | --- | --- | --- |
 | First login | Apply the branded wallpaper early and show a clear state while optional setup finishes | Time a first login and a later login on a fresh account |
 | Control Center | Check keyboard navigation, smaller displays, and large text across themes | Find and open common tools without clipped controls |
-| Dock | Check drag reorder and shortcut drops on smaller displays, a hidden dock and multiple monitors. | Verify drop placement, launching, removal, and saved order across logins and upgrades |
+| Dock | Check physical multi-monitor and hot-plug behavior. Small screen and auto-hide passed in VirtualBox. | Verify drop placement, launching, removal, and saved order across logins and upgrades |
 | Widgets | Check multi-monitor placement, time-zone changes, and large text | Widgets remain reachable after monitor changes, and user layouts and notes persist |
-| Weather and search | Add a manual weather location and local app search, then evaluate file and online providers | Show which requests leave the device and allow the user to turn them off |
+| Local search | Find files and settings from the desktop using explicitly chosen folders | Test file names, settings, exclusions, canceling and keyboard navigation with networking disabled |
+| Weather | Add an opt-in widget with manual location and a visible provider | Confirm requests stop when disabled and handle offline and unknown-location states clearly |
+| Installer guidance | Explain disk choices, encryption and first boot inside the installer | Test the explanation in fresh encrypted and unencrypted installs and confirm it appears before disk changes |
 | First-run transparency | Summarize installed software, services and update sources with links to detail | Users can dismiss the screen, reopen it, and reach the relevant controls |
 | Privacy controls | Audit outbound connections and add clear DNS, MAC randomization, permission and metadata controls where useful | Record what changes per connection, after reconnect and after reboot |
 | Software profiles | Start with one optional profile and show packages, source, disk space and services | Install and remove it on a clean system while preserving personal data |

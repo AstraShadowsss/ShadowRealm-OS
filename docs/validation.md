@@ -21,6 +21,10 @@ A fresh VirtualBox install from the checksum-verified r4 ISO used Calamares auto
 
 On that encrypted installation, **Software & Updates → System Updates → Install Debian Updates** completed with exit code 0. The transaction applied 58 upgrades, installed one new kernel package and removed zero packages. ShadowRealm-OS desktop advanced from 0.2.3 to 0.2.11 and artwork from 0.2.3 to 0.2.4. The package audit was clean, the desktop package was marked manually installed, and no system units were in the failed state. Restarting from the desktop accepted the disk and account passwords again. Terminal and the live widgets worked on the updated kernel, 6.12.117+deb13-amd64, with the root filesystem still encrypted.
 
+## Dock display checks
+
+Panel 0.2.1 reordered launchers at 800 × 600 and accepted a desktop shortcut while the dock was set to always hide. The shortcut appeared in the dock configuration after confirming its placement. In a separate XRandR layout with two logical regions, the dock stayed on the primary region and could reveal and reorder launchers. A second independent VirtualBox output did not activate in this live session. Physical multi-monitor and hot-plug checks remain open.
+
 ## Limits
 
 This is a beta. Physical hardware, Secure Boot, shared-ESP dual boot, suspend/resume and real Bluetooth-radio certification remain unperformed. First sign-in prepares per-user artwork and can briefly show the Xfce background. Matching source and third-party notices accompany the release; notice-file coverage is not legal certification.
