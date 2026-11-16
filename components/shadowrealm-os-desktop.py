@@ -72,6 +72,29 @@ def write_default(path, text):
         pass
 
 
+def refresh_corridor_wallpapers(home, payload):
+    manifest = payload / "corridor-wallpaper-previous.json"
+    marker = home / ".local/state/shadowrealm-os/corridor-wallpapers-v1"
+    target = home / "Pictures/Backgrounds"
+    if marker.exists() or not manifest.is_file() or not target.resolve().is_relative_to(home.resolve()):
+        return
+    for name, previous_hash in json.loads(manifest.read_text()).items():
+        source = payload / "wallpapers" / name
+        existing = target / name
+        if existing.is_symlink() or not existing.is_file() or not source.is_file():
+            continue
+        if hashlib.sha256(existing.read_bytes()).hexdigest() != previous_hash:
+            continue
+        with tempfile.NamedTemporaryFile(dir=target, delete=False) as temp:
+            temporary = Path(temp.name)
+        try:
+            shutil.copy2(source, temporary)
+            os.replace(temporary, existing)
+        finally:
+            temporary.unlink(missing_ok=True)
+    write_default(marker, "1\n")
+
+
 def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
     base = home / ".local/share/shadow-link"
     cfg = home / ".config/shadowrealm-os"
@@ -152,6 +175,7 @@ def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
             finally:
                 Path(temp.name).unlink(missing_ok=True)
     if marker.is_file():
+        refresh_corridor_wallpapers(home, payload)
         return base
     copy_defaults(payload / "runtime", base)
     copy_defaults(payload / "wallpapers", home / "Pictures/Backgrounds")

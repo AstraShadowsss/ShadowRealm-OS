@@ -91,7 +91,7 @@ static void reflow_widgets(void)
     gdk_monitor_get_workarea(primary, &area);
     int total = 0;
     for (int i = 0; i < WIDGET_COUNT; i++) {
-        if (widget_enabled(i) && !widget_layout[i].positioned)
+        if (widget_enabled(i))
             total += widget_heights[i] + 12;
     }
     double size = CLAMP((area.height - 85) / 685., .68, 1.2) *
@@ -101,20 +101,22 @@ static void reflow_widgets(void)
     int margin = CLAMP(widget_integer("RightMargin", 12), 0, 150);
     int y = area.y + 20;
     for (int i = 0; i < WIDGET_COUNT; i++) {
-        if (!cardwindows[i] || i == widget_drag.index)
-            continue;
         if (!widget_enabled(i)) {
-            gtk_widget_hide(cardwindows[i]);
+            if (cardwindows[i])
+                gtk_widget_hide(cardwindows[i]);
             continue;
         }
+        int slot_y = y;
+        y += (int)((widget_heights[i] + 12) * size);
+        if (!cardwindows[i] || i == widget_drag.index)
+            continue;
         WidgetLayout *layout = &widget_layout[i];
         int width = layout->width > 0 ? layout->width : MAX(1, (int)(270 * size));
         if (layout->positioned) {
             GdkMonitor *monitor = gdk_display_get_monitor_at_point(display, layout->x, layout->y);
             widget_geometry(i, monitor ? monitor : primary, layout->x, layout->y, width);
         } else {
-            widget_geometry(i, primary, area.x + area.width - width - margin, y, width);
-            y += (int)((widget_heights[i] + 12) * size);
+            widget_geometry(i, primary, area.x + area.width - width - margin, slot_y, width);
         }
         gtk_widget_show(cardwindows[i]);
     }

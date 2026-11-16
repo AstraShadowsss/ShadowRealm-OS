@@ -2,7 +2,7 @@
 # Build the same patched Xfce panel used by the reference desktop.
 set -euo pipefail
 src=$(cd -- "$(dirname -- "$0")" && pwd)
-version=$(cat "$src/VERSION")
+version=$(cat "$src/PANEL_VERSION")
 out=${1:?Usage: build-panel.sh OUTPUT_DIRECTORY}
 mkdir -p "$out";out=$(cd "$out" && pwd)
 work=$(mktemp -d)

@@ -10,10 +10,10 @@ ShadowRealm-OS is a Debian 13 and Xfce desktop with a recognizable visual identi
 
 ## Desktop and system controls
 
-Desktop 0.2.11 includes searchable settings, the updated Professional theme, movable and resizable widgets, independent Clock and Calendar, saved Notes, and a dock auto-fit control. These are available through signed APT updates.
+Desktop 0.2.12 includes searchable settings, the updated Professional theme, movable and resizable widgets, independent Clock and Calendar, saved Notes, and a dock auto-fit control. These are available through signed APT updates.
 - Show current state at the point of action. Explain whether Bluetooth is off or an adapter is missing and why an administrative action failed. Provide visible keyboard focus, readable toggle labels, and clear confirmation for changes that can interrupt connectivity.
 - Check the settings on smaller displays and with larger text. Carry the same focus and status conventions into the remaining system windows.
-- Add direct drag-and-drop dock editing. Keep all launchers removable. Add local search and make any online weather lookups optional.
+- Keep the dock's drag-and-drop behavior consistent on smaller displays. Add local search and make any online weather lookups optional.
 
 ## Transparency and optional tools
 
@@ -30,7 +30,7 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 | --- | --- | --- |
 | First login | Apply the branded wallpaper early and show a clear state while optional setup finishes | Time a first login and a later login on a fresh account |
 | Control Center | Check keyboard navigation, smaller displays, and large text across themes | Find and open common tools without clipped controls |
-| Dock | Drag launchers to reorder them in place. Drop shortcuts from the desktop or Applications menu at the desired position. Expand the dock as items are added. | Verify drop placement, launching, removal, and saved order across logins and upgrades |
+| Dock | Check drag reorder and shortcut drops on smaller displays, a hidden dock and multiple monitors. | Verify drop placement, launching, removal, and saved order across logins and upgrades |
 | Widgets | Check multi-monitor placement, time-zone changes, and large text | Widgets remain reachable after monitor changes, and user layouts and notes persist |
 | Weather and search | Add a manual weather location and local app search, then evaluate file and online providers | Show which requests leave the device and allow the user to turn them off |
 | First-run transparency | Summarize installed software, services and update sources with links to detail | Users can dismiss the screen, reopen it, and reach the relevant controls |

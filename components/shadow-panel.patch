@@ -197,3 +197,96 @@
  panel_dbus_service_add_new_item (XfcePanelExportedService *skeleton,
                                   GDBusMethodInvocation *invocation,
                                   const gchar *plugin_name,
+--- a/plugins/launcher/launcher.c
++++ b/plugins/launcher/launcher.c
+@@ -346,0 +347,40 @@
++
++static void
++launcher_plugin_dock_drag_data (GtkWidget *button,
++                                GdkDragContext *context,
++                                GtkSelectionData *data,
++                                guint info,
++                                guint time,
++                                gpointer user_data)
++{
++  gtk_selection_data_set (data, gtk_selection_data_get_target (data),
++                          8, (const guchar *) "0", 1);
++}
++
++static void
++launcher_plugin_dock_hierarchy_changed (GtkWidget *widget,
++                                        GtkWidget *previous_toplevel,
++                                        LauncherPlugin *plugin)
++{
++  GtkWidget *toplevel = gtk_widget_get_toplevel (widget);
++  GParamSpec *property = g_object_class_find_property (G_OBJECT_GET_CLASS (toplevel), "id");
++  gint panel_id = -1;
++  const GtkTargetEntry target = { "xfce-panel/plugin-widget", GTK_TARGET_SAME_APP, 0 };
++
++  if (property != NULL && G_PARAM_SPEC_VALUE_TYPE (property) == G_TYPE_INT)
++    g_object_get (toplevel, "id", &panel_id, NULL);
++
++  if (panel_id == 2)
++    {
++      gtk_drag_source_set (plugin->button, GDK_BUTTON1_MASK, &target, 1, GDK_ACTION_MOVE);
++      /* Let the panel place dropped shortcuts between dock items. */
++      gtk_drag_dest_unset (plugin->button);
++      gtk_drag_dest_unset (plugin->arrow);
++    }
++  else
++    {
++      gtk_drag_source_unset (plugin->button);
++      gtk_drag_dest_set (plugin->button, 0, NULL, 0, 0);
++      gtk_drag_dest_set (plugin->arrow, 0, NULL, 0, 0);
++    }
++}
+@@ -436,0 +477,4 @@
++  g_signal_connect (plugin->button, "drag-data-get",
++                    G_CALLBACK (launcher_plugin_dock_drag_data), NULL);
++  g_signal_connect (plugin, "hierarchy-changed",
++                    G_CALLBACK (launcher_plugin_dock_hierarchy_changed), plugin);
+--- a/panel/panel-application.c
++++ b/panel/panel-application.c
+@@ -976,3 +976,9 @@
+-
+-          /* debug check */
+-          panel_return_if_fail (XFCE_IS_PANEL_PLUGIN_PROVIDER (provider));
++          if (provider != NULL && !XFCE_IS_PANEL_PLUGIN_PROVIDER (provider))
++            {
++              /* A direct dock drag starts on the button inside its provider. */
++              provider = gtk_widget_get_ancestor (provider, XFCE_TYPE_PANEL_PLUGIN_PROVIDER);
++              if (provider == NULL || gtk_widget_get_parent (provider) != itembar)
++                break;
++            }
++          if (provider == NULL)
++            break;
+@@ -1074,2 +1080,10 @@
+-invalid_drag:
+-      gdk_drag_status (context, 0, drag_time);
++      if (panel_window_get_id (window) == 2 && application->drop_desktop_files)
++        {
++          panel_itembar_set_drop_highlight_item (PANEL_ITEMBAR (itembar), application->drop_index);
++          gdk_drag_status (context, GDK_ACTION_COPY, drag_time);
++        }
++      else
++        {
++invalid_drag:
++          gdk_drag_status (context, 0, drag_time);
++        }
+@@ -1112,1 +1126,7 @@
++          /* Keep the first dock hover position while the source replies. */
++          if (panel_window_get_id (PANEL_WINDOW (window)) == 2)
++            {
++              itembar = gtk_bin_get_child (GTK_BIN (window));
++              application->drop_index = panel_itembar_get_drop_index (PANEL_ITEMBAR (itembar), x, y);
++            }
+           /* request the drop data from the source */
+@@ -1131,2 +1137,6 @@
+-      /* move an existing plugin */
+-      drag_action = GDK_ACTION_MOVE;
++      GtkWidget *source = gtk_drag_get_source_widget (context);
++      /* Direct dock drags stay within the dock. The panel's Move action
++       * can still move a complete plugin between panels. */
++      if (source != NULL && (XFCE_IS_PANEL_PLUGIN_PROVIDER (source)
++                            || gtk_widget_get_toplevel (source) == window))
++        drag_action = GDK_ACTION_MOVE;

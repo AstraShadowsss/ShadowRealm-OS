@@ -28,6 +28,7 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
  run('tar','-xzf',str(src/'shadowrealm-os-desktop-defaults-source.tar.gz'),'-C',str(root))
  walls=root/'usr/share/shadowrealm-os/desktop/wallpapers';walls.mkdir(parents=True,exist_ok=True)
  run('tar','-xzf',str(src/'shadowrealm-os-walker-wallpapers.tar.gz'),'-C',str(walls))
+ shutil.copyfile(src/'corridor-wallpaper-previous.json',walls.parent/'corridor-wallpaper-previous.json')
  seed_panel(root)
  # Seed the complete first-login appearance before xfwm/settings start.
  # Both themes are installed system-wide, so provisioning order cannot cause fallback.

@@ -1,5 +1,11 @@
 # Release notes
 
+## Desktop 0.2.12 and panel 0.2.1
+
+- Keep neighboring widgets in place when moving or resizing a widget.
+- Restore cyan and magenta throughout the Neon circuit corridor and extend the circuit traces toward the SR emblem across all seven branded palettes.
+- Drag dock launchers to reorder them, or drop a shortcut from the desktop or Applications menu and confirm its placement.
+
 ## Desktop update 0.2.11 (2026-11-15)
 
 - Split Clock and Calendar into independently positioned and configurable widgets.

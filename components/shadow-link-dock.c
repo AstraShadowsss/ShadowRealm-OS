@@ -344,7 +344,12 @@ static void pin_app(GtkMenuItem*i,gpointer data){App*a=data;char*src=launcher_fi
  g_object_unref(f);g_object_unref(to);g_free(name);g_free(src);g_free(dst);
 }
 static void app_context_done(GtkWidget*w,gpointer data){menu_interacting=FALSE;gtk_widget_destroy(w);menu_close(NULL,NULL);}
-static void app_drag_begin(GtkWidget*w,GdkDragContext*c,gpointer data){menu_interacting=TRUE;}
+static void app_drag_begin(GtkWidget *widget, GdkDragContext *context, gpointer data)
+{
+    menu_interacting = TRUE;
+    if (menu_window)
+        gtk_window_set_keep_above(GTK_WINDOW(menu_window), FALSE);
+}
 static void app_drag_end(GtkWidget*w,GdkDragContext*c,gpointer data){menu_interacting=FALSE;menu_close(NULL,NULL);}
 #include "menu-sizing-orbital.c"
 
