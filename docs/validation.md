@@ -32,3 +32,7 @@ Desktop 0.2.13 built and installed over the r4 baseline in a disposable Debian 1
 ## Limits
 
 This is a beta. Physical hardware, Secure Boot, shared-ESP dual boot, suspend/resume and real Bluetooth-radio certification remain unperformed. First sign-in prepares per-user artwork and can briefly show the Xfce background. Matching source and third-party notices accompany the release; notice-file coverage is not legal certification.
+
+## Encrypted DNS on installed r4
+
+A fresh UEFI installation from r4 booted from disk in VirtualBox. Before changing the DNS setting, a lookup used ordinary DNS despite the DNSCrypt service running. Desktop 0.2.14 installed cleanly over the bundled desktop package. Its DNS control switched the system resolver to the local DNSCrypt listener before returning success. The next lookups resolved, and a separate capture contained HTTPS upstream traffic and zero outgoing TCP or UDP port 53 packets.

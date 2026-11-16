@@ -6,6 +6,7 @@ import secrets
 import socket
 import struct
 import subprocess
+import time
 
 import gi
 gi.require_version("Gtk", "3.0")
@@ -108,6 +109,8 @@ def change_dns(device, mode, v4, v6):
         nm("connection", "modify", "uuid", uuid,
            *(token for pair in zip(DNS_FIELDS, values) for token in pair))
     if target == previous:
+        if mode == "encrypted":
+            wait_for_encrypted_dns(device)
         return "This DNS setting is already saved."
     if active_profile(device) != uuid:
         raise RuntimeError("The active connection changed. Reload the DNS page and try again.")
@@ -116,7 +119,9 @@ def change_dns(device, mode, v4, v6):
         if active_profile(device) != uuid:
             raise RuntimeError("The active connection changed before DNS could be applied.")
         nm("device", "reapply", device)
-    except (RuntimeError, subprocess.TimeoutExpired) as error:
+        if mode == "encrypted":
+            wait_for_encrypted_dns(device)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
         try:
             modify(previous)
             if active_profile(device) == uuid:
@@ -125,6 +130,19 @@ def change_dns(device, mode, v4, v6):
             raise RuntimeError(f"{error} Restore failed: {restore}") from error
         raise RuntimeError(f"{error} The original DNS settings were restored.") from error
     return "DNS applied to the active connection."
+
+
+def wait_for_encrypted_dns(device):
+    deadline = time.monotonic() + 8
+    while time.monotonic() < deadline:
+        effective = nm("-g", "IP4.DNS,IP6.DNS", "device", "show", device, timeout=2)
+        with open("/etc/resolv.conf", encoding="utf-8") as config:
+            resolvers = [fields[1] for line in config if len(fields := line.split()) >= 2
+                         and fields[0] == "nameserver"]
+        if effective.splitlines() == [LOCAL_PROXY] and resolvers == [LOCAL_PROXY]:
+            return
+        time.sleep(0.25)
+    raise RuntimeError("System DNS did not switch exclusively to DNSCrypt.")
 
 
 def label(box, message):

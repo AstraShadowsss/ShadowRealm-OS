@@ -35,7 +35,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 - Customizable login backgrounds, optional original session chimes and three screensaver animations with standard XFCE locking.
 - Nine offline games, including Shadow Pinball, Skull Invaders, Shadow Runner, Circuit Chase, Snake, Shadow Spider Solitaire, Neon Ascent, Neon Breaker and Marble Reactor. Scores and settings stay local.
 
-**Desktop 0.2.13** adds Local Search for files and settings. Recent signed updates also include stable widget placement, refreshed circuit corridor wallpapers, and drag-and-drop dock editing. Install them through Software & Updates. [Release notes](CHANGELOG.md)
+**Desktop 0.2.14** fixes Encrypted DNS reporting success before the resolver switches. Recent signed updates also include Local Search, stable widget placement, refreshed circuit corridor wallpapers, and drag-and-drop dock editing. Install them through Software & Updates. [Release notes](CHANGELOG.md)
 
 ## Screenshots
 

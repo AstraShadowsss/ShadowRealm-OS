@@ -1,5 +1,9 @@
 # Release notes
 
+## Desktop update 0.2.14
+
+- Wait for the active connection and system resolver to switch to DNSCrypt before confirming Encrypted DNS. Restore the previous settings if the switch fails.
+
 ## Desktop update 0.2.13
 
 - Add Local Search for file names in a folder you choose. Open matches with their normal applications or send the same query to Control Center to find a setting.
