@@ -19,9 +19,10 @@ Desktop 0.2.13 includes Local Search, searchable settings, the updated Professio
 
 Local Search is available in desktop 0.2.13.
 
-1. An opt-in weather widget with a manually chosen location and a clear provider setting.
-2. Privacy controls and an optional rootless container setup.
-3. Optional gaming support, including Steam, Proton, Vulkan and controllers.
+An opt-in Weather widget is available in desktop 0.2.15.
+
+1. Privacy controls and an optional rootless container setup.
+2. Optional gaming support, including Steam, Proton, Vulkan and controllers.
 
 Installer guidance, first-run transparency and hardware validation are tracked separately.
 

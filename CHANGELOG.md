@@ -1,5 +1,9 @@
 # Release notes
 
+## Desktop update 0.2.15
+
+- Add an optional Weather widget with manually entered coordinates, forecasts from MET Norway, and a locally cached forecast for interrupted connections. Weather is off by default.
+
 ## Desktop update 0.2.14
 
 - Wait for the active connection and system resolver to switch to DNSCrypt before confirming Encrypted DNS. Restore the previous settings if the switch fails.

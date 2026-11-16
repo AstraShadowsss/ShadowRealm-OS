@@ -36,3 +36,7 @@ This is a beta. Physical hardware, Secure Boot, shared-ESP dual boot, suspend/re
 ## Encrypted DNS on installed r4
 
 A fresh UEFI installation from r4 booted from disk in VirtualBox. Before changing the DNS setting, a lookup used ordinary DNS despite the DNSCrypt service running. Desktop 0.2.14 installed cleanly over the bundled desktop package. Its DNS control switched the system resolver to the local DNSCrypt listener before returning success. The next lookups resolved, and a separate capture contained HTTPS upstream traffic and zero outgoing TCP or UDP port 53 packets.
+
+## Weather on installed r4
+
+Desktop 0.2.15 installed cleanly on a fresh r4 VirtualBox guest booted from disk. Weather stayed off after saving a location. In the test capture, traffic to the forecast provider appeared only after enabling Weather and again after reconnecting the guest. The widget displayed a forecast, showed a cached forecast with an offline label when the network was disconnected, and refreshed on reconnection. Disabling Weather hid the card.

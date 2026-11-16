@@ -34,19 +34,20 @@ enum { PROCESS_VISIBLE=6, PROCESS_MAX=256 };
 static ProcessRow process_rows[PROCESS_MAX];
 static int process_count, process_offset;
 static unsigned long long lasttotal,lastidle;
-enum { WIDGET_CLOCK = 4, WIDGET_CALENDAR, WIDGET_NOTES, WIDGET_COUNT };
-static const int widget_heights[WIDGET_COUNT] = {151, 145, 197, 163, 94, 196, 164};
+enum { WIDGET_CLOCK = 4, WIDGET_CALENDAR, WIDGET_NOTES, WIDGET_WEATHER, WIDGET_COUNT };
+static const int widget_heights[WIDGET_COUNT] = {151, 145, 197, 163, 94, 196, 164, 140};
 static GtkWidget *cards[WIDGET_COUNT], *cardwindows[WIDGET_COUNT];
 enum { WIDGET_BORDER, WIDGET_TEXT, WIDGET_BAR, WIDGET_GRAPH, WIDGET_COLOR_COUNT };
 static const char *widget_color_keys[] = {"Accent", "TextColor", "BarColor", "GraphColor"};
-static const char *widget_keys[] = {"System", "Network", "Processes", "Security", "ClockCalendar", "Calendar", "Notes"};
-static const char *widget_names[] = {"System overview", "Network", "Processes", "Shadow Shield", "Clock", "Calendar", "Notes"};
+static const char *widget_keys[] = {"System", "Network", "Processes", "Security", "ClockCalendar", "Calendar", "Notes", "Weather"};
+static const char *widget_names[] = {"System overview", "Network", "Processes", "Shadow Shield", "Clock", "Calendar", "Notes", "Weather"};
 static GdkRGBA widget_colors[WIDGET_COUNT][WIDGET_COLOR_COUNT];
 static gboolean widget_has_color[WIDGET_COUNT][WIDGET_COLOR_COUNT];
 static double widget_scale[WIDGET_COUNT];
 static int drawing_widget;
 static int widget_opacity[WIDGET_COUNT];
 static void widgets_read(void);
+static void update_weather_from_config(void);
 static gboolean widget_enabled(int i);
 static int widget_integer(const char*key,int fallback);
 static void reflow_widgets(void);
@@ -148,8 +149,9 @@ static void draw_widget_calendar(cairo_t *canvas)
     g_date_time_unref(now);
 }
 #include "widget-notes.c"
+#include "widget-weather.c"
 static gboolean draw(GtkWidget*w,cairo_t*c,gpointer p){int k=GPOINTER_TO_INT(p);drawing_widget=k;double scale=widget_scale[k]>0?widget_scale[k]:1;double ww=gtk_widget_get_allocated_width(w)/scale,hh=gtk_widget_get_allocated_height(w)/scale;cairo_set_operator(c,CAIRO_OPERATOR_SOURCE);cairo_set_source_rgba(c,0,0,0,0);cairo_paint(c);cairo_set_operator(c,CAIRO_OPERATOR_OVER);cairo_scale(c,scale,scale);
- const char *names[]={"SYSTEM OVERVIEW","NETWORK // LIVE","PROCESSES","SHADOW SHIELD","CLOCK","CALENDAR","NOTES"};char process_title[40];
+ const char *names[]={"SYSTEM OVERVIEW","NETWORK // LIVE","PROCESSES","SHADOW SHIELD","CLOCK","CALENDAR","NOTES","WEATHER"};char process_title[40];
  if(k==2&&process_count){
   g_snprintf(process_title,sizeof process_title,"PROCESSES  %d-%d/%d",
              process_offset+1,MIN(process_count,process_offset+PROCESS_VISIBLE),process_count);
@@ -162,6 +164,7 @@ static gboolean draw(GtkWidget*w,cairo_t*c,gpointer p){int k=GPOINTER_TO_INT(p);
  if(k==WIDGET_CLOCK)draw_widget_clock(c);
  if(k==WIDGET_CALENDAR)draw_widget_calendar(c);
  if(k==WIDGET_NOTES)draw_widget_notes(c);
+ if(k==WIDGET_WEATHER)draw_widget_weather(c);
  return FALSE;}
 static void refresh_stats(void){FILE*f=fopen("/proc/stat","r");unsigned long long u,n,s,id,iw,irq,si,st;if(f){if(fscanf(f,"cpu %llu %llu %llu %llu %llu %llu %llu %llu",&u,&n,&s,&id,&iw,&irq,&si,&st)==8){unsigned long long t=u+n+s+id+iw+irq+si+st,ii=id+iw;if(lasttotal&&t>lasttotal)cpu=100.*(1.-(double)(ii-lastidle)/(t-lasttotal));lasttotal=t;lastidle=ii;}fclose(f);}unsigned long mt=0,ma=0,ss=0,sf=0,v;char b[256],key[64];f=fopen("/proc/meminfo","r");if(f){while(fgets(b,sizeof b,f)){if(sscanf(b,"%63s %lu",key,&v)==2){if(!strcmp(key,"MemTotal:"))mt=v;if(!strcmp(key,"MemAvailable:"))ma=v;if(!strcmp(key,"SwapTotal:"))ss=v;if(!strcmp(key,"SwapFree:"))sf=v;}}fclose(f);}ram=mt?100.*(mt-ma)/mt:0;ram_used_mib=(mt-ma)/1024.;ram_total_mib=mt/1024.;swp=ss?100.*(ss-sf)/ss:0;struct statvfs fs;if(!statvfs("/",&fs)&&fs.f_blocks)diskpct=100.*(fs.f_blocks-fs.f_bfree)/fs.f_blocks;
  active_if[0]=0;strcpy(iptext,"NO ADDRESS");strcpy(iftext,"OFFLINE");strcpy(vpn,"NO ACTIVE INTERFACE");struct ifaddrs*a=NULL;if(!getifaddrs(&a)){for(struct ifaddrs*i=a;i;i=i->ifa_next){if(!i->ifa_addr||i->ifa_addr->sa_family!=AF_INET||!(i->ifa_flags&IFF_UP)||(i->ifa_flags&IFF_LOOPBACK))continue;if(!strncmp(i->ifa_name,"tun",3)||!strncmp(i->ifa_name,"wg",2)||!strncmp(i->ifa_name,"tap",3)){snprintf(vpn,sizeof vpn,"%s UP",i->ifa_name);continue;}snprintf(active_if,sizeof active_if,"%s",i->ifa_name);snprintf(iftext,sizeof iftext,"%s // UP",i->ifa_name);inet_ntop(AF_INET,&((struct sockaddr_in*)i->ifa_addr)->sin_addr,iptext,sizeof iptext);}freeifaddrs(a);}
@@ -179,7 +182,7 @@ static void refresh_stats(void){FILE*f=fopen("/proc/stat","r");unsigned long lon
  if(f)pclose(f);
  process_offset=CLAMP(process_offset,0,MAX(0,process_count-PROCESS_VISIBLE));
 }
-static gboolean tick(gpointer unused){double previous_opacity=widget_background_alpha;char*opacity_path=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","transparency.ini",NULL);GKeyFile*opacity=g_key_file_new();if(g_key_file_load_from_file(opacity,opacity_path,G_KEY_FILE_NONE,NULL)&&g_key_file_has_key(opacity,"Appearance","widget-opacity",NULL))widget_background_alpha=CLAMP(g_key_file_get_integer(opacity,"Appearance","widget-opacity",NULL),0,100)/100.;g_key_file_unref(opacity);g_free(opacity_path);if(fabs(previous_opacity-widget_background_alpha)>.001)for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);appearance_read();static gint64 previous=0;widgets_read();reflow_widgets();gint64 now=g_get_monotonic_time();int interval=CLAMP(widget_integer("RefreshSeconds",2),1,15);if(now-previous>=interval*1000000LL){refresh_stats();previous=now;char tip[160];snprintf(tip,sizeof tip,"RAM: %.0f MiB used of %.0f MiB (%.1f%%). Updated every %d seconds. Drag the header to move or the bottom-right corner to resize.",ram_used_mib,ram_total_mib,ram,interval);if(cards[0])gtk_widget_set_tooltip_text(cards[0],tip);gchar*sec=NULL;if(g_file_get_contents("/run/shadowrealm-os/security-status",&sec,NULL,NULL)){g_strlcpy(firewall_status,strstr(sec,"firewall=active")?"ACTIVE":"INACTIVE",sizeof firewall_status);g_strlcpy(policy_status,strstr(sec,"apparmor=enforcing")?"APPARMOR: ENFORCING":strstr(sec,"apparmor=enabled")?"APPARMOR: ENABLED":strstr(sec,"apparmor=available")?"APPARMOR: NO POLICY":"APPARMOR: NOT ACTIVE",sizeof policy_status);g_strlcpy(tor_status,strstr(sec,"tor=running")?"TOR: SERVICE RUNNING":strstr(sec,"tor=stopped")?"TOR: STOPPED":"TOR: NOT INSTALLED",sizeof tor_status);char*vi=strstr(sec,"vpn_interface=");if(vi){vi+=14;char*end=strchr(vi,'\n');int length=end?end-vi:strlen(vi);if(length>0)snprintf(vpn,sizeof vpn,"%.*s CONNECTED",MIN(length,20),vi);}g_free(sec);}for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);}return G_SOURCE_CONTINUE;}
+static gboolean tick(gpointer unused){double previous_opacity=widget_background_alpha;char*opacity_path=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","transparency.ini",NULL);GKeyFile*opacity=g_key_file_new();if(g_key_file_load_from_file(opacity,opacity_path,G_KEY_FILE_NONE,NULL)&&g_key_file_has_key(opacity,"Appearance","widget-opacity",NULL))widget_background_alpha=CLAMP(g_key_file_get_integer(opacity,"Appearance","widget-opacity",NULL),0,100)/100.;g_key_file_unref(opacity);g_free(opacity_path);if(fabs(previous_opacity-widget_background_alpha)>.001)for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);appearance_read();static gint64 previous=0;widgets_read();update_weather_from_config();reflow_widgets();gint64 now=g_get_monotonic_time();int interval=CLAMP(widget_integer("RefreshSeconds",2),1,15);if(now-previous>=interval*1000000LL){refresh_stats();previous=now;char tip[160];snprintf(tip,sizeof tip,"RAM: %.0f MiB used of %.0f MiB (%.1f%%). Updated every %d seconds. Drag the header to move or the bottom-right corner to resize.",ram_used_mib,ram_total_mib,ram,interval);if(cards[0])gtk_widget_set_tooltip_text(cards[0],tip);gchar*sec=NULL;if(g_file_get_contents("/run/shadowrealm-os/security-status",&sec,NULL,NULL)){g_strlcpy(firewall_status,strstr(sec,"firewall=active")?"ACTIVE":"INACTIVE",sizeof firewall_status);g_strlcpy(policy_status,strstr(sec,"apparmor=enforcing")?"APPARMOR: ENFORCING":strstr(sec,"apparmor=enabled")?"APPARMOR: ENABLED":strstr(sec,"apparmor=available")?"APPARMOR: NO POLICY":"APPARMOR: NOT ACTIVE",sizeof policy_status);g_strlcpy(tor_status,strstr(sec,"tor=running")?"TOR: SERVICE RUNNING":strstr(sec,"tor=stopped")?"TOR: STOPPED":"TOR: NOT INSTALLED",sizeof tor_status);char*vi=strstr(sec,"vpn_interface=");if(vi){vi+=14;char*end=strchr(vi,'\n');int length=end?end-vi:strlen(vi);if(length>0)snprintf(vpn,sizeof vpn,"%.*s CONNECTED",MIN(length,20),vi);}g_free(sec);}for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);}return G_SOURCE_CONTINUE;}
 #include "widget-layout.c"
 static gboolean process_scroll(GtkWidget *widget,GdkEventScroll *event,gpointer unused){
  (void)unused;

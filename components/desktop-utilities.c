@@ -59,7 +59,7 @@ static gboolean widget_enabled(int i)
 }
 static int widget_integer(const char*key,int fallback){return g_key_file_has_key(widget_config,"Widgets",key,NULL)?g_key_file_get_integer(widget_config,"Widgets",key,NULL):fallback;}
 static void widgets_save(void){gsize n;char*s=g_key_file_to_data(widget_config,&n,NULL),*p=widget_config_path();g_file_set_contents(p,s,n,NULL);g_free(p);g_free(s);}
-static void widget_toggle(GtkToggleButton*b,gpointer p){g_key_file_set_boolean(widget_config,"Widgets",p,gtk_toggle_button_get_active(b));widgets_save();}
+static void widget_toggle(GtkToggleButton*b,gpointer p){widgets_read();g_key_file_set_boolean(widget_config,"Widgets",p,gtk_toggle_button_get_active(b));widgets_save();}
 static void widget_spin(GtkSpinButton*b,gpointer p){g_key_file_set_integer(widget_config,"Widgets",p,gtk_spin_button_get_value_as_int(b));widgets_save();}
 typedef struct {
     int index, role;
@@ -144,12 +144,86 @@ static void widget_professional(GtkToggleButton *button, gpointer unused)
     g_spawn_command_line_async("shadowrealm-os-desktop sync-widgets", NULL);
 }
 
+static void update_weather_from_config(void)
+{
+    GError *latitude_error = NULL, *longitude_error = NULL;
+    double latitude = g_key_file_get_double(widget_config, "Weather", "Latitude", &latitude_error);
+    double longitude = g_key_file_get_double(widget_config, "Weather", "Longitude", &longitude_error);
+    weather_update(widget_enabled(WIDGET_WEATHER) && !latitude_error && !longitude_error,
+                   latitude, longitude);
+    g_clear_error(&latitude_error);
+    g_clear_error(&longitude_error);
+}
+
+static gboolean weather_coordinate(GtkWidget *entry, double limit, double *result)
+{
+    const char *input = gtk_entry_get_text(GTK_ENTRY(entry));
+    char *end = NULL;
+    *result = g_ascii_strtod(input, &end);
+    return end != input && !*end && isfinite(*result) && fabs(*result) <= limit;
+}
+
+static void weather_settings(GtkButton *button, gpointer unused)
+{
+    (void)unused;
+    GtkWindow *parent = GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button)));
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Weather location", parent, GTK_DIALOG_MODAL,
+                                                   "Cancel", GTK_RESPONSE_CANCEL,
+                                                   "Save location", GTK_RESPONSE_ACCEPT, NULL);
+    GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
+    gtk_container_set_border_width(GTK_CONTAINER(content), 14);
+    GtkWidget *notice = gtk_label_new("When the Weather widget is enabled, rounded coordinates are sent to MET Norway for the forecast. Enter a nearby location using latitude and longitude.");
+    gtk_label_set_line_wrap(GTK_LABEL(notice), TRUE);
+    gtk_label_set_max_width_chars(GTK_LABEL(notice), 48);
+    gtk_box_pack_start(GTK_BOX(content), notice, FALSE, FALSE, 8);
+    GtkWidget *lat = gtk_entry_new(), *lon = gtk_entry_new();
+    gtk_entry_set_placeholder_text(GTK_ENTRY(lat), "Latitude, for example 59.91");
+    gtk_entry_set_placeholder_text(GTK_ENTRY(lon), "Longitude, for example 10.75");
+    atk_object_set_name(gtk_widget_get_accessible(lat), "Latitude");
+    atk_object_set_name(gtk_widget_get_accessible(lon), "Longitude");
+    widgets_read();
+    const char *keys[] = {"Latitude", "Longitude"};
+    GtkWidget *fields[] = {lat, lon};
+    for (int i = 0; i < 2; i++) {
+        gchar *value = g_key_file_get_value(widget_config, "Weather", keys[i], NULL);
+        if (value)
+            gtk_entry_set_text(GTK_ENTRY(fields[i]), value);
+        g_free(value);
+        gtk_box_pack_start(GTK_BOX(content), fields[i], FALSE, FALSE, 4);
+    }
+    GtkWidget *status = gtk_label_new("");
+    gtk_box_pack_start(GTK_BOX(content), status, FALSE, FALSE, 4);
+    gtk_widget_show_all(dialog);
+    while (gtk_dialog_run(GTK_DIALOG(dialog)) == GTK_RESPONSE_ACCEPT) {
+        double latitude, longitude;
+        if (!weather_coordinate(lat, 90, &latitude) || !weather_coordinate(lon, 180, &longitude)) {
+            gtk_label_set_text(GTK_LABEL(status), "Enter valid latitude and longitude.");
+            continue;
+        }
+        widgets_read();
+        g_key_file_set_double(widget_config, "Weather", "Latitude", latitude);
+        g_key_file_set_double(widget_config, "Weather", "Longitude", longitude);
+        widgets_save();
+        break;
+    }
+    gtk_widget_destroy(dialog);
+}
+
 static void widget_settings(void)
 {
     widgets_read();
     GtkWidget *box;
     GtkWidget *window = page("Shadow Widgets", "Choose which desktop widgets appear and how they look", &box);
     gtk_window_set_default_size(GTK_WINDOW(window), 620, 520);
+    GtkWidget *weather_controls = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
+    GtkWidget *weather_enabled = gtk_check_button_new_with_label("Show Weather");
+    gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(weather_enabled), widget_enabled(WIDGET_WEATHER));
+    g_signal_connect(weather_enabled, "toggled", G_CALLBACK(widget_toggle), (gpointer)widget_keys[WIDGET_WEATHER]);
+    GtkWidget *location = gtk_button_new_with_label("Weather location…");
+    g_signal_connect(location, "clicked", G_CALLBACK(weather_settings), NULL);
+    gtk_box_pack_start(GTK_BOX(weather_controls), weather_enabled, FALSE, FALSE, 0);
+    gtk_box_pack_end(GTK_BOX(weather_controls), location, FALSE, FALSE, 0);
+    gtk_box_pack_start(GTK_BOX(box), weather_controls, FALSE, FALSE, 0);
     GtkWidget *scroll = gtk_scrolled_window_new(NULL, NULL);
     gtk_scrolled_window_set_policy(GTK_SCROLLED_WINDOW(scroll), GTK_POLICY_NEVER, GTK_POLICY_AUTOMATIC);
     gtk_box_pack_start(GTK_BOX(box), scroll, TRUE, TRUE, 0);
@@ -162,12 +236,18 @@ static void widget_settings(void)
     gtk_grid_attach(GTK_GRID(grid), gtk_label_new("Background (%)"), 3, 0, 1, 1);
     for (int i = 0; i < WIDGET_COUNT; i++) {
         const char *key = widget_keys[i];
-        GtkWidget *enabled = gtk_check_button_new_with_label(widget_names[i]);
-        gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(enabled), widget_enabled(i));
-        gtk_widget_set_hexpand(enabled, TRUE);
-        const char *visibility_key = i == WIDGET_CLOCK ? "Clock" : key;
-        g_signal_connect(enabled, "toggled", G_CALLBACK(widget_toggle), (gpointer)visibility_key);
-        gtk_grid_attach(GTK_GRID(grid), enabled, 0, i + 1, 1, 1);
+        GtkWidget *name;
+        if (i == WIDGET_WEATHER) {
+            name = gtk_label_new(widget_names[i]);
+            gtk_label_set_xalign(GTK_LABEL(name), 0);
+        } else {
+            name = gtk_check_button_new_with_label(widget_names[i]);
+            gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(name), widget_enabled(i));
+            const char *visibility_key = i == WIDGET_CLOCK ? "Clock" : key;
+            g_signal_connect(name, "toggled", G_CALLBACK(widget_toggle), (gpointer)visibility_key);
+        }
+        gtk_widget_set_hexpand(name, TRUE);
+        gtk_grid_attach(GTK_GRID(grid), name, 0, i + 1, 1, 1);
 
         GtkWidget *colors = gtk_button_new_with_label("Edit colors…");
         g_signal_connect(colors, "clicked", G_CALLBACK(widget_color_dialog), GINT_TO_POINTER(i));
