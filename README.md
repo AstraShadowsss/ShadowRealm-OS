@@ -106,9 +106,9 @@ Nine lightweight arcade and card games, with local scores and settings. No accou
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
 
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122c)
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122d)
 
-![Professional Control Center](screenshots/control-center-professional.png?v=20261122c)
+![Professional Control Center](screenshots/control-center-professional.png?v=20261122d)
 
 
 ## Shadow Games for Android
