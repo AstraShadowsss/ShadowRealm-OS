@@ -167,11 +167,12 @@ static GtkWidget *toolbar_button(GtkWidget *toolbar, const char *title, GCallbac
 
 static void terminal_theme_changed(GtkSettings *settings,GParamSpec *spec,gpointer data){
  (void)spec;App *a=data;gchar *name=NULL;g_object_get(settings,"gtk-theme-name",&name,NULL);
- gboolean professional=name&&strcmp(name,"ShadowRealm-OS-Neon");g_free(name);
+ gboolean professional=name&&strcmp(name,"ShadowRealm-OS-Neon");gboolean unbranded=name&&g_str_has_prefix(name,"ShadowRealm-OS-Professional");g_free(name);
  gtk_css_provider_load_from_data(a->css,professional?terminal_professional_css:terminal_neon_css,-1,NULL);
  GdkRGBA fg,bg,cursor;gdk_rgba_parse(&fg,professional?"#e5e7eb":"#d9faff");gdk_rgba_parse(&bg,"#000000");bg.alpha=terminal_background_opacity();gdk_rgba_parse(&cursor,professional?"#93b7d6":"#ff35e1");
- if(professional)gtk_style_context_lookup_color(gtk_widget_get_style_context(a->window),"theme_selected_bg_color",&cursor);
+ if(professional && !gtk_style_context_lookup_color(gtk_widget_get_style_context(a->window),"accent_color",&cursor))gtk_style_context_lookup_color(gtk_widget_get_style_context(a->window),"theme_selected_bg_color",&cursor);
  gchar *brand_path=g_build_filename(g_get_home_dir(),".local","share","shadow-link","term.png",NULL);GdkPixbuf*newlogo=gdk_pixbuf_new_from_file_at_scale(brand_path,88,88,TRUE,NULL);if(newlogo&&a->logo_image){gtk_image_set_from_pixbuf(GTK_IMAGE(a->logo_image),newlogo);}if(newlogo)g_object_unref(newlogo);g_free(brand_path);
+ if(a->logo_image){gtk_widget_set_no_show_all(a->logo_image,unbranded);gtk_widget_set_visible(a->logo_image,!unbranded);}
  vte_terminal_set_colors(a->terminal,&fg,&bg,NULL,0);vte_terminal_set_color_cursor(a->terminal,&cursor);
  {gchar *p=g_build_filename(g_get_home_dir(),".local","share","shadow-link","icons","current","shadow-terminal.png",NULL);gtk_window_set_icon_from_file(GTK_WINDOW(a->window),p,NULL);g_free(p);}
 }
@@ -230,7 +231,7 @@ int main(int argc, char **argv) {prctl(PR_SET_NAME,"Terminal",0,0,0);
     gtk_window_set_title(GTK_WINDOW(app.window), window_title);
     GdkVisual *rgba=gdk_screen_get_rgba_visual(gtk_widget_get_screen(app.window));if(rgba)gtk_widget_set_visual(app.window,rgba);
     gtk_widget_set_app_paintable(app.window,TRUE);gtk_widget_set_name(app.window,"shadow-terminal-window");
-    GtkCssProvider *transparent=gtk_css_provider_new();gtk_css_provider_load_from_data(transparent,"#shadow-terminal-window, #shadow-root {background-color:transparent;background-image:none;} #shadow-header {background-color:rgba(0,0,0,0.98);} vte-terminal {background-color:transparent;}",-1,NULL);gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),GTK_STYLE_PROVIDER(transparent),GTK_STYLE_PROVIDER_PRIORITY_APPLICATION+1);g_object_unref(transparent);
+    GtkCssProvider *transparent=gtk_css_provider_new();gtk_css_provider_load_from_data(transparent,"#shadow-terminal-window, #shadow-root {background-color:transparent;background-image:none;} #shadow-header {background-color:rgba(0,0,0,0.98);} vte-terminal, vte-terminal:backdrop {background-color:transparent;color:#e5e7eb;}",-1,NULL);gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),GTK_STYLE_PROVIDER(transparent),GTK_STYLE_PROVIDER_PRIORITY_APPLICATION+1);g_object_unref(transparent);
 
     gtk_window_set_default_size(GTK_WINDOW(app.window), 930, 560);
     gchar *app_icon=g_build_filename(home,".local","share","shadow-link","icons","current","shadow-terminal.png",NULL);

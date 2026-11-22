@@ -2,13 +2,15 @@
 from pathlib import Path
 import subprocess,json,re,sys,shutil
 from shadow_whole_theme import matching_icons,set_widgets
-from shadow_appearance_desktop import query as q, set_property as setq, wallpaper_properties, set_wallpaper
+from shadow_palette import write_active_palette
+from shadow_appearance_desktop import query as q, set_property as setq, wallpaper_properties, set_wallpaper, matching_wallpaper
 h=Path.home();base=h/'.local/share/shadow-link';cfg=h/'.config/shadowrealm-os';cfg.mkdir(parents=True,exist_ok=True)
 mode=sys.argv[1] if len(sys.argv)>1 else 'neon';modes=json.loads((base/'appearance-modes.json').read_text())
 if mode not in modes:raise SystemExit('Unknown appearance mode')
 selected=modes[mode];selected['id']=mode
 wallprops=wallpaper_properties()
 wallpaper=Path(selected['wallpaper'])
+if selected.get('unbranded'):wallpaper=matching_wallpaper(selected,wallprops)
 palette=base/'icons'/mode
 for path in (Path(selected['logo']),palette/'term.png',h/'.themes'/selected['theme']/'gtk-3.0/gtk.css',
              h/'.themes'/selected['wm']/'xfwm4/themerc',h/'.local/share/icons'/selected['icons']/'index.theme'):
@@ -41,12 +43,14 @@ matching_icons(selected,base,files)
 active_icons=base/'icons/current';active_tmp=base/'icons/current.orbital-new'
 active_tmp.unlink(missing_ok=True);active_tmp.symlink_to(mode);active_tmp.replace(active_icons)
 modefile=cfg/'appearance-mode';tmp=cfg/'appearance-mode.new';tmp.write_text(mode+'\n');tmp.replace(modefile)
+write_active_palette(cfg,mode,selected)
 if mode=='neon':
  for c,p,v in state['properties']:
   if (c,p) in props and v is not None:setq(c,p,v)
 else:
  setq('xsettings','/Gtk/FontName','DejaVu Sans 10');setq('xsettings','/Gtk/MonospaceFontName','DejaVu Sans Mono 10');setq('xfwm4','/general/title_font','DejaVu Sans Bold 10');setq('xfce4-panel','/plugins/plugin-8/digital-time-font','DejaVu Sans Bold 10')
-if selected.get('plain') and q('xsettings','/Net/ThemeName')==selected['theme']:setq('xsettings','/Net/ThemeName','Default')
+if q('xsettings','/Net/ThemeName')==selected['theme']:
+ setq('xsettings','/Net/ThemeName','Default');setq('xfwm4','/general/theme','Default')
 setq('xsettings','/Net/IconThemeName',selected['icons']);setq('xfwm4','/general/theme',selected['wm']);setq('xsettings','/Net/ThemeName',selected['theme'])
 subprocess.run(['gsettings','set','org.gnome.desktop.interface','color-scheme','prefer-light' if selected.get('light') or selected.get('unbranded') else 'prefer-dark'],check=False)
 set_wallpaper(wallpaper,wallprops)
@@ -54,4 +58,5 @@ from shadow_effects import sync_panels
 sync_panels()
 set_widgets(selected.get('unbranded',False),base)
 subprocess.run(['xfce4-panel','--restart'],check=True)
+subprocess.run(['xfdesktop','--reload'],check=False,timeout=10)
 print('Appearance applied: '+selected['label'])

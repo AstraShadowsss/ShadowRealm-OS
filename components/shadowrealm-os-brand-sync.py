@@ -4,7 +4,7 @@ Unprivileged files supply only a whitelisted palette name, never an asset path.
 """
 import fcntl, hashlib, json, os, pathlib, pwd, stat, subprocess, tempfile
 P=pathlib.Path
-PALETTES={'neon':('Neon','ShadowRealm-OS-Neon'),'white-silver-gold':('WhiteSilverGold','ShadowRealm-OS-White-Silver-Gold'),'red-black':('RedBlack','ShadowRealm-OS-RedBlack'),'woodland':('Woodland','ShadowRealm-OS-Woodland'),'hacker':('Hacker','ShadowRealm-OS-Hacker'),'black-blue':('BlackBlue','ShadowRealm-OS-BlackBlue'),'black-white':('BlackWhite','ShadowRealm-OS-BlackWhite'),'professional':('Professional','ShadowRealm-OS-Professional')}
+PALETTES={'purple-black': ('PurpleBlack', 'ShadowRealm-OS-PurpleBlack'), 'neon': ('Neon', 'ShadowRealm-OS-Neon'), 'white-silver-gold': ('WhiteSilverGold', 'ShadowRealm-OS-White-Silver-Gold'), 'red-black': ('RedBlack', 'ShadowRealm-OS-RedBlack'), 'woodland': ('Woodland', 'ShadowRealm-OS-Woodland'), 'hacker': ('Hacker', 'ShadowRealm-OS-Hacker'), 'black-blue': ('BlackBlue', 'ShadowRealm-OS-BlackBlue'), 'black-white': ('BlackWhite', 'ShadowRealm-OS-BlackWhite'), 'professional': ('Professional', 'ShadowRealm-OS-Professional'), 'professional-ocean': ('ProfessionalOcean', 'ShadowRealm-OS-ProfessionalOcean'), 'professional-graphite': ('ProfessionalGraphite', 'ShadowRealm-OS-ProfessionalGraphite'), 'professional-plum': ('ProfessionalPlum', 'ShadowRealm-OS-ProfessionalPlum')}
 def output(*args):return subprocess.check_output(args,text=True,timeout=10).strip()
 def active_palette():
  sid=output('loginctl','show-seat','seat0','-p','ActiveSession','--value')
@@ -46,13 +46,15 @@ def main():
   if mode is None:return
   name,theme=PALETTES[mode]
   logo=approved(P('/usr/share/shadowrealm-os/branding')/('ShadowRealm-OS-Circular-'+name+'.png'))
-  wall=P('/usr/share/backgrounds/shadowrealm-os/logo-focused')/('ShadowRealm-OS-'+name+'.png')
+  wall=(P('/usr/share/backgrounds/shadowrealm-os/professional')/(name+'-Misty-Ridges.png') if mode.startswith('professional') else P('/usr/share/backgrounds/shadowrealm-os/logo-focused')/('ShadowRealm-OS-'+name+'.png'))
   image=approved(wall)
+  progress=approved(P('/usr/share/shadowrealm-os/branding')/('Progress-Fill-'+name+'.png'))
   state=P('/var/lib/shadowrealm-os/branding.json')
-  signature={'palette':mode,'logo':hashlib.sha256(logo).hexdigest(),'background':hashlib.sha256(image).hexdigest()}
+  signature={'palette':mode,'logo':hashlib.sha256(logo).hexdigest(),'background':hashlib.sha256(image).hexdigest(),'progress':hashlib.sha256(progress).hexdigest()}
   if state.exists() and json.loads(state.read_text())==signature:return
   for target in ('/usr/share/pixmaps/shadowrealm-os-logo.png','/usr/share/plymouth/themes/shadowrealm-os/logo.png'):
    atomic(P(target),logo)
+  atomic(P('/usr/share/plymouth/themes/shadowrealm-os/progress-fill.png'),progress)
   if P('/boot/grub').is_dir():atomic(P('/boot/grub/shadowrealm-os-background.png'),image)
   text=f'[greeter]\nbackground={wall}\nuser-background=false\ntheme-name={theme}\nicon-theme-name={theme}\n'
   atomic(P('/etc/lightdm/lightdm-gtk-greeter.conf.d/91-shadowrealm-os-artwork.conf'),text.encode())

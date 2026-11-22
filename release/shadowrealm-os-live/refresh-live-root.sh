@@ -22,24 +22,20 @@ export DEBIAN_FRONTEND=noninteractive LANG=C.UTF-8 LC_ALL=C.UTF-8
 sed -i "s/^# *en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/" "$root/etc/locale.gen"
 chroot "$root" locale-gen
 printf 'LANG=en_US.UTF-8\n' > "$root/etc/default/locale"
+# Retired default messengers are removed only from this disposable release root.
+rm -f -- "$root/etc/apt/sources.list.d/jami.list" "$root/usr/share/keyrings/jami-archive-keyring.gpg"
+retired=()
+for name in jami jami-daemon libqt-jami hexchat hexchat-common; do
+ if chroot "$root" dpkg-query -W -f='${Status}' "$name" 2>/dev/null | grep -qx 'install ok installed'; then retired+=("$name"); fi
+done
+if ((${#retired[@]})); then chroot "$root" apt-get purge -y "${retired[@]}"; fi
 chroot "$root" apt-get update
 chroot "$root" apt-get install -y extrepo extrepo-offline-data gnupg curl ca-certificates
 chroot "$root" extrepo enable librewolf
 chroot "$root" extrepo update librewolf
-# Jami's signed stable Debian 13 repository. Key is scoped to this repository.
-chroot "$root" curl -fsSL https://dl.jami.net/public-key.gpg -o /usr/share/keyrings/jami-archive-keyring.gpg.pending
-# Pin the official repository key used by this release; review upstream rotation.
-jami_fingerprint=$(chroot "$root" gpg --batch --show-keys --with-colons /usr/share/keyrings/jami-archive-keyring.gpg.pending 2>/dev/null | awk -F: '$1=="fpr" && !seen++ {print $10}')
-if test "$jami_fingerprint" != A295D773307D25A33AE72F2F64CD5FA175348F84; then
- rm -f "$root/usr/share/keyrings/jami-archive-keyring.gpg.pending"
- echo 'Jami repository key changed. Verify the upstream rotation before rebuilding.' >&2
- exit 1
-fi
-mv "$root/usr/share/keyrings/jami-archive-keyring.gpg.pending" "$root/usr/share/keyrings/jami-archive-keyring.gpg"
-printf 'deb [signed-by=/usr/share/keyrings/jami-archive-keyring.gpg] https://dl.jami.net/stable/debian_13/ jami main\n' > "$root/etc/apt/sources.list.d/jami.list"
 chroot "$root" apt-get update
 chroot "$root" apt-get -y full-upgrade
-chroot "$root" apt-get install -y librewolf jami thunderbird guvcview gnome-authenticator sirikali gocryptfs gparted gnupg torbrowser-launcher openvpn wireguard-tools network-manager-openvpn-gnome network-manager-openconnect-gnome xarchiver xfce4-taskmanager gnome-clocks mousepad galculator ristretto onboard seahorse libpam-gnome-keyring gvfs-backends gvfs-fuse thunar-archive-plugin thunar-volman xfce4-notes xfce4-clipman pipewire-audio wireplumber pavucontrol pulseaudio-utils bluez blueman dnscrypt-proxy flatpak xdg-desktop-portal-gtk mate-polkit
+chroot "$root" apt-get install -y librewolf thunderbird guvcview gnome-authenticator sirikali gocryptfs gparted gnupg torbrowser-launcher openvpn wireguard-tools network-manager-openvpn-gnome network-manager-openconnect-gnome xarchiver xfce4-taskmanager gnome-clocks mousepad galculator ristretto onboard seahorse libpam-gnome-keyring gvfs-backends gvfs-fuse thunar-archive-plugin thunar-volman xfce4-notes xfce4-clipman pipewire-audio wireplumber pavucontrol pulseaudio-utils bluez blueman dnscrypt-proxy flatpak xdg-desktop-portal-gtk mate-polkit
 rm -rf -- "$root/tmp/shadowrealm-os-packages"
 mkdir -p "$root/tmp/shadowrealm-os-packages"
 for name in artwork desktop terminal panel security installer-settings; do

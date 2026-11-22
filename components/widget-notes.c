@@ -14,6 +14,8 @@ static char *widget_notes_text(void)
     return text;
 }
 
+static int notes_scroll_offset;
+
 static void draw_widget_notes(cairo_t *canvas)
 {
     char *text = widget_notes_text();
@@ -22,15 +24,39 @@ static void draw_widget_notes(cairo_t *canvas)
     pango_layout_set_font_description(layout, font);
     pango_font_description_free(font);
     pango_layout_set_width(layout, 238 * PANGO_SCALE);
-    pango_layout_set_height(layout, 100 * PANGO_SCALE);
     pango_layout_set_wrap(layout, PANGO_WRAP_WORD_CHAR);
-    pango_layout_set_ellipsize(layout, PANGO_ELLIPSIZE_END);
     pango_layout_set_text(layout, text && *text ? text : "Click to write a note", -1);
+    int text_height;
+    pango_layout_get_pixel_size(layout, NULL, &text_height);
+    notes_scroll_offset = CLAMP(notes_scroll_offset, 0, MAX(0, text_height - 100));
     widget_color(canvas, WIDGET_TEXT, "f5e9ff", 1);
-    cairo_move_to(canvas, 16, 47);
+    cairo_save(canvas);
+    cairo_rectangle(canvas, 16, 47, 238, 100);
+    cairo_clip(canvas);
+    cairo_move_to(canvas, 16, 47 - notes_scroll_offset);
     pango_cairo_show_layout(canvas, layout);
+    cairo_restore(canvas);
     g_object_unref(layout);
     g_free(text);
+}
+
+static gboolean notes_scroll(GtkWidget *widget, GdkEventScroll *event, gpointer unused)
+{
+    (void)unused;
+    double distance = 0;
+    if (event->direction == GDK_SCROLL_UP)
+        distance = -1;
+    else if (event->direction == GDK_SCROLL_DOWN)
+        distance = 1;
+    else if (event->direction == GDK_SCROLL_SMOOTH) {
+        double horizontal;
+        gdk_event_get_scroll_deltas((GdkEvent *)event, &horizontal, &distance);
+    }
+    if (distance == 0)
+        return FALSE;
+    notes_scroll_offset = MAX(0, notes_scroll_offset + (distance > 0 ? 32 : -32));
+    gtk_widget_queue_draw(widget);
+    return TRUE;
 }
 
 static void edit_widget_notes(void)

@@ -137,6 +137,26 @@ static void widget_set_opacity(GtkSpinButton *button, gpointer key)
     widgets_save();
 }
 
+static gboolean widget_opacity_output(GtkSpinButton *button, gpointer unused)
+{
+    (void)unused;
+    if (gtk_spin_button_get_value_as_int(button) < 0) {
+        gtk_entry_set_text(GTK_ENTRY(button), "Theme");
+        return TRUE;
+    }
+    return FALSE;
+}
+
+static gint widget_opacity_input(GtkSpinButton *button, gdouble *value, gpointer unused)
+{
+    (void)unused;
+    if (!g_ascii_strcasecmp(gtk_entry_get_text(GTK_ENTRY(button)), "Theme")) {
+        *value = -1;
+        return TRUE;
+    }
+    return FALSE;
+}
+
 static void widget_professional(GtkToggleButton *button, gpointer unused)
 {
     (void)unused;
@@ -146,6 +166,9 @@ static void widget_professional(GtkToggleButton *button, gpointer unused)
 
 static void update_weather_from_config(void)
 {
+    gchar *unit = g_key_file_get_string(widget_config, "Weather", "Unit", NULL);
+    weather_fahrenheit = g_strcmp0(unit, "C") != 0;
+    g_free(unit);
     GError *latitude_error = NULL, *longitude_error = NULL;
     double latitude = g_key_file_get_double(widget_config, "Weather", "Latitude", &latitude_error);
     double longitude = g_key_file_get_double(widget_config, "Weather", "Longitude", &longitude_error);
@@ -182,12 +205,23 @@ static void weather_settings(GtkButton *button, gpointer unused)
     atk_object_set_name(gtk_widget_get_accessible(lat), "Latitude");
     atk_object_set_name(gtk_widget_get_accessible(lon), "Longitude");
     widgets_read();
+    GtkWidget *units = gtk_combo_box_text_new();
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(units), "F", "Fahrenheit (°F)");
+    gtk_combo_box_text_append(GTK_COMBO_BOX_TEXT(units), "C", "Celsius (°C)");
+    gchar *unit = g_key_file_get_string(widget_config, "Weather", "Unit", NULL);
+    gtk_combo_box_set_active_id(GTK_COMBO_BOX(units), g_strcmp0(unit, "C") == 0 ? "C" : "F");
+    g_free(unit);
+    atk_object_set_name(gtk_widget_get_accessible(units), "Temperature unit");
+    gtk_box_pack_start(GTK_BOX(content), units, FALSE, FALSE, 4);
     const char *keys[] = {"Latitude", "Longitude"};
     GtkWidget *fields[] = {lat, lon};
     for (int i = 0; i < 2; i++) {
         gchar *value = g_key_file_get_value(widget_config, "Weather", keys[i], NULL);
-        if (value)
-            gtk_entry_set_text(GTK_ENTRY(fields[i]), value);
+        if (value) {
+            gchar formatted[G_ASCII_DTOSTR_BUF_SIZE];
+            g_ascii_formatd(formatted, sizeof formatted, "%.2f", g_ascii_strtod(value, NULL));
+            gtk_entry_set_text(GTK_ENTRY(fields[i]), formatted);
+        }
         g_free(value);
         gtk_box_pack_start(GTK_BOX(content), fields[i], FALSE, FALSE, 4);
     }
@@ -203,6 +237,8 @@ static void weather_settings(GtkButton *button, gpointer unused)
         widgets_read();
         g_key_file_set_double(widget_config, "Weather", "Latitude", latitude);
         g_key_file_set_double(widget_config, "Weather", "Longitude", longitude);
+        g_key_file_set_string(widget_config, "Weather", "Unit",
+                              gtk_combo_box_get_active_id(GTK_COMBO_BOX(units)));
         widgets_save();
         break;
     }
@@ -214,7 +250,7 @@ static void widget_settings(void)
     widgets_read();
     GtkWidget *box;
     GtkWidget *window = page("Shadow Widgets", "Choose which desktop widgets appear and how they look", &box);
-    gtk_window_set_default_size(GTK_WINDOW(window), 620, 520);
+    gtk_window_set_default_size(GTK_WINDOW(window), 680, 640);
     GtkWidget *weather_controls = gtk_box_new(GTK_ORIENTATION_HORIZONTAL, 12);
     GtkWidget *weather_enabled = gtk_check_button_new_with_label("Show Weather");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(weather_enabled), widget_enabled(WIDGET_WEATHER));
@@ -254,13 +290,17 @@ static void widget_settings(void)
         gtk_grid_attach(GTK_GRID(grid), colors, 1, i + 1, 2, 1);
 
         GtkWidget *opacity = gtk_spin_button_new_with_range(-1, 100, 1);
+        gtk_spin_button_set_numeric(GTK_SPIN_BUTTON(opacity), FALSE);
+        gtk_entry_set_width_chars(GTK_ENTRY(opacity), 6);
+        g_signal_connect(opacity, "output", G_CALLBACK(widget_opacity_output), NULL);
+        g_signal_connect(opacity, "input", G_CALLBACK(widget_opacity_input), NULL);
         gtk_spin_button_set_value(GTK_SPIN_BUTTON(opacity), widget_opacity[i]);
-        gtk_widget_set_tooltip_text(opacity, "Use −1 to follow the shared widget opacity");
+        gtk_widget_set_tooltip_text(opacity, "Theme follows the shared background opacity from Appearance");
         atk_object_set_name(gtk_widget_get_accessible(opacity), widget_names[i]);
         g_signal_connect(opacity, "value-changed", G_CALLBACK(widget_set_opacity), (gpointer)key);
         gtk_grid_attach(GTK_GRID(grid), opacity, 3, i + 1, 1, 1);
     }
-    GtkWidget *note = gtk_label_new("−1 uses the shared background opacity from Appearance.");
+    GtkWidget *note = gtk_label_new("Theme uses the shared background opacity from Appearance.");
     gtk_label_set_xalign(GTK_LABEL(note), 0);
     gtk_grid_attach(GTK_GRID(grid), note, 0, WIDGET_COUNT + 1, 4, 1);
     GtkWidget *layout_help = gtk_label_new("Drag a widget by its header or resize from its bottom-right corner. Right-click it to reset.");

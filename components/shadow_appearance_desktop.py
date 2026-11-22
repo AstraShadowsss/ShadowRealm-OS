@@ -31,6 +31,11 @@ def matching_wallpaper(mode,properties):
         current=query('xfce4-desktop',prop)
         if not current or '/Pictures/Backgrounds/' not in current:
             continue
+        professional=re.search(r'Professional(?:Ocean|Graphite|Plum)?-(Satin-Bloom|Flowing-Glass|Sculpted-Silk)\.png$',current)
+        if professional and mode.get('unbranded'):
+            candidate=Path.home()/'Pictures/Backgrounds'/f"{mode['wallpaper_palette']}-{professional[1]}.png"
+            if candidate.is_file():
+                return candidate
         match=re.search(r'-(full-artwork|logo-focused|Circuit-Walker|seated-city|circuit-corridor)\.png$',current)
         if match:
             candidate=Path.home()/'Pictures/Backgrounds'/f"ShadowRealm-OS-{mode['wallpaper_palette']}-{match[1]}.png"

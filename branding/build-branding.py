@@ -33,7 +33,7 @@ for palette in palettes:
  red,green,blue=colored.split()
  content=f'<defs><filter id="white"><feColorMatrix values="0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 1 0"/></filter><filter id="accent"><feColorMatrix values="0 0 0 0 {red} 0 0 0 0 {green} 0 0 0 0 {blue} 0 0 0 1 0"/></filter><clipPath id="prefix"><rect width="975" height="180"/></clipPath><clipPath id="os"><rect x="975" width="225" height="180"/></clipPath></defs><g clip-path="url(#prefix)" filter="url(#white)">{image("wordmark.png",0,-105,1200,400)}</g><g clip-path="url(#os)" filter="url(#accent)">{image("wordmark.png",0,-105,1200,400)}</g>'
  render('Wordmark-'+palette,1200,180,'','Neon',content)
- if palette=='Professional':continue
+ if palette.startswith('Professional'):continue
  for family,bg in [('logo-focused','focused'),('circuit-corridor','corridor'),('full-artwork','artwork'),('seated-city','seated')]:
   body=image('background-'+bg+'.png',0,0,1920,1080)
   if family in ('logo-focused','circuit-corridor'):

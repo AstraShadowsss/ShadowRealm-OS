@@ -26,7 +26,46 @@ static char policy_status[48]="NOT VERIFIED";
 static char tor_status[48]="TOR: CHECKING";
 static double net_down_kib,net_up_kib;
 static char active_if[IFNAMSIZ];
-static void appearance_read(void){char *p=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","appearance-mode",NULL);gchar*v=NULL;professional_mode=0;if(g_file_get_contents(p,&v,NULL,NULL)){professional_mode=g_str_has_prefix(v,"black-blue")?8:g_str_has_prefix(v,"black-white")?9:(g_str_has_prefix(v,"white-silver-gold")||g_str_has_prefix(v,"professional-light"))?2:g_str_has_prefix(v,"professional")?1:g_str_has_prefix(v,"red-black")?3:g_str_has_prefix(v,"woodland")?4:g_str_has_prefix(v,"hacker")?5:g_str_has_prefix(v,"plain-dark")?6:g_str_has_prefix(v,"plain-light")?7:0;g_free(v);}g_free(p);p=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","plain-accent",NULL);v=NULL;if(g_file_get_contents(p,&v,NULL,NULL)){g_strstrip(v);gboolean valid=strlen(v)==6;for(int i=0;valid&&i<6;i++)valid=g_ascii_isxdigit(v[i]);if(valid)memcpy(plain_accent,v,7);g_free(v);}g_free(p);}
+static char active_colors[5][7];
+static gboolean active_palette_valid;
+static void appearance_read(void)
+{
+ char *p=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","appearance-mode",NULL);
+ gchar *value=NULL;
+ char mode[64]="neon";
+ professional_mode=0;
+ if(g_file_get_contents(p,&value,NULL,NULL)){
+  g_strstrip(value);g_strlcpy(mode,value,sizeof mode);
+  professional_mode=g_str_has_prefix(value,"purple-black")?10:g_str_has_prefix(value,"black-blue")?8:g_str_has_prefix(value,"black-white")?9:(g_str_has_prefix(value,"white-silver-gold")||g_str_has_prefix(value,"professional-light"))?2:g_str_has_prefix(value,"professional")?1:g_str_has_prefix(value,"red-black")?3:g_str_has_prefix(value,"woodland")?4:g_str_has_prefix(value,"hacker")?5:g_str_has_prefix(value,"plain-dark")?6:g_str_has_prefix(value,"plain-light")?7:0;
+  g_free(value);
+ }
+ g_free(p);
+ p=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","plain-accent",NULL);value=NULL;
+ if(g_file_get_contents(p,&value,NULL,NULL)){
+  g_strstrip(value);gboolean valid=strlen(value)==6;
+  for(int i=0;valid&&i<6;i++)valid=g_ascii_isxdigit(value[i]);
+  if(valid)memcpy(plain_accent,value,7);
+  g_free(value);
+ }
+ g_free(p);
+ p=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","active-palette.ini",NULL);
+ GKeyFile *config=g_key_file_new();
+ active_palette_valid=FALSE;
+ if(g_key_file_load_from_file(config,p,G_KEY_FILE_NONE,NULL)){
+  gchar *selected=g_key_file_get_string(config,"Palette","Mode",NULL);
+  active_palette_valid=g_strcmp0(selected,mode)==0;
+  g_free(selected);
+  const char *roles[]={"Accent","Secondary","Background","Foreground","Surface"};
+  for(int i=0;active_palette_valid&&i<5;i++){
+   gchar *hex=g_key_file_get_string(config,"Palette",roles[i],NULL);
+   gboolean valid=hex&&strlen(hex)==7&&hex[0]=='#';
+   for(int j=1;valid&&j<7;j++)valid=g_ascii_isxdigit(hex[j]);
+   if(valid)memcpy(active_colors[i],hex+1,7);else active_palette_valid=FALSE;
+   g_free(hex);
+  }
+ }
+ g_key_file_unref(config);g_free(p);
+}
 
 static char iptext[64]="NO ADDRESS",iftext[32]="OFFLINE",vpn[40]="NO ACTIVE INTERFACE";
 typedef struct { int pid; char name[64]; double cpu,mem; } ProcessRow;
@@ -62,7 +101,23 @@ static void appearance_css_changed(GtkSettings *settings,GParamSpec *spec,gpoint
  if(g_file_test(p,G_FILE_TEST_IS_REGULAR))gtk_css_provider_load_from_path(GTK_CSS_PROVIDER(provider),p,NULL);else gtk_css_provider_load_from_data(GTK_CSS_PROVIDER(provider),"",-1,NULL);g_free(p);char*bp=g_build_filename(g_get_home_dir(),".local","share","shadow-link","logo.png",NULL);if(brand)g_object_unref(brand);brand=gdk_pixbuf_new_from_file_at_scale(bp,24,24,TRUE,NULL);g_free(bp);
 }
 static void color(cairo_t *c,const char *s,double a){
- if(professional_mode==8 || professional_mode==9){
+ if(active_palette_valid){
+  const char *mapped=NULL;
+  if(!strcmp(s,"04040b")||!strcmp(s,"080710"))mapped=active_colors[2];
+  else if(!strcmp(s,"39243f"))mapped=active_colors[4];
+  else if(strstr("fa12ed f04fff fc52f9 fc36ed f114dd",s))mapped=active_colors[1];
+  else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9",s))mapped=active_colors[0];
+  else if(strstr("f5e9ff f4eaff f2e4fa f8f0ff f2e9f8 c7b4d6 baa3ce",s))mapped=active_colors[3];
+  if(mapped){unsigned r,g,b;sscanf(mapped,"%2x%2x%2x",&r,&g,&b);cairo_set_source_rgba(c,r/255.,g/255.,b/255.,a);return;}
+ }
+
+ if(professional_mode==10){
+  if(!strcmp(s,"04040b")||!strcmp(s,"080710"))s="100b18";
+  else if(!strcmp(s,"39243f"))s="382345";
+  else if(strstr("fa12ed f04fff fc52f9 fc36ed f114dd",s))s="b858ff";
+  else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9",s))s="e3b5ff";
+  else if(strstr("f5e9ff f4eaff f2e4fa f8f0ff f2e9f8 c7b4d6 baa3ce",s))s="f5edff";
+ }else if(professional_mode==8 || professional_mode==9){
   gboolean light=professional_mode==9;
   if(!strcmp(s,"04040b")||!strcmp(s,"080710"))s=light?"080808":"090e19";
   else if(!strcmp(s,"39243f"))s=light?"383838":"243b61";
@@ -70,12 +125,12 @@ static void color(cairo_t *c,const char *s,double a){
   else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9",s))s=light?"f2f2f2":"52b4ff";
   else if(strstr("f5e9ff f4eaff f2e4fa f8f0ff f2e9f8 c7b4d6 baa3ce",s))s=light?"eeeeee":"edf5ff";
  }else if(professional_mode){
-  if(!strcmp(s,"04040b")||!strcmp(s,"080710"))s=professional_mode==7?"f4f4f4":professional_mode==6?"202124":professional_mode==2?"f5f4ef":professional_mode==3?"100b0d":professional_mode==4?"19271c":professional_mode==5?"050a07":"172521";
+  if(!strcmp(s,"04040b")||!strcmp(s,"080710"))s=professional_mode==7?"f4f4f4":professional_mode==6?"202124":professional_mode==2?"f5f4ef":professional_mode==3?"100b0d":professional_mode==4?"241b15":professional_mode==5?"050a07":"172521";
   else if((professional_mode==2||professional_mode==7)&&!strcmp(s,"e5bb6a"))s="7b571c";
-  else if(!strcmp(s,"39243f"))s=professional_mode==7?"d9dadd":professional_mode==6?"44474d":professional_mode==2?"d9e0e8":"293548";
-  else if(strstr("fa12ed f04fff fc52f9 fc36ed f114dd",s))s=professional_mode>=6?plain_accent:professional_mode==2?"a78236":professional_mode==3?"e24b4b":professional_mode==4?"efbf49":professional_mode==5?"40f879":"9ec6b7";
-  else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9 04eaf5",s))s=professional_mode>=6?plain_accent:professional_mode==2?"8e6b2c":professional_mode==3?"f5bbbb":professional_mode==4?"8bd445":professional_mode==5?"a5ffc0":"b8d6c9";
-  else if(strstr("f5e9ff f4eaff f2e4fa f8f0ff f2e9f8",s))s=professional_mode==7?"25272a":professional_mode==6?"e6e7e9":professional_mode==2?"172535":"edf2f7";
+  else if(!strcmp(s,"39243f"))s=professional_mode==7?"d9dadd":professional_mode==6?"44474d":professional_mode==2?"d9e0e8":professional_mode==4?"443326":"293548";
+  else if(strstr("fa12ed f04fff fc52f9 fc36ed f114dd",s))s=professional_mode>=6?plain_accent:professional_mode==2?"a78236":professional_mode==3?"e24b4b":professional_mode==4?"a8b66b":professional_mode==5?"40f879":"9ec6b7";
+  else if(strstr("00efff 04eaf5 00eafa 00f4ff 00f0ff 00eaff 19ebf5 00dce9 04eaf5",s))s=professional_mode>=6?plain_accent:professional_mode==2?"8e6b2c":professional_mode==3?"f5bbbb":professional_mode==4?"b88a58":professional_mode==5?"a5ffc0":"b8d6c9";
+  else if(strstr("f5e9ff f4eaff f2e4fa f8f0ff f2e9f8",s))s=professional_mode==7?"25272a":professional_mode==6?"e6e7e9":professional_mode==2?"172535":professional_mode==4?"f3e6cf":"edf2f7";
   else if(strstr("c7b4d6 baa3ce",s))s=professional_mode==7?"52565d":professional_mode==6?"c6c8cd":professional_mode==2?"42566c":"d0dae7";
  }
  unsigned r,g,b;sscanf(s,"%2x%2x%2x",&r,&g,&b);cairo_set_source_rgba(c,r/255.,g/255.,b/255.,a);}
@@ -94,11 +149,25 @@ static void txt_right(cairo_t*c,double right,double y,double size,const char*tex
 static void line(cairo_t*c,double x,double y,double xx,double yy,const char*co,double w){color(c,co,1);cairo_set_line_width(c,w);cairo_move_to(c,x,y);cairo_line_to(c,xx,yy);cairo_stroke(c);}
 static void frame(cairo_t*c,double w,double h,const char*title,int widget){
  double opacity=widget_opacity[widget]<0 ? widget_background_alpha : widget_opacity[widget]/100.;
+ if(professional_mode==1){
+  double radius=12;
+  cairo_new_sub_path(c);
+  cairo_arc(c,w-radius-1,radius+1,radius,-G_PI/2,0);
+  cairo_arc(c,w-radius-1,h-radius-1,radius,0,G_PI/2);
+  cairo_arc(c,radius+1,h-radius-1,radius,G_PI/2,G_PI);
+  cairo_arc(c,radius+1,radius+1,radius,G_PI,3*G_PI/2);
+  cairo_close_path(c);color(c,"04040b",opacity);cairo_fill_preserve(c);
+  widget_color(c,WIDGET_BORDER,"f04fff",.6);cairo_set_line_width(c,1.2);cairo_stroke(c);
+  txt(c,16,26,12,title,"fc36ed",1);
+  line(c,14,37,w-14,37,"39243f",1);
+  for(int i=0;i<3;i++)line(c,w-9-i*4,h-15,w-15-i*4,h-9,"baa3ce",.8);
+  return;
+ }
  color(c,"04040b",opacity);cairo_move_to(c,12,1);cairo_line_to(c,w-12,1);cairo_line_to(c,w-1,12);cairo_line_to(c,w-1,h-12);cairo_line_to(c,w-12,h-1);cairo_line_to(c,12,h-1);cairo_line_to(c,1,h-12);cairo_line_to(c,1,12);cairo_close_path(c);cairo_fill_preserve(c);
  widget_color(c,WIDGET_BORDER,"fa12ed",.3);cairo_set_line_width(c,professional_mode?1:5);cairo_stroke_preserve(c);widget_color(c,WIDGET_BORDER,"f04fff",1);
  cairo_set_line_width(c,1.7);cairo_stroke(c);
  line(c,18,5,w-28,5,"fc52f9",1);line(c,20,h-5,w-20,h-5,"00efff",1.5);line(c,w-5,18,w-5,h-20,"00efff",1);
- if(brand){gdk_cairo_set_source_pixbuf(c,brand,10,10);cairo_paint(c);}txt(c,39,27,12,title,"fc36ed",1);line(c,12,37,w-12,37,"04eaf5",1);
+ if(brand && professional_mode != 1){gdk_cairo_set_source_pixbuf(c,brand,10,10);cairo_paint(c);}txt(c,39,27,12,title,"fc36ed",1);line(c,12,37,w-12,37,"04eaf5",1);
  for(int i=0;i<39;i++){
   widget_color(c,WIDGET_GRAPH,i%2?"00eafa":"fc36ed",1);
   cairo_set_line_width(c,.9);
@@ -158,7 +227,7 @@ static gboolean draw(GtkWidget*w,cairo_t*c,gpointer p){int k=GPOINTER_TO_INT(p);
  }
  frame(c,ww,hh,k==2&&process_count?process_title:names[k],k);
  if(k==0){bar(c,61,"CPU",cpu);bar(c,85,"RAM",ram);bar(c,109,"SWAP",swp);bar(c,133,"DISK",diskpct);}
- if(k==1){char rates[80];txt(c,15,61,12,iftext,"f8f0ff",1);txt(c,15,81,12,iptext,"00f0ff",1);snprintf(rates,sizeof rates,"DOWN  %.1f KiB/s",net_down_kib);txt(c,15,105,11,rates,"f5e9ff",0);snprintf(rates,sizeof rates,"UP    %.1f KiB/s",net_up_kib);txt(c,15,128,11,rates,"f5e9ff",0);}
+ if(k==1){char rates[80];txt(c,15,61,12,iftext,"f8f0ff",1);txt(c,15,81,12,iptext,"00f0ff",1);snprintf(rates,sizeof rates,"DOWN  %.2f Mb/s",net_down_kib*8192./1000000.);txt(c,15,105,11,rates,"f5e9ff",0);snprintf(rates,sizeof rates,"UP    %.2f Mb/s",net_up_kib*8192./1000000.);txt(c,15,128,11,rates,"f5e9ff",0);}
  if(k==2){double pid_right=55,name_x=66,cpu_right=ww-66,mem_right=ww-15;txt_right(c,pid_right,58,11,"PID","f4eaff",1);txt(c,name_x,58,11,"NAME","f4eaff",1);txt_right(c,cpu_right,58,11,"CPU%","f4eaff",1);txt_right(c,mem_right,58,11,"MEM%","f4eaff",1);for(int i=0;i<PROCESS_VISIBLE&&i+process_offset<process_count;i++){ProcessRow*r=&process_rows[i+process_offset];char pid[24],name[15],pc[24],pm[24];snprintf(pid,sizeof pid,"%d",r->pid);snprintf(name,sizeof name,"%.14s",r->name);snprintf(pc,sizeof pc,"%.1f",r->cpu);snprintf(pm,sizeof pm,"%.1f",r->mem);const char*co=i%2?"f2e4fa":"19ebf5";double y=80+i*18;txt_right(c,pid_right,y,10,pid,co,0);txt(c,name_x,y,10,name,co,0);txt_right(c,cpu_right,y,10,pc,co,0);txt_right(c,mem_right,y,10,pm,co,0);}}
  if(k==3){txt(c,15,61,11,"FIREWALL","f2e9f8",0);txt(c,15,79,11,firewall_status,"e5bb6a",1);txt(c,15,102,11,policy_status,"c7b4d6",0);char vp[64];snprintf(vp,sizeof vp,"VPN: %.28s",vpn);txt(c,15,124,10,vp,"00dce9",0);txt(c,15,146,10,tor_status,"c7b4d6",0);}
  if(k==WIDGET_CLOCK)draw_widget_clock(c);
@@ -197,13 +266,18 @@ static gboolean process_scroll(GtkWidget *widget,GdkEventScroll *event,gpointer 
  (void)widget;gtk_widget_queue_draw(cards[2]);
  return TRUE;
 }
-static void widgets(void){widgets_read();widget_layout_read();for(int i=0;i<WIDGET_COUNT;i++){GtkWidget*w=gtk_window_new(GTK_WINDOW_TOPLEVEL);cardwindows[i]=w;gtk_window_set_title(GTK_WINDOW(w),"Shadow Link · Live Status");gtk_window_set_decorated(GTK_WINDOW(w),FALSE);gtk_window_set_resizable(GTK_WINDOW(w),FALSE);gtk_window_set_skip_taskbar_hint(GTK_WINDOW(w),TRUE);gtk_window_set_skip_pager_hint(GTK_WINDOW(w),TRUE);gtk_window_set_accept_focus(GTK_WINDOW(w),FALSE);gtk_window_set_type_hint(GTK_WINDOW(w),GDK_WINDOW_TYPE_HINT_NORMAL);gtk_window_set_keep_below(GTK_WINDOW(w),TRUE);gtk_window_stick(GTK_WINDOW(w));GdkVisual*v=gdk_screen_get_rgba_visual(gtk_widget_get_screen(w));if(v)gtk_widget_set_visual(w,v);gtk_widget_set_app_paintable(w,TRUE);cards[i]=gtk_drawing_area_new();
+static void widgets(void){widgets_read();widget_layout_read();for(int i=0;i<WIDGET_COUNT;i++){GtkWidget*w=gtk_window_new(GTK_WINDOW_TOPLEVEL);cardwindows[i]=w;gtk_window_set_title(GTK_WINDOW(w),"Shadow Link Ã‚Â· Live Status");gtk_window_set_decorated(GTK_WINDOW(w),FALSE);gtk_window_set_resizable(GTK_WINDOW(w),FALSE);gtk_window_set_skip_taskbar_hint(GTK_WINDOW(w),TRUE);gtk_window_set_skip_pager_hint(GTK_WINDOW(w),TRUE);gtk_window_set_accept_focus(GTK_WINDOW(w),FALSE);gtk_window_set_type_hint(GTK_WINDOW(w),GDK_WINDOW_TYPE_HINT_NORMAL);gtk_window_set_keep_below(GTK_WINDOW(w),TRUE);gtk_window_stick(GTK_WINDOW(w));GdkVisual*v=gdk_screen_get_rgba_visual(gtk_widget_get_screen(w));if(v)gtk_widget_set_visual(w,v);gtk_widget_set_app_paintable(w,TRUE);cards[i]=gtk_drawing_area_new();
  if(i==2){
   gtk_widget_add_events(w,GDK_SCROLL_MASK|GDK_SMOOTH_SCROLL_MASK);
   g_signal_connect(w,"scroll-event",G_CALLBACK(process_scroll),NULL);
   gtk_widget_add_events(cards[i],GDK_SCROLL_MASK|GDK_SMOOTH_SCROLL_MASK);
   g_signal_connect(cards[i],"scroll-event",G_CALLBACK(process_scroll),NULL);
   gtk_widget_set_tooltip_text(cards[i],"Scroll to see more processes.");
+ }
+ if(i==WIDGET_NOTES){
+  gtk_widget_add_events(cards[i],GDK_SCROLL_MASK|GDK_SMOOTH_SCROLL_MASK);
+  g_signal_connect(cards[i],"scroll-event",G_CALLBACK(notes_scroll),NULL);
+  gtk_widget_set_tooltip_text(cards[i],"Scroll to read the note. Click to edit.");
  }
  widget_input(cards[i],i);gtk_container_add(GTK_CONTAINER(w),cards[i]);g_signal_connect(cards[i],"draw",G_CALLBACK(draw),GINT_TO_POINTER(i));gtk_widget_show(cards[i]);}tick(NULL);g_timeout_add_seconds(1,tick,NULL);}
 typedef struct {char *name,*command,*category;GAppInfo*info;char*category_override;} App;

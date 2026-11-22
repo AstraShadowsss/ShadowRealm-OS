@@ -1,13 +1,13 @@
 #!/usr/bin/python3
 """Build editable theme, logo, wallpaper and boot/login assets."""
 from pathlib import Path
-import argparse, subprocess, tempfile
+import argparse, subprocess, tempfile, os
 p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('output',type=Path);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 version_file=a.source/'ARTWORK_VERSION'
 version=(version_file if version_file.is_file() else a.source/'ASSET_VERSION').read_text().strip()
 def write(root,name,text,mode=0o644):
  f=root/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text(text);f.chmod(mode)
-with tempfile.TemporaryDirectory() as tmp:
+with tempfile.TemporaryDirectory(prefix='shadowrealm-os-artwork-',dir=os.environ.get('TMPDIR','/var/tmp')) as tmp:
  root=Path(tmp);subprocess.run(['tar','-xzf',str(a.source/'shadowrealm-os-artwork-source.tar.gz'),'-C',str(root)],check=True)
  professional=root/'usr/share/themes/ShadowRealm-OS-Professional/gtk-3.0/gtk.css'
  professional.write_bytes((a.source/'professional-gtk.css').read_bytes())
@@ -19,6 +19,8 @@ with tempfile.TemporaryDirectory() as tmp:
    if member.isfile() and member.name.endswith('.png'):
     theme=member.name.removeprefix('ShadowRealm-OS-').removesuffix('-Circuit-Walker.png')
     (target/('ShadowRealm-OS-'+theme+'.png')).write_bytes(walkers.extractfile(member).read())
+ from theme_variants import build_variants
+ build_variants(root, a.source)
  # Keep vendor application icons supplied by their own packages.
  vendors=('proton-*','protonvpn*','thunar','Thunar','org.xfce.Thunar','org.xfce.thunar','org.xfce.filemanager','xfce4-terminal','org.xfce.terminal','xfce4-taskmanager','org.xfce.taskmanager','librewolf','io.gitlab.librewolf-community','thunderbird','org.mozilla.Thunderbird','vlc','net.jami.Jami','jami','libreoffice-*','io.github.Hexchat','hexchat','org.keepassxc.KeePassXC','keepassxc','org.gnome.Snapshot','com.belmoussaoui.Authenticator','guvcview','org.xfce.mousepad','mousepad','org.xfce.ristretto','ristretto','org.xfce.notes','atril','shutter','timeshift','sirikali','gparted','seahorse','org.gnome.clocks','org.gnome.Clocks','xarchiver','galculator','torbrowser-launcher','tor-browser','onboard')
  for theme in (root/'usr/share/icons').glob('ShadowRealm-OS-*'):
@@ -122,4 +124,6 @@ if [ "$1" = configure ]; then
  done
 fi
 ''',0o755)
+ from package_files import prepare_package
+ prepare_package(root)
  subprocess.run(['dpkg-deb','--root-owner-group','--build',str(root),str(a.output/f'shadowrealm-os-artwork_{version}_all.deb')],check=True)

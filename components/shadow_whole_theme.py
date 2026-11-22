@@ -56,7 +56,7 @@ def matching_icons(mode,base,files):
         'software':'system-software-install','calculator':'accessories-calculator','trash':'user-trash',
         'email':'internet-mail','editor':'accessories-text-editor','launcher':'view-app-grid'}
     brand_icons={'shadow-dock-launcher','shadowrealm-os-dock-menu','shadowrealm-os-release-shadow-menu','shadowrealm-os-app-menu','shadow-menu','distributor-logo','shadowrealm-os-logo'}
-    if neutral:
+    if neutral and not mode.get('custom_system_icons'):
         for path in icon_dir.glob('*.png'):
             if path.stem.startswith('shadow-switch-') or path.stem in brand_icons:continue
             role=path.stem.removeprefix('shadowrealm-os-release-').removeprefix('shadowrealm-os-app-').removeprefix('orbital-dock-').removeprefix('shadow-panel-').removeprefix('shadow-')
@@ -75,7 +75,20 @@ def matching_icons(mode,base,files):
         metadata=re.search(r'^X-ShadowRealm-OS-OriginalIcon=(.*)$',text,re.M)
         original=metadata[1] if metadata else icon_match[1]
         old=Path(original)
+        command=re.search(r'^Exec=(.*)$',text,re.M)
+        managed_role=None
+        if command:
+            value=command[1]
+            found=re.search(r'(?:shadowrealm-os-desktop\s+|shadow-link\s+--)(terminal|files|browser|control-center|shield|audio|software|menu|clock|calendar|task-manager)\b',value)
+            if not found:
+                found=re.search(r'(?:^|/|\s)shadow-(terminal|files|browser|task-manager|software)\b',value)
+            if found:managed_role=found[1]
+        managed_asset=palette/('orbital-dock-'+managed_role+'.png') if managed_role else None
+        token=original.removeprefix('shadowrealm-os-release-').removeprefix('shadowrealm-os-app-')
+        if token.startswith(('orbital-dock-','shadow-')) and (palette/(token+'.png')).is_file():
+            managed_asset=palette/(token+'.png')
         branded=old.is_relative_to(base/'icons') and (palette/old.name).is_file()
+        if managed_asset and managed_asset.is_file():branded=True
         dock='/xfce4/panel/' in str(path)
         native_icon=old.is_absolute() and not original.startswith(str(base))
         if not branded:
@@ -84,8 +97,8 @@ def matching_icons(mode,base,files):
                 restored=re.sub(r"^X-ShadowRealm-OS-OriginalIcon=.*\n","",restored,count=1,flags=re.M)
                 path.write_text(restored)
             continue
-        if branded and (not neutral or old.stem in brand_icons):
-            icon=str(palette/old.name)
+        if branded and (not neutral or mode.get('custom_system_icons') or old.stem in brand_icons):
+            icon=str(managed_asset if managed_asset and managed_asset.is_file() else palette/old.name)
         else:
             name=original
             if branded:

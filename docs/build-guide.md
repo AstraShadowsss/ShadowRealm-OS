@@ -4,7 +4,7 @@ ShadowRealm-OS is a customized Debian 13 desktop. Its original desktop, artwork,
 
 ## Contents
 
-- `components/`: editable C/Python/shell code, root helpers, eight theme asset packs, native component builders and the exact upstream Xfce panel source plus ShadowRealm-OS patch.
+- `components/`: editable C/Python/shell code, root helpers, theme asset packs and coordinated palette variants, native component builders and the exact upstream Xfce panel source plus ShadowRealm-OS patch.
 - `games/`: nine Linux games, package builder, icons and rules tests.
 - `release/shadowrealm-os-live/`: AMD64 live/installer build, defaults, sanitization and inspection scripts.
 - Third-party source archives are in the local Project / Rebuild Files / Third-party Sources directory, or the matching SourceForge source distribution.
@@ -18,6 +18,7 @@ Use a disposable Debian 13 AMD64 VM with at least 4 GB RAM and 45 GB available d
 ```sh
 sudo apt-get update
 sudo apt-get install build-essential dpkg-dev pkg-config python3 python3-apt python3-gi python3-pil gettext libgtk-3-dev libvte-2.91-dev libxfce4ui-2-dev libxfce4util-dev libxfconf-0-dev libexo-2-dev libwnck-3-dev libgarcon-1-dev libgarcon-gtk3-1-dev libdbusmenu-gtk3-dev libgtk-layer-shell-dev libxfce4windowing-0-dev live-build xorriso squashfs-tools cryptsetup lvm2 librsvg2-bin
+export TMPDIR=/var/tmp
 mkdir -p outputs
 python3 components/build-packages.py components outputs
 python3 components/build-artwork.py components outputs
@@ -42,7 +43,7 @@ Use the fixed, empty build path `/var/tmp/shadowrealm-os-iso-build`; the scripts
 sudo bash release/shadowrealm-os-live/prepare-build.sh /var/tmp/shadowrealm-os-iso-build --build
 ```
 
-This builds a Debian live/installer base, adds the signed LibreWolf/Jami repositories and everyday applications, installs the custom packages, removes machine credentials and personal state, and creates a BIOS/UEFI hybrid image. Network access is required; upstream security packages can change, so byte-identical reproduction requires the supplied version/source manifest and a pinned Debian snapshot.
+This builds a Debian live/installer base, adds the signed LibreWolf repository and everyday applications, installs the custom packages, removes machine credentials and personal state, and creates a BIOS/UEFI hybrid image. Network access is required; upstream security packages can change, so byte-identical reproduction requires the supplied version/source manifest and a pinned Debian snapshot.
 
 Never build by copying the owner's Home directory or by exporting the working personal VM.
 

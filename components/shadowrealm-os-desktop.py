@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """Install ShadowRealm-OS defaults for an individual desktop account."""
 import hashlib
+import importlib.util
 import json
 import fcntl
 import tempfile
@@ -110,7 +111,7 @@ def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
             target.symlink_to(source)
     # Package-owned assets have a separate version from user settings. Refresh
     # only shipped filenames; never replace unrelated user wallpapers or icons.
-    asset_marker = home / ".local/state/shadowrealm-os/icon-catalog-v3"
+    asset_marker = home / ".local/state/shadowrealm-os/icon-catalog-v4"
     if marker.is_file() and not asset_marker.is_file():
         def refresh_owned(source, destination):
             for original in source.rglob("*"):
@@ -204,7 +205,19 @@ def provision(home, payload=PAYLOAD, system_share=Path("/usr/share")):
     state.mkdir(parents=True, exist_ok=True)
     with (state / "provision.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        return _provision_unlocked(home, payload, system_share)
+        base = _provision_unlocked(home, payload, system_share)
+        helper = payload / "runtime/bin/shadow_palette.py"
+        mode_file = home / ".config/shadowrealm-os/appearance-mode"
+        manifest = base / "appearance-modes.json"
+        if helper.is_file() and mode_file.is_file() and manifest.is_file():
+            spec = importlib.util.spec_from_file_location("shadow_palette", helper)
+            module = importlib.util.module_from_spec(spec)
+            spec.loader.exec_module(module)
+            mode = mode_file.read_text().strip()
+            records = json.loads(manifest.read_text())
+            if mode in records:
+                module.write_active_palette(mode_file.parent, mode, records[mode])
+        return base
 
 
 def seed_wallpaper(home, base, *, early=False):

@@ -7,7 +7,10 @@ source=Path(sys.argv[1]).resolve();sys.path.insert(0,str(source.parent));spec=im
 from gi.repository import Gtk,GLib
 app=module.Backgrounds();app.register(None);app.activate()
 assert app.window.get_visible() and app.tabs.get_n_pages()==4
-assert len(app.style_buttons)==len(app.modes)==8
+assert len(app.style_buttons)==sum(not entry.get('variant_of') for entry in app.modes.values())
+assert len(app.style_buttons)==9
+for mode in ('professional-ocean','professional-graphite','professional-plum'):
+ assert app.modes[mode].get('variant_of')=='professional'
 assert 'black-white' in app.modes and 'blue-white' not in app.modes
 for i in range(4):
  app.tabs.set_current_page(i)
@@ -28,4 +31,4 @@ def poll():
   return True
  except Exception as error:failure.append(str(error));app.window.close();loop.quit();return False
 apply(targets[0]);GLib.timeout_add(250,poll);loop.run();assert not failure,failure
-print('PASS Appearance: all four pages, eight actual themes, Black & White apply and original-theme restore')
+print('PASS Appearance: all four pages, nine theme groups, Professional accents, Black & White apply and original-theme restore')

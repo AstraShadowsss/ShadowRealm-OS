@@ -53,10 +53,17 @@ def heading(title, subtitle=None):
 
     def refresh(*_):
         try:
+            base = Path.home() / ".local/share/shadow-link"
+            mode = (Path.home() / ".config/shadowrealm-os/appearance-mode").read_text().strip()
+            record = json.loads((base / "appearance-modes.json").read_text()).get(mode, {})
+            if record.get("unbranded"):
+                image.set_from_icon_name("preferences-system-symbolic", Gtk.IconSize.DIALOG)
+                image.set_pixel_size(40)
+                return
             path = Path.home() / ".local/share/shadow-link/logo.png"
             logo = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), 52, 52, True)
             image.set_from_pixbuf(logo)
-        except GLib.Error:
+        except (GLib.Error, OSError, ValueError):
             image.set_from_icon_name("preferences-system-symbolic", Gtk.IconSize.DIALOG)
 
     refresh()

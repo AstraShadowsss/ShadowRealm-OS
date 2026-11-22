@@ -26,6 +26,7 @@ def build_professional_icons(root, modes, source=None):
         return
     glyphs.setdefault('software','<g fill="none" stroke="#000000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 21 20-10 20 10v26L32 57 12 47Z M12 21l20 10 20-10 M32 31v26 M22 16l20 10"/></g>')
     glyphs.setdefault('task-manager','<g fill="none" stroke="#000000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="12" width="46" height="34" rx="5"/><path d="M20 54h24 M32 46v8 M15 33h8l6-12 7 18 5-9h8"/></g>')
+    glyphs.setdefault('home','<g fill="none" stroke="#000000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 30 23-19 23 19 M15 26v28h34V26 M26 54V37h12v17"/></g>')
     for mode, palette in modes.items():
         if not palette.get('unbranded'):
             continue
@@ -80,3 +81,15 @@ def build_professional_icons(root, modes, source=None):
                 svg = icon(role)
             p.write_text(svg) if p.suffix == '.svg' else p.write_bytes(render_svg(svg))
         palette['custom_system_icons'] = True
+        frame=root/'usr/share/themes'/palette['wm']/'xfwm4'
+        for p in frame.glob('*.xpm'):
+            colors={'.':'#edf3f0','m':'#70877c','c':accent,'g':'#c4d1cb','w':ink}
+            text=p.read_text()
+            text=re.sub(r'"([.mcgw]) c #[0-9a-fA-F]{6}"',lambda m:'"'+m[1]+' c '+colors[m[1]]+'"',text)
+            p.write_text(text)
+        css=root/'usr/share/themes'/palette['theme']/'gtk-3.0/gtk.css'
+        if css.is_file():
+            marker='/* Professional selection controls */'
+            text=css.read_text().split(marker)[0]
+            text+=f'\n{marker}\n@define-color accent_color {accent};\ncheck:checked, radio:checked {{background-image:none; background-color:{accent}; border-color:{accent}; color:#ffffff;}}\n'
+            css.write_text(text)

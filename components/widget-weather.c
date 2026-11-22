@@ -4,6 +4,7 @@ static gchar *weather_condition;
 static GSubprocess *weather_process;
 static gint64 weather_next;
 static gboolean weather_retry, weather_network_available;
+static gboolean weather_fahrenheit = TRUE;
 
 static void weather_finished(GObject *source, GAsyncResult *result, gpointer unused)
 {
@@ -85,8 +86,15 @@ static void draw_widget_weather(cairo_t *canvas)
 {
     const gchar *fallback = weather_process ? "Fetching forecast…" :
                             weather_location ? "Forecast unavailable" : "Choose a location in Widget Settings";
-    if (weather_temperature)
-        txt(canvas, 16, 76, 26, weather_temperature, "f5e9ff", 1);
+    if (weather_temperature) {
+        double temperature = g_ascii_strtod(weather_temperature, NULL);
+        char formatted[64], number[G_ASCII_DTOSTR_BUF_SIZE];
+        if (weather_fahrenheit)
+            temperature = temperature * 9.0 / 5.0 + 32.0;
+        g_ascii_formatd(number, sizeof number, "%.1f", temperature);
+        g_snprintf(formatted, sizeof formatted, "%s °%s", number, weather_fahrenheit ? "F" : "C");
+        txt(canvas, 16, 76, 26, formatted, "f5e9ff", 1);
+    }
     txt(canvas, 16, 104, 10, weather_condition ? weather_condition : fallback, "f5e9ff", 0);
     txt(canvas, 16, 124, 10, "Forecast from MET Norway", "00eaff", 0);
 }

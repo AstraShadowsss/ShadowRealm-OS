@@ -1,10 +1,11 @@
 #!/usr/bin/python3
 """Edit the dock through the current Xfce session."""
 import subprocess
+from pathlib import Path
 import gi
 
 gi.require_version("Gtk", "3.0")
-from gi.repository import Gtk
+from gi.repository import Gtk, Gio, GLib
 from shadow_effects import attach, heading
 
 CHANNEL = ["xfconf-query", "-c", "xfce4-panel"]
@@ -27,7 +28,7 @@ class DockSettings(Gtk.Application):
             return
         window = Gtk.ApplicationWindow(application=self, title="Dock")
         window.set_icon_name("shadowrealm-os-app-appearance")
-        window.set_default_size(490, 330)
+        window.set_default_size(540, 620)
         attach(window)
         body = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=16, margin=20)
         window.add(body)
@@ -55,13 +56,35 @@ class DockSettings(Gtk.Application):
         expand.connect("clicked", self.fit_to_launchers)
         body.pack_start(expand, False, False, 0)
 
+        self.launchers = Gtk.ListStore(int, str)
+        self.launcher_view = Gtk.TreeView(model=self.launchers)
+        self.launcher_view.set_headers_visible(False)
+        self.launcher_view.set_reorderable(True)
+        self.launcher_view.append_column(Gtk.TreeViewColumn("Dock item", Gtk.CellRendererText(), text=1))
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_min_content_height(150)
+        scroll.add(self.launcher_view)
+        body.pack_start(scroll, True, True, 0)
+        actions = Gtk.Box(spacing=8)
+        for label, callback in (("Add application…", self.add_application),
+                                ("Move left", lambda _b: self.move_item(-1)),
+                                ("Move right", lambda _b: self.move_item(1)),
+                                ("Remove", self.remove_item)):
+            button = Gtk.Button(label=label)
+            button.connect("clicked", callback)
+            actions.pack_start(button, True, True, 0)
+        body.pack_start(actions, False, False, 0)
+
         edit = Gtk.Button(label="Edit dock launchers and position…")
         edit.connect("clicked", self.preferences)
         body.pack_start(edit, False, False, 0)
-        body.pack_start(Gtk.Label(label="Use Items in Panel Preferences to add, remove or reorder launchers.",
+        body.pack_start(Gtk.Label(label="Drag rows to rearrange the dock, or select an item and use the buttons.",
                                   xalign=0, wrap=True), False, False, 0)
         self.status = Gtk.Label(xalign=0, wrap=True)
         body.pack_end(self.status, False, False, 0)
+        self.load_items()
+        self.launchers.connect("rows-reordered", self.save_order)
         if size.returncode != 0:
             form.set_sensitive(False)
             edit.set_sensitive(False)
@@ -69,6 +92,109 @@ class DockSettings(Gtk.Application):
         size_control.connect("value-changed", self.change, "size", "uint", Gtk.SpinButton.get_value_as_int)
         behavior.connect("changed", self.change, "autohide-behavior", "uint", Gtk.ComboBox.get_active)
         window.show_all()
+
+    def current_ids(self):
+        result = query("plugin-ids")
+        if result.returncode:
+            raise RuntimeError(result.stderr.strip() or "The dock is unavailable.")
+        return [int(line.strip()) for line in result.stdout.splitlines() if line.strip().isdigit()]
+
+    def load_items(self):
+        self.loading = True
+        try:
+            self.saved_ids = self.current_ids()
+            self.launchers.clear()
+            for item in self.saved_ids:
+                result = subprocess.run(CHANNEL + ["-p", f"/plugins/plugin-{item}"],
+                                        capture_output=True, text=True, timeout=5)
+                kind = result.stdout.strip()
+                label = {"separator": "Divider", "applicationsmenu": "Applications menu"}.get(kind, kind.title())
+                directory = Path.home() / f".config/xfce4/panel/launcher-{item}"
+                entries = sorted(directory.glob("*.desktop"))
+                if kind == "launcher" and entries:
+                    app = Gio.DesktopAppInfo.new_from_filename(str(entries[0]))
+                    if app:
+                        label = app.get_display_name()
+                    if len(entries) > 1:
+                        label += f" (+{len(entries)-1})"
+                self.launchers.append([item, label or f"Dock item {item}"])
+        except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+            self.status.set_text(str(error))
+        finally:
+            self.loading = False
+        return False
+
+    def write_items(self, ids):
+        try:
+            if ids == self.saved_ids:
+                return
+            if self.current_ids() != self.saved_ids:
+                self.status.set_text("The dock changed elsewhere. Its current items have been reloaded.")
+                self.load_items()
+                return
+            args = ["--force-array"]
+            for item in ids:
+                args += ["--type", "int", "--set", str(item)]
+            result = query("plugin-ids", *args)
+            if result.returncode:
+                raise RuntimeError(result.stderr.strip() or "Could not save dock items.")
+            if self.current_ids() != ids:
+                raise RuntimeError("The dock did not accept the new order.")
+            self.saved_ids = ids
+            subprocess.run(["xfce4-panel", "--restart"], check=True, timeout=15)
+            self.status.set_text("Dock updated.")
+        except (OSError, RuntimeError, subprocess.TimeoutExpired, subprocess.CalledProcessError) as error:
+            self.status.set_text(str(error))
+            self.load_items()
+
+    def save_order(self, *_args):
+        if not self.loading:
+            self.write_items([row[0] for row in self.launchers])
+
+    def move_item(self, direction):
+        model, selected = self.launcher_view.get_selection().get_selected()
+        if selected is None:
+            return
+        index = model.get_path(selected).get_indices()[0]
+        other = index + direction
+        if 0 <= other < len(model):
+            model.swap(selected, model.get_iter(Gtk.TreePath.new_from_indices([other])))
+            self.save_order()
+
+    def remove_item(self, _button):
+        model, selected = self.launcher_view.get_selection().get_selected()
+        if selected is None:
+            return
+        if len(model) <= 1:
+            self.status.set_text("Keep at least one dock item, or hide the dock using Visibility.")
+            return
+        ids = [row[0] for row in model if row[0] != model[selected][0]]
+        self.write_items(ids)
+        self.load_items()
+
+    def add_application(self, _button):
+        dialog = Gtk.AppChooserDialog.new(self.get_active_window(), Gtk.DialogFlags.MODAL,
+                                         "application/octet-stream")
+        dialog.set_title("Add application to dock")
+        dialog.get_widget().set_show_all(True)
+        response = dialog.run()
+        app = dialog.get_app_info() if response == Gtk.ResponseType.OK else None
+        dialog.destroy()
+        filename = app.get_filename() if app and hasattr(app, "get_filename") else None
+        if not filename:
+            return
+        try:
+            result = subprocess.run(["gdbus", "call", "--session", "--dest", "org.xfce.Panel",
+                                     "--object-path", "/org/xfce/Panel", "--method",
+                                     "org.xfce.Panel.AddLauncherToPanel", "2", Path(filename).as_uri()],
+                                    capture_output=True, text=True, timeout=10)
+            if result.returncode:
+                self.status.set_text(result.stderr.strip() or "Could not add this application.")
+            else:
+                self.status.set_text("Application added to the dock.")
+                GLib.timeout_add(500, self.load_items)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            self.status.set_text(str(error))
 
     def change(self, widget, key, kind, value):
         try:

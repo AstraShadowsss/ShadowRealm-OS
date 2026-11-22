@@ -22,12 +22,16 @@ def control(root,name,depends,description):
  write(root,f'usr/share/doc/{name}/copyright',(src/'LICENSE').read_text())
  write(root,'DEBIAN/control',f'Package: {name}\nVersion: {package_version(name)}\nSection: x11\nPriority: optional\nArchitecture: {arch}\nMaintainer: ShadowRealm-OS Project <packages@shadowrealm-os.invalid>\nDepends: {depends}\nDescription: {description}\n')
 def build(root,name):
+ from package_files import prepare_package
+ prepare_package(root)
  run('dpkg-deb','--root-owner-group','--build',str(root),str(out/f'{name}_{package_version(name)}_{arch}.deb'))
-with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
+with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-',dir=os.environ.get('TMPDIR','/var/tmp')) as td:
  root=Path(td)/'desktop';root.mkdir()
  run('tar','-xzf',str(src/'shadowrealm-os-desktop-defaults-source.tar.gz'),'-C',str(root))
  walls=root/'usr/share/shadowrealm-os/desktop/wallpapers';walls.mkdir(parents=True,exist_ok=True)
  run('tar','-xzf',str(src/'shadowrealm-os-walker-wallpapers.tar.gz'),'-C',str(walls))
+ from theme_variants import build_variants
+ build_variants(root, src)
  shutil.copyfile(src/'corridor-wallpaper-previous.json',walls.parent/'corridor-wallpaper-previous.json')
  seed_panel(root)
  # Seed the complete first-login appearance before xfwm/settings start.
@@ -50,10 +54,10 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-') as td:
  write(root,'usr/share/glib-2.0/schemas/90-shadowrealm-os.gschema.override',"[org.gnome.desktop.interface]\ncolor-scheme='prefer-dark'\n")
  runtime=root/'usr/share/shadowrealm-os/desktop/runtime/bin'
  runtime.mkdir(parents=True,exist_ok=True)
- names='shadow-weather.py local-file-search.py shadow-account shadow_account_preflight.py shadow_airplane.py shadow-appearance shadow-appearance-apply shadow_appearance_desktop.py shadow-audio-panel shadow-browser shadow-dock-settings shadow_effects.py shadow-files shadow_network_tools.py shadow-notes shadow-screenshot shadow-software shadow-system-panels shadow-terminal shadow-trash shadow_whole_theme.py'.split()
+ names='wallpaper-collections.json shadow-weather.py local-file-search.py shadow-account shadow_account_preflight.py shadow_airplane.py shadow-appearance shadow-appearance-apply shadow_appearance_desktop.py shadow_palette.py shadow-audio-panel shadow-browser shadow-dock-settings shadow_effects.py shadow-files shadow_network_tools.py shadow-notes shadow-screenshot shadow-software shadow-system-panels shadow-terminal shadow-trash shadow_whole_theme.py'.split()
  for name in names:
   target=runtime/name
-  shutil.copyfile(src/name,target);target.chmod(0o644 if target.suffix=='.py' else 0o755)
+  shutil.copyfile(src/name,target);target.chmod(0o644 if target.suffix in ('.py','.json') else 0o755)
  native=src
  flags=subprocess.check_output(['pkg-config','--cflags','--libs','gtk+-3.0','gio-unix-2.0'],text=True).split()
  run('cc','-O2',str(native/'shadow-link-dock.c'),'-o',str(runtime/'shadow-link'),*flags,'-lm')
