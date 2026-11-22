@@ -2,9 +2,9 @@
 
 A Debian 13 desktop with its own look, built around Xfce and a set of small, integrated desktop tools.
 
-<p align="center"><img src="branding/banner-neon.png" alt="ShadowRealm-OS â€” SR logo and wordmark" width="880"></p>
+<p align="center"><img src="branding/banner-neon.png" alt="ShadowRealm-OS - SR logo and wordmark" width="880"></p>
 
-**2026.11 beta 1 Â· AMD64 Â· live desktop and installer**
+**2026.11 beta 1 | AMD64 | live desktop and installer**
 
 ![ShadowRealm-OS desktop](screenshots/desktop.png)
 
@@ -12,7 +12,7 @@ ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal
 
 ## Download and install
 
-[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) Â· [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) Â· [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
+[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) | [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) | [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
 
 Check the ISO against `SHA256SUMS` before writing it to a USB drive or attaching it to a virtual machine.
 
@@ -95,6 +95,6 @@ Original project work is supplied under the [MIT license](LICENSE). Linux, Debia
 
 This repository contains the custom source, configurations, artwork masters and build recipes. The ISO and matching third-party source distribution belong on SourceForge, outside Git history. Personal files and VM disks are not part of this repository.
 
-[Report a bug](https://github.com/AstraShadowsss/ShadowRealm-OS/issues) Â· [SourceForge](https://sourceforge.net/projects/shadowrealm-os/)
+[Report a bug](https://github.com/AstraShadowsss/ShadowRealm-OS/issues) | [SourceForge](https://sourceforge.net/projects/shadowrealm-os/)
 
 Created and maintained by AstraShadows
