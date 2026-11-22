@@ -4,16 +4,16 @@
     "#ff27d5"
   ],
   "WhiteSilverGold": [
-    "#b38a35",
-    "#8e6b2c"
+    "#e4bd36",
+    "#a9b4c3"
   ],
   "RedBlack": [
-    "#e24b4b",
-    "#c38b8b"
+    "#ff142b",
+    "#d60838"
   ],
   "Woodland": [
-    "#8bd445",
-    "#efbf49"
+    "#76bd3e",
+    "#c47832"
   ],
   "Hacker": [
     "#40f879",
@@ -30,5 +30,21 @@
   "Professional": [
     "#326d59",
     "#60877a"
+  ],
+  "PurpleBlack": [
+    "#b34dff",
+    "#dfb0ff"
+  ],
+  "ProfessionalOcean": [
+    "#2668b4",
+    "#5e9cb8"
+  ],
+  "ProfessionalGraphite": [
+    "#4e5c70",
+    "#8996a8"
+  ],
+  "ProfessionalPlum": [
+    "#81449d",
+    "#b18cc8"
   ]
 }
