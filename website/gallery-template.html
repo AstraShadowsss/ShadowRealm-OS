@@ -1,7 +1,8 @@
 <section id="appearance" class="appearance-gallery" aria-labelledby="appearance-title">
 <h2 id="appearance-title">Wallpapers, your way</h2>
-<p>Browse by theme, choose a wallpaper style, or explore the whole collection. Open any image for a larger view.</p>
+<p>Vivid cyberpunk Signature themes and a separate, unbranded Professional collection. Choose a collection, then browse its colors and wallpapers.</p>
 <p class="gallery-preview-note">Appearance preview: the expanded collection is being prepared for the next desktop update.</p>
+<div class="gallery-families" role="group" aria-label="Wallpaper collection"><button type="button" class="gallery-family" data-family="signature" aria-pressed="true">Signature themes</button><button type="button" id="professional" class="gallery-family" data-family="professional" aria-pressed="false">Professional</button></div>
 <div class="gallery-toolbar" hidden>
   <label>Theme <select class="gallery-theme" aria-label="Filter wallpaper theme"><option value="">All themes</option></select></label>
   <label>Wallpaper <select class="gallery-style" aria-label="Filter wallpaper style"><option value="">All wallpapers</option></select></label>
@@ -11,10 +12,12 @@
 <!-- GALLERY CARDS -->
 </div>
 <p class="gallery-position" aria-live="polite" aria-atomic="true"></p>
+<div class="professional-showcase" hidden><h3>A quieter workspace</h3><p>Emerald, Ocean, Graphite and Plum accents pair with three sculpted abstract wallpapers. The same desktop controls and widgets use a restrained, unbranded appearance.</p><img class="screen" src="https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/professional.png" alt="Professional desktop with Satin Bloom wallpaper and rounded status widgets" loading="lazy"><img class="screen" src="https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/control-center-professional.png" alt="Control Center in the Professional desktop" loading="lazy"></div>
 <noscript><p>Scroll sideways to browse the labeled collection.</p></noscript>
 </section>
 <style>
 .appearance-gallery{margin:42px 0}.gallery-preview-note{font-size:.9rem;color:#b9b4d6}
+.gallery-families{display:flex;gap:10px;flex-wrap:wrap;margin:20px 0}.gallery-family{font:inherit;border:1px solid #56657f;border-radius:24px;padding:10px 22px;background:#151a26;color:#edf0fa;cursor:pointer}.gallery-family[aria-pressed="true"]{background:#d8e8e4;color:#142d28;border-color:#d8e8e4}.professional-showcase{margin:28px 0}.professional-showcase[hidden]{display:none}
 .gallery-toolbar{display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin:20px 0}.gallery-toolbar[hidden]{display:none}
 .gallery-toolbar label{display:grid;gap:6px;font-size:.95rem;flex:1;min-width:185px}
 .gallery-toolbar select,.gallery-navigation button{font:inherit;color:#edf0fa;background:#151a26;border:1px solid #56657f;border-radius:8px;padding:10px 12px;min-height:46px}
@@ -34,8 +37,10 @@
  const strip=gallery.querySelector('.gallery-strip'),cards=[...strip.querySelectorAll('.gallery-card')];
  const theme=gallery.querySelector('.gallery-theme'),style=gallery.querySelector('.gallery-style');
  const previous=gallery.querySelector('.gallery-previous'),next=gallery.querySelector('.gallery-next'),position=gallery.querySelector('.gallery-position');
- const themes=new Map(cards.map(c=>[c.dataset.theme,c.dataset.themeLabel]));
- for(const [value,label] of themes)theme.add(new Option(label,value));
+ let family=location.hash==='#professional'?'professional':'signature';
+ const inFamily=c=>c.dataset.theme.startsWith('professional')===(family==='professional');
+ function themeOptions(){theme.replaceChildren(new Option(family==='professional'?'All Professional accents':'All Signature themes',''));const themes=new Map(cards.filter(inFamily).map(c=>[c.dataset.theme,c.dataset.themeLabel]));for(const [value,label] of themes)theme.add(new Option(label,value));gallery.querySelector('.professional-showcase').hidden=family!=='professional';gallery.querySelectorAll('.gallery-family').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.family===family)));}
+ themeOptions();
  for(const value of [...new Set(cards.map(c=>c.dataset.style))].sort())style.add(new Option(value,value));
  let visible=cards,frame=0;
  function updatePosition(){
@@ -46,16 +51,17 @@
   previous.disabled=index===0;next.disabled=index===visible.length-1;return index;
  }
  function filter(){
-  const candidates=cards.filter(c=>!theme.value||c.dataset.theme===theme.value);
+  const candidates=cards.filter(c=>inFamily(c)&&(!theme.value||c.dataset.theme===theme.value));
   const styles=new Set(candidates.map(c=>c.dataset.style));
-  [...style.options].forEach(o=>{o.disabled=!!o.value&&!styles.has(o.value);});
+  [...style.options].forEach(o=>{o.disabled=!!o.value&&!styles.has(o.value);o.hidden=o.disabled;});
   if(style.selectedOptions[0].disabled)style.value='';
-  cards.forEach(c=>{c.hidden=!!((theme.value&&c.dataset.theme!==theme.value)||(style.value&&c.dataset.style!==style.value));});
+  cards.forEach(c=>{c.hidden=!!(!inFamily(c)||(theme.value&&c.dataset.theme!==theme.value)||(style.value&&c.dataset.style!==style.value));});
   visible=cards.filter(c=>!c.hidden);strip.dataset.single=String(visible.length===1);strip.scrollTo({left:0,behavior:'instant'});updatePosition();
  }
  function move(delta){const index=updatePosition(),target=visible[Math.max(0,Math.min(visible.length-1,index+delta))];strip.scrollTo({left:strip.scrollLeft+target.getBoundingClientRect().left-strip.getBoundingClientRect().left-2});}
  previous.addEventListener('click',()=>move(-1));next.addEventListener('click',()=>move(1));
  theme.addEventListener('change',filter);style.addEventListener('change',filter);
+ gallery.querySelectorAll('.gallery-family').forEach(button=>button.addEventListener('click',()=>{family=button.dataset.family;style.value='';themeOptions();filter();}));
  strip.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();move(e.key==='ArrowLeft'?-1:1);}});
  strip.addEventListener('scroll',()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(updatePosition);},{passive:true});
  gallery.querySelector('.gallery-toolbar').hidden=false;filter();

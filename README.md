@@ -45,15 +45,19 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 [Browse the labeled wallpaper carousel](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance), with theme and collection filters. The expanded appearance collection is a preview of the next desktop update.
 
-[![Professional abstract wallpapers: Satin Bloom, Flowing Glass and Sculpted Silk](screenshots/professional-wallpapers.jpg)](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance)
+[![Professional abstract wallpapers: Satin Bloom, Flowing Glass and Sculpted Silk](screenshots/professional-wallpapers.jpg)](https://astrashadowsss.github.io/ShadowRealm-OS/#professional)
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
+
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png)
+
+![Professional Control Center](screenshots/control-center-professional.png)
 
 ### Control Center
 
 ![Searchable Control Center in Neon](screenshots/control-center-neon.png)
 
-![The same Control Center in Professional](screenshots/control-center-professional.png)
+
 
 ### Widgets and system tools
 
