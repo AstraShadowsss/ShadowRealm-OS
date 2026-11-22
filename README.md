@@ -49,9 +49,9 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
 
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png)
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122)
 
-![Professional Control Center](screenshots/control-center-professional.png)
+![Professional Control Center](screenshots/control-center-professional.png?v=20261122)
 
 ### Control Center
 
