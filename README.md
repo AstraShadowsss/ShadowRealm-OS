@@ -41,19 +41,9 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 ## Screenshots
 
-### Wallpapers and themes
+### Terminal
 
-[![A selection from the coordinated wallpaper collection](screenshots/wallpaper-styles.png)](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance)
-
-[Browse the labeled wallpaper carousel](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance), with theme and collection filters. The expanded appearance collection is a preview of the next desktop update.
-
-[![Professional abstract wallpapers: Satin Bloom, Flowing Glass and Sculpted Silk](screenshots/professional-wallpapers.jpg)](https://astrashadowsss.github.io/ShadowRealm-OS/#professional)
-
-Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
-
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122)
-
-![Professional Control Center](screenshots/control-center-professional.png?v=20261122)
+![Terminal on the current desktop](screenshots/terminal-current.png)
 
 ### Control Center
 
@@ -67,7 +57,6 @@ Professional pairs these three unbranded designs with Emerald, Ocean, Graphite o
 | --- | --- | --- | --- |
 | ![Clock widget showing the time](screenshots/widget-clock.png) | ![Calendar widget showing the month](screenshots/widget-calendar.png) | ![Notes widget showing saved notes](screenshots/widget-notes.png) | ![Weather widget showing forecast temperature and conditions](screenshots/widget-weather-professional-clean.png) |
 
-![Separate Clock, Calendar and Notes widgets alongside their settings](screenshots/widget-settings-professional.png)
 
 ![System Overview, Network, Processes and Shadow Shield](screenshots/widgets.png)
 
@@ -82,6 +71,21 @@ Professional pairs these three unbranded designs with Emerald, Ocean, Graphite o
 [![The nine games in action](screenshots/games-in-action.png)](https://astrashadowsss.github.io/ShadowRealm-OS/#games)
 
 [Browse individual game screenshots](https://astrashadowsss.github.io/ShadowRealm-OS/#games).
+
+### Wallpapers and themes
+
+[![A selection from the coordinated wallpaper collection](screenshots/wallpaper-styles.png)](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance)
+
+[Browse the labeled wallpaper carousel](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance), with theme and collection filters. The expanded appearance collection is a preview of the next desktop update.
+
+[![Professional abstract wallpapers: Satin Bloom, Flowing Glass and Sculpted Silk](screenshots/professional-wallpapers.jpg)](https://astrashadowsss.github.io/ShadowRealm-OS/#professional)
+
+Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
+
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122)
+
+![Professional Control Center](screenshots/control-center-professional.png?v=20261122)
+
 
 ## Shadow Games for Android
 
