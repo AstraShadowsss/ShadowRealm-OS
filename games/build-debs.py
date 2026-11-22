@@ -4,7 +4,7 @@ import argparse, shutil, subprocess, tempfile
 from pathlib import Path
 p=argparse.ArgumentParser();p.add_argument('output',type=Path);p.add_argument('--game',action='append',default=[]);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 source=Path(__file__).resolve().parent
-GAMES=[('shadow-pinball','Shadow Pinball','0.3.3','pinball'),('skull-invaders','Skull Invaders','0.2.0','arcade'),('shadow-runner','Shadow Runner','0.1.2','arcade'),('circuit-chase','Circuit Chase','0.2.0','classic'),('marble-reactor','Marble Reactor','0.3.0','classic'),('neon-ascent','Neon Ascent','0.1.1','classic'),('neon-breaker','Neon Breaker','0.1.1','classic'),('shadow-snake','Shadow Snake','0.1.2','classic'),('shadow-solitaire','Shadow Spider Solitaire','0.2.1','classic')]
+GAMES=[('shadow-pinball','Shadow Pinball','0.3.3','pinball'),('skull-invaders','Skull Invaders','0.2.1','arcade'),('shadow-runner','Shadow Runner','0.1.3','arcade'),('circuit-chase','Circuit Chase','0.2.1','classic'),('marble-reactor','Marble Reactor','0.3.1','classic'),('neon-ascent','Neon Ascent','0.1.2','classic'),('neon-breaker','Neon Breaker','0.1.2','classic'),('shadow-snake','Shadow Snake','0.1.3','classic'),('shadow-solitaire','Shadow Spider Solitaire','0.2.2','classic')]
 if set(a.game)-{row[0] for row in GAMES}:p.error('Unknown game selection')
 def put(root,name,data,mode=0o644):
  path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(data);path.chmod(mode)

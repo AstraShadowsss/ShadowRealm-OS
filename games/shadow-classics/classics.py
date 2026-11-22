@@ -301,7 +301,7 @@ class Maze(Classic):
             self.previous_ghosts=self.ghosts[:]
             self.ghosts=[self.move(g,i) for i,g in enumerate(self.ghosts)]
             self.collide()
-        if not self.food:
+        if not self.food and not self.over:
             self.level+=1;self.begin();self.effects.append("mission")
 
     def collide(self):

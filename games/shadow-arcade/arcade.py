@@ -263,6 +263,7 @@ class Invaders:
                 self.damage()
         for foe in self.foes:
             if foe[5] and abs(foe[0]-self.x)<31 and abs(foe[1]-579)<25:self.damage()
+        if self.over:return
         for drop in self.drops[:]:
             drop[1]+=125*dt
             if drop[1]>H:self.drops.remove(drop)

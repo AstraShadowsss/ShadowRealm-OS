@@ -11,6 +11,9 @@ for x,y,direction in [(824,463,(0,-1)),(782,505,(-1,0)),(866,505,(1,0)),(824,547
     maze.click(x,y);assert maze.pending==direction
 maze.swipe(80,10);assert maze.pending==(1,0)
 maze.swipe(5,-90);assert maze.pending==(0,-1)
+maze=Maze();maze.food={maze.player:'.'};maze.ghosts=[maze.player];maze.previous_ghosts=maze.ghosts[:]
+maze.invulnerable=0;maze.lives=1;maze.step(.12,set())
+assert maze.over and maze.lives==0 and maze.level==1
 
 for kind,count in [('double',2),('triple',3),('shield',1),('repair',1)]:
     game=Invaders();game.hp=2;game.drops=[[game.x,579,kind]]
@@ -20,6 +23,9 @@ for kind,count in [('double',2),('triple',3),('shield',1),('repair',1)]:
         hp=game.hp;game.damage();assert game.hp==hp
         game.t=game.shield_until+1;game.protect=0;game.damage();assert game.hp==hp-1
     if kind=='repair':assert game.hp==3
+
+game=Invaders();game.hp=1;game.bolts=[[game.x,579,0,0]];game.drops=[[game.x,579,'repair']]
+game.step(.001,set());assert game.over and game.hp==0 and len(game.drops)==1
 
 game=Invaders();bosses=[]
 for wave in range(1,13):
