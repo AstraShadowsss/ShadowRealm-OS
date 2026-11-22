@@ -143,12 +143,14 @@ def render_wallpaper_master(source, target, palette):
         if palette.get('wallpaper_light'):
             matrix = ' '.join(f'0 {0.45-c} {c-0.96} 0 0.96' for c in color) + ' 0 0 0 1 0'
         else:
-            matrix = ' '.join(f'0 {1-c} {c} 0 0' for c in color) + ' 0 0 0 1 0'
+            neutral = .2 if palette.get('wallpaper_palette') == 'Neon' else 1.0
+            matrix = ' '.join(f'0 {(1-c)*neutral} {c} 0 0' for c in color) + ' 0 0 0 1 0'
         filters.append(f'<filter id="{role}" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter>')
     encoded = base64.b64encode(source.read_bytes()).decode()
     image = f'<image width="{width}" height="{height}" href="data:image/png;base64,{encoded}"'
+    stops = '<stop offset=".45" stop-color="black"/><stop offset=".55" stop-color="white"/>' if palette.get('wallpaper_palette') == 'Neon' else '<stop stop-color="black"/><stop offset="1" stop-color="white"/>'
     svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">
-<defs>{''.join(filters)}<linearGradient id="blend"><stop stop-color="black"/><stop offset="1" stop-color="white"/></linearGradient><mask id="fade"><rect width="100%" height="100%" fill="url(#blend)"/></mask></defs>
+<defs>{''.join(filters)}<linearGradient id="blend">{stops}</linearGradient><mask id="fade"><rect width="100%" height="100%" fill="url(#blend)"/></mask></defs>
 {image} filter="url(#accent)"/>
 <g mask="url(#fade)">{image} filter="url(#secondary)"/></g></svg>'''
     target.write_bytes(render_svg(svg))
@@ -400,7 +402,55 @@ def build_variants(root, source, include_icons=True):
                         shutil.copy2(override, target)
                     else:
                         render_wallpaper(seated, target, palette)
+    wraith = source.parent / 'branding/wraith-master.png'
+    if wraith.is_file():
+        for mode, palette in modes.items():
+            if palette.get('unbranded'):
+                continue
+            family = palette['wallpaper_palette']
+            targets = []
+            if desktop.is_dir():
+                targets.append(desktop / 'wallpapers' / f'ShadowRealm-OS-{family}-full-artwork.png')
+            if backgrounds.is_dir():
+                targets.append(backgrounds / 'full-artwork' / f'ShadowRealm-OS-{family}.png')
+            for target in targets:
+                target.parent.mkdir(parents=True, exist_ok=True)
+                render_wraith(wraith, target, palette)
     apply_wallpaper_finish(root, source, modes)
+    if include_icons:
+        from professional_icons import build_professional_icons
+        build_professional_icons(root, modes, source)
+        if modes_file.is_file():
+            modes_file.write_text(json.dumps(modes, indent=2) + '\n')
+    for record in modes.values():
+        if not record.get('unbranded'):
+            continue
+        frame=root/'usr/share/themes'/record['wm']/'xfwm4/themerc'
+        if frame.is_file():
+            text=frame.read_text()
+            for key,value in [('active_text_color',record['foreground']),('inactive_text_color',record['foreground']),('title_shadow_active','false'),('title_shadow_inactive','false')]:
+                text=re.sub(r'^'+key+r'=.*$',key+'='+value,text,flags=re.M)
+            frame.write_text(text)
+
+
+def render_wraith(source, target, palette):
+    """Keep the charcoal master intact while rendering colored emission."""
+    if palette['wallpaper_palette'] == 'RedBlack':
+        shutil.copy2(source, target)
+        return
+    from PIL import Image
+    with Image.open(source) as image:
+        width, height = image.size
+    palette = wallpaper_palette(palette)
+    filters = []
+    for role in ('accent', 'secondary'):
+        color = [int(palette[role][i:i+2], 16)/255 for i in (1,3,5)]
+        matrix = ' '.join(f'{c} {1-c} 0 0 0' for c in color) + ' 0 0 0 1 0'
+        filters.append(f'<filter id="{role}" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter>')
+    data = base64.b64encode(source.read_bytes()).decode()
+    element = f'<image width="{width}" height="{height}" href="data:image/png;base64,{data}"'
+    svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><defs>{''.join(filters)}<linearGradient id="fade"><stop offset=".25" stop-color="black"/><stop offset=".75" stop-color="white"/></linearGradient><mask id="blend"><rect width="100%" height="100%" fill="url(#fade)"/></mask></defs>{element} filter="url(#accent)"/><g mask="url(#blend)">{element} filter="url(#secondary)"/></g></svg>'''
+    target.write_bytes(render_svg(svg))
 
 
 def apply_wallpaper_finish(root, source, modes):
@@ -426,6 +476,8 @@ def apply_wallpaper_finish(root, source, modes):
         for target in targets:
             style = (target.stem.removeprefix(f'ShadowRealm-OS-{family}-')
                      if target.parent == desktop else target.parent.name)
+            if style.lower() == 'full-artwork' and (source.parent / 'branding/wraith-master.png').is_file():
+                continue
             override = overrides / family / (style + '.png')
             if not override.is_file():
                 override = next((p for p in (overrides / family).glob('*.png')

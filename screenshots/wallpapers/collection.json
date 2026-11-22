@@ -3,10 +3,10 @@
     "theme": "neon",
     "theme_label": "Neon",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-full-artwork-6447e1fad6.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-full-artwork-30e890c776.webp",
     "width": 1440,
-    "height": 810,
-    "source_sha256": "6447e1fad6c6bda94592217faec71885b2a5c3b6d2e31853bd70d2092ead1290"
+    "height": 811,
+    "source_sha256": "30e890c7764499d4f98956fae28f48a13ce2c837a406dd92d4a65b25881aec20"
   },
   {
     "theme": "neon",
@@ -39,46 +39,46 @@
     "theme": "neon",
     "theme_label": "Neon",
     "style": "Triangle Grid",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-triangle-grid-44d7841432.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-triangle-grid-85e1aebdf3.webp",
     "width": 1440,
     "height": 810,
-    "source_sha256": "44d784143285457d8b5d30c72157defe7a00a5c478510aee53e7f6ec47c2e280"
+    "source_sha256": "85e1aebdf3e65287ea4a45e948ad423158ba1f78952cc1048f31f7884ded6f8d"
   },
   {
     "theme": "neon",
     "theme_label": "Neon",
     "style": "Waves",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-waves-2e8ee8da81.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-waves-ab585cf4af.webp",
     "width": 836,
     "height": 468,
-    "source_sha256": "2e8ee8da81275832aa8c18ed45908da134ff89fba4e533a42a063e0ec8320b0b"
+    "source_sha256": "ab585cf4afbd5c3bb47e271de140f341025820b577fa63baaba8fb3010962b12"
   },
   {
     "theme": "neon",
     "theme_label": "Neon",
     "style": "Hex Grid",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-hex-grid-6261d472c9.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-hex-grid-442b21c8f0.webp",
     "width": 834,
     "height": 468,
-    "source_sha256": "6261d472c9b6fd12866765592c3380ec19cc1a34b042f0d08200fc5a144478a6"
+    "source_sha256": "442b21c8f07dac9626605684bf4b12da483b677d8f0b8c5a16098d251663a7c3"
   },
   {
     "theme": "neon",
     "theme_label": "Neon",
     "style": "Moonlit Mountain Lake",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-moonlit-mountain-lake-b2c2a5bbb1.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-moonlit-mountain-lake-b2f68b1b99.webp",
     "width": 1440,
     "height": 810,
-    "source_sha256": "b2c2a5bbb18a794d558a5c830141d5cff546b28113c42a97cf9dfda8bca344b6"
+    "source_sha256": "b2f68b1b99c5a80c78f6fc0949b306a27a031f05be0c4d600b9ebf56f881b85f"
   },
   {
     "theme": "white-silver-gold",
     "theme_label": "White, Silver & Gold",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-full-artwork-8e86f225c4.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-full-artwork-158dd9566c.webp",
     "width": 1440,
     "height": 811,
-    "source_sha256": "8e86f225c4b621595b1137ff84cf6f346da2014a2a80ec73f8ac3104be0135e2"
+    "source_sha256": "158dd9566c9dd6bbf5d8096c882ed2490a8fc46cf7870ccbc09ceadd8a33a086"
   },
   {
     "theme": "white-silver-gold",
@@ -147,10 +147,10 @@
     "theme": "red-black",
     "theme_label": "Red & Black",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-full-artwork-c50ca54482.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-full-artwork-29105887c9.webp",
     "width": 1440,
-    "height": 810,
-    "source_sha256": "c50ca54482996678a7bfcd97bf4a12e8c7690217e3f91ab46cc678d86336a0a9"
+    "height": 811,
+    "source_sha256": "29105887c90f3dc8cc3eb9e82001e45c3d69e1e1bb12af3fd8cdb8a33c341f3e"
   },
   {
     "theme": "red-black",
@@ -219,10 +219,10 @@
     "theme": "woodland",
     "theme_label": "Woodland",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-full-artwork-62b011c627.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-full-artwork-096f7268d8.webp",
     "width": 1440,
-    "height": 810,
-    "source_sha256": "62b011c627963ec2fcdfe7c72d42e914eb65b323d49331f59fb57ad280d88454"
+    "height": 811,
+    "source_sha256": "096f7268d85970e450467747ec1aa03e00e54d6e4bf09adea06a615d138f2a82"
   },
   {
     "theme": "woodland",
@@ -291,10 +291,10 @@
     "theme": "hacker",
     "theme_label": "Black & Green Hacker",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-full-artwork-d16b108da8.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-full-artwork-205d4f2fb6.webp",
     "width": 1440,
-    "height": 810,
-    "source_sha256": "d16b108da8ceb1857b84a7a58a693e50195b75dc3624d3779dac01aef7899f69"
+    "height": 811,
+    "source_sha256": "205d4f2fb650bc54004217201e7341219eabb8b641444912350ed645a0030262"
   },
   {
     "theme": "hacker",
@@ -363,10 +363,10 @@
     "theme": "black-blue",
     "theme_label": "Black & Blue",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-full-artwork-98cd110652.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-full-artwork-12726de5d5.webp",
     "width": 1440,
-    "height": 810,
-    "source_sha256": "98cd1106526e9e688aa29b42f9c0c59f39061d51835fb649711d3fc1b4f3608c"
+    "height": 811,
+    "source_sha256": "12726de5d599d3c2d50b3df6eaa6c0958bb387f89a2f450a0b0fe2104527e1e4"
   },
   {
     "theme": "black-blue",
@@ -435,10 +435,10 @@
     "theme": "black-white",
     "theme_label": "Black & White",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-full-artwork-ef311a7785.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-full-artwork-6dd71392fb.webp",
     "width": 1440,
-    "height": 810,
-    "source_sha256": "ef311a7785c51b2ca404093ce2a3f4bc53e59cf11500db2958b9e379c542513e"
+    "height": 811,
+    "source_sha256": "6dd71392fb6af3e6d1152664fe8230c543909fa114d0d609616834a1f2c04f9c"
   },
   {
     "theme": "black-white",
@@ -534,10 +534,10 @@
     "theme": "purple-black",
     "theme_label": "Purple & Black",
     "style": "Digital Wraith",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-full-artwork-cee418ccaf.webp",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-full-artwork-6821940f87.webp",
     "width": 1440,
-    "height": 810,
-    "source_sha256": "cee418ccaf7e7aab59511e95e34c7c87ddc73dbdbec3ae884899af3117bf4648"
+    "height": 811,
+    "source_sha256": "6821940f870397cbbb6d37fcd72fdc2d4300b3ef98afa9a87852c87f0cb2929f"
   },
   {
     "theme": "purple-black",

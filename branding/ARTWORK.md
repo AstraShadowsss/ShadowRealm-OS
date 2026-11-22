@@ -8,6 +8,8 @@ The abstract waves, circuit corridor and hooded artwork have clean background pl
 
 ## Wallpaper palettes
 
-The White, Silver & Gold Digital Wraith, Circuit Corridor and Waves masters are in palette-overrides/WhiteSilverGold. These take precedence over generated palette variants. Other branded wallpapers use a coordinated chroma pass; Black & White and Professional retain neutral rendering. Red & Black uses crimson accents, without an orange secondary. The gallery and desktop chooser share components/wallpaper-collections.json; only catalogued styles appear in the gallery.
+The White, Silver & Gold Circuit Corridor and Waves masters are in palette-overrides/WhiteSilverGold. These take precedence over generated palette variants. Other branded wallpapers use a coordinated chroma pass; Black & White and Professional retain neutral rendering. Red & Black uses crimson accents, without an orange secondary. The gallery and desktop chooser share components/wallpaper-collections.json; only catalogued styles appear in the gallery.
 
 Professional uses three unbranded rendered masters: Satin Bloom, Flowing Glass and Sculpted Silk. The originals live in professional-masters; Emerald, Ocean, Graphite and Plum variants share the same material detail and geometry. The retired landscape and walking-figure options are excluded from the Professional collection.
+
+Digital Wraith uses wraith-master.png across the eight branded palettes. The red master is preserved exactly; other variants keep its charcoal detail and recolor the light emission. Professional uses a separate rounded vector system and dock icon family; third-party application identities remain unchanged.
