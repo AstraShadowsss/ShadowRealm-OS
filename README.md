@@ -10,7 +10,7 @@ A Debian 13 desktop with its own look, built around Xfce and a set of small, int
 
 ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal and a package manager. Its custom panel, dock, widgets and Control Center bring the everyday controls together. Eight coordinated styles range from Neon and Hacker to White, Silver & Gold and a quieter Professional theme. Wallpapers can be changed separately.
 
-> **Website updates in progress:** We are reorganizing the project pages and refreshing screenshots. Screenshots include upcoming desktop changes. The current beta download is unchanged.
+> **Website updates in progress:** We are reorganizing the project pages and refreshing screenshots. Screenshots show the current desktop updates. The current beta download is unchanged.
 
 ## Download and install
 
@@ -37,7 +37,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 - Customizable login backgrounds, optional original session chimes and three screensaver animations with standard XFCE locking.
 - Nine offline games, including Shadow Pinball, Skull Invaders, Shadow Runner, Circuit Chase, Snake, Shadow Spider Solitaire, Neon Ascent, Neon Breaker and Marble Reactor. Scores and settings stay local.
 
-**Desktop 0.2.15** adds an opt-in Weather widget with a manually chosen location and a cached forecast for interrupted connections. Recent signed updates also include the DNSCrypt fix, Local Search, and drag-and-drop dock editing. Install them through Software & Updates. [Release notes](CHANGELOG.md)
+**Desktop 0.2.16, artwork 0.2.5 and Terminal 0.2.3** refresh the theme collection, add matching Professional icons, correct dock reordering, and improve widget settings and Terminal readability. Weather, Local Search and the DNSCrypt transition fix are included in the signed update stream. Install updates through Software & Updates. [Release notes](CHANGELOG.md)
 
 ## Screenshots
 
@@ -100,15 +100,15 @@ Nine lightweight arcade and card games, with local scores and settings. No accou
 
 [![A selection from the coordinated wallpaper collection](screenshots/wallpaper-styles.png)](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance)
 
-[Browse the labeled wallpaper carousel](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance), with theme and collection filters. The expanded appearance collection is a preview of the next desktop update.
+[Browse the labeled wallpaper carousel](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance), with theme and collection filters. The expanded appearance collection is available through the signed desktop updates.
 
 [![Professional abstract wallpapers: Satin Bloom, Flowing Glass and Sculpted Silk](screenshots/professional-wallpapers.jpg)](https://astrashadowsss.github.io/ShadowRealm-OS/#professional)
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
 
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122b)
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122c)
 
-![Professional Control Center](screenshots/control-center-professional.png?v=20261122b)
+![Professional Control Center](screenshots/control-center-professional.png?v=20261122c)
 
 
 ## Shadow Games for Android

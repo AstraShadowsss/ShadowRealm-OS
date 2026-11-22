@@ -40,3 +40,9 @@ A fresh UEFI installation from r4 booted from disk in VirtualBox. Before changin
 ## Weather on installed r4
 
 Desktop 0.2.15 installed cleanly on a fresh r4 VirtualBox guest booted from disk. Weather stayed off after saving a location. In the test capture, traffic to the forecast provider appeared only after enabling Weather and again after reconnecting the guest. The widget displayed a forecast, showed a cached forecast with an offline label when the network was disconnected, and refreshed on reconnection. Disabling Weather hid the card.
+
+## Desktop 0.2.16 / artwork 0.2.5 / Terminal 0.2.3
+
+The three packages installed over the previous private candidates in the Debian VM with a clean dpkg audit. The package-owned per-user asset migration completed, all 12 palette boot/login/default-wallpaper paths resolved, and the Professional boot-image regeneration completed successfully. The visible dock followed the move control and returned to its original order. The installed Terminal and Control Center launched. Professional desktop and Control Center screenshots were captured from the installed packages.
+
+These checks do not constitute a new ISO installation, a fresh encrypted-install test, Secure Boot certification or physical-hardware coverage. Those remain separate release gates.

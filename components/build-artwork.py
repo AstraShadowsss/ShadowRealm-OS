@@ -119,6 +119,10 @@ Description: ShadowRealm-OS themes, icons, wallpapers and boot/login branding
 set -e
 if [ "$1" = configure ]; then
  deb-systemd-helper enable shadowrealm-os-brand-sync.timer >/dev/null
+ if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  deb-systemd-invoke start shadowrealm-os-brand-sync.timer >/dev/null || true
+ fi
  for theme in /usr/share/icons/ShadowRealm-OS-*; do
   if [ -f "$theme/index.theme" ]; then gtk-update-icon-cache -f "$theme"; fi
  done

@@ -1,4 +1,14 @@
 # Release notes
+## Desktop 0.2.16, artwork 0.2.5 and Terminal 0.2.3 (2026-11-22)
+
+- Refresh the coordinated theme collection, including Purple & Black and four Professional accents with matching system, dock and panel icons.
+- Replace retired Professional backgrounds with Satin Bloom, Flowing Glass and Sculpted Silk. Use the current artwork for login and GRUB, with theme-matched boot and shutdown logos.
+- Correct dock Move left/right changes so the visible panel follows the saved order.
+- Improve widget settings, theme opacity inheritance, Notes scrolling and network-rate labels. Add Fahrenheit/Celsius selection.
+- Keep Terminal text readable in light themes and remove the unused logo space in Professional mode.
+- Correct public package-file permissions when building with a restrictive file-creation mask.
+
+The r4 installer is unchanged. Install the desktop updates through Software & Updates or APT.
 
 ## Desktop update 0.2.15
 

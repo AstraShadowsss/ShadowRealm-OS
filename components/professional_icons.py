@@ -3,6 +3,7 @@ from pathlib import Path
 import re
 import xml.etree.ElementTree as ET
 import tarfile
+import base64
 
 PREFIXES = ('orbital-dock-', 'shadow-panel-', 'shadowrealm-os-release-', 'shadowrealm-os-app-', 'shadow-')
 
@@ -49,6 +50,22 @@ def build_professional_icons(root, modes, source=None):
                 (folder / (prefix+role+'.svg')).write_text(svg)
                 (folder / (prefix+role+'.png')).write_bytes(render_svg(svg))
         theme = root / 'usr/share/icons' / palette['icons']
+        brand_names = {'shadow-dock-launcher', 'shadowrealm-os-dock-menu',
+                       'shadowrealm-os-release-shadow-menu', 'distributor-logo',
+                       'shadowrealm-os-logo'}
+        originals = list((root / 'usr/share/icons/ShadowRealm-OS-Neon').rglob('shadow-dock-launcher.png'))
+        if originals:
+            original = max(originals, key=lambda p: p.stat().st_size)
+            encoded = base64.b64encode(original.read_bytes()).decode('ascii')
+            rgb = [int(accent[i:i+2], 16)/255 for i in (1, 3, 5)]
+            matrix = ' '.join(f'0 0 0 0 {c}' for c in rgb) + ' 0 0 0 1 0'
+            for p in theme.rglob('*'):
+                if p.stem not in brand_names or p.suffix not in ('.png', '.svg') or not p.is_file():
+                    continue
+                match = re.search(r'/(\d+)x\d+/', p.as_posix())
+                size = int(match[1]) if match else 64
+                svg = f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{size}" height="{size}" viewBox="0 0 64 64"><defs><filter id="tint" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter></defs><rect x="5" y="4" width="54" height="54" rx="14" fill="#f4f7f6" stroke="#bfccc7"/><image x="10" y="9" width="44" height="44" filter="url(#tint)" xlink:href="data:image/png;base64,{encoded}"/></svg>'
+                p.write_text(svg) if p.suffix == '.svg' else p.write_bytes(render_svg(svg))
         for p in theme.rglob('*'):
             if p.suffix not in ('.svg', '.png') or not p.is_file() or 'apps' not in p.parts:
                 continue

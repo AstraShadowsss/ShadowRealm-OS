@@ -111,7 +111,7 @@ def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
             target.symlink_to(source)
     # Package-owned assets have a separate version from user settings. Refresh
     # only shipped filenames; never replace unrelated user wallpapers or icons.
-    asset_marker = home / ".local/state/shadowrealm-os/icon-catalog-v4"
+    asset_marker = home / ".local/state/shadowrealm-os/icon-catalog-v5"
     if marker.is_file() and not asset_marker.is_file():
         def refresh_owned(source, destination):
             for original in source.rglob("*"):
@@ -272,7 +272,7 @@ def main():
         mode = home / ".config/shadowrealm-os/appearance-mode"
         sys.path.insert(0, str(PAYLOAD / "runtime/bin"))
         from shadow_whole_theme import set_widgets
-        set_widgets(mode.is_file() and mode.read_text().strip() == "professional",
+        set_widgets(mode.is_file() and mode.read_text().strip().startswith("professional"),
                     home / ".local/share/shadow-link")
         return
     if action not in COMMANDS and action != "prepare":

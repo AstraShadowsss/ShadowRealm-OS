@@ -12,6 +12,8 @@ p.add_argument('output', type=pathlib.Path)
 p.add_argument('--signing-key', required=True, help='Full fingerprint of your signing key')
 p.add_argument('--gnupg-home', type=pathlib.Path)
 p.add_argument('--valid-days', type=int, default=14)
+p.add_argument('--existing-index', type=pathlib.Path, help='Verified existing Packages index to retain')
+p.add_argument('--metadata-only', action='store_true', help='Prepare metadata for signing on a separate machine')
 a = p.parse_args()
 if not 1 <= a.valid_days <= 90:
     p.error('--valid-days must be between 1 and 90')
@@ -40,6 +42,24 @@ for file in files:
     entries.append((file, control, name))
 a.output.mkdir(parents=True)
 index = []
+if a.existing_index:
+    existing = a.existing_index.read_text().strip()
+    for paragraph in existing.split('\n\n'):
+        fields = dict(line.split(': ', 1) for line in paragraph.splitlines()
+                      if ': ' in line and not line.startswith((' ', '\t')))
+        identity = tuple(fields.get(k) for k in ('Package', 'Version', 'Architecture'))
+        if not all(identity) or identity in seen:
+            p.error('Invalid or duplicate existing package identity')
+        filename = pathlib.PurePosixPath(fields.get('Filename', ''))
+        if filename.is_absolute() or '..' in filename.parts or not str(filename).startswith('pool/main/'):
+            p.error('Invalid existing package location')
+        for algorithm, length in [('SHA256',64), ('SHA512',128)]:
+            value=fields.get(algorithm,'')
+            if len(value)!=length or any(c not in '0123456789abcdefABCDEF' for c in value):
+                p.error('Invalid existing package checksum')
+        if not fields.get('Size','').isdigit():p.error('Invalid existing package size')
+        seen.add(identity)
+    index.append(existing+'\n\n')
 for file, control, name in entries:
     relative = pathlib.PurePosixPath('pool/main') / name / file.name
     destination = a.output / str(relative)
@@ -72,6 +92,9 @@ for label, algorithm in [('SHA256', 'sha256'), ('SHA512', 'sha512')]:
         hashed.parent.mkdir(parents=True, exist_ok=True)
         hashed.write_bytes(data)
 (suite / 'Release').write_text(release)
+if a.metadata_only:
+    print('Prepared unsigned metadata for offline signing')
+    raise SystemExit(0)
 gpg = ['gpg', '--batch']
 if a.gnupg_home:
     gpg += ['--homedir', str(a.gnupg_home)]
