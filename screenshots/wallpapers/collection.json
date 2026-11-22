@@ -1,0 +1,938 @@
+[
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-full-artwork-011251d9a2.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "011251d9a2e9cf8adf2870fa15b226a4183d6cdc8a26ce981d85f430a0c3c83d"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-logo-focused-056c1ceb98.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "056c1ceb981aa0efb97825bf7c8ed06e087f45b3c2e372b8e8d2a8c7a87b23cc"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-circuit-walker-3ae6f90e52.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "3ae6f90e5235d60111a0f50e019b34c7834fc3d97cb6cdeedcfc2c34cdd04192"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-seated-city-5ecfb6e157.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "5ecfb6e1576c0a488a0552740a1e1a023f938d445b52429790d6bb3abd2a9a8c"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-circuit-corridor-e033d48b83.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "e033d48b83749567b6e97d60569c853cf98bc4ba6e94471bd7974645c79bbf03"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-triangle-grid-deb585cb1a.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "deb585cb1a1652c02314d9887c72b990dfc9b54fe8c94f57467ffd450ad2eb75"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-waves-d5492e8e51.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "d5492e8e516a8ae8a3fa1676d6d066347cba4d1cc7a4f068d6b5284a211dedc8"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-hex-grid-5adb2afdef.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "5adb2afdef2e773e334ffdc7e9b2d4251ef6d367cb2c39ba6e5c194443537579"
+  },
+  {
+    "theme": "neon",
+    "theme_label": "Neon",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-moonlit-mountain-lake-a9c89c382a.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "a9c89c382a51fb9a2eb7ecaed3b504ca5a27b95756ec10c8ff7f571901007920"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-full-artwork-a5bb663679.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "a5bb663679f004e6c730fb12dee37acc0cb41e917cee3a3511d0ce8e5a104b45"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-logo-focused-acc15e31ce.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "acc15e31ce2311e44a82d3525c450821326f7c4ed02a7c3720f1885731a07b8e"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-circuit-walker-346ee78eb4.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "346ee78eb417baa4058c21213b0e05fe4601f3b11396af86b4dd85ed41c52890"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-seated-city-8ab7d84052.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "8ab7d84052fe61ed1c5cbc2a6a5216b66e62748803a49ac4469190d8bc3c8197"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-circuit-corridor-31348a1083.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "31348a10836823bd2f0d8c65394114a9d8ef4cd4affceb13ad23cb9cdcbce9e1"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-triangle-grid-a2f6939519.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "a2f6939519e814007a17b761e473dcb3b968adfb43016a85fc807c160e0af1c9"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-waves-53f7ed002c.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "53f7ed002caa8c90dc39b6c666df2b5e8b53b8c75e59db5c0ad6a688a601d683"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-hex-grid-13cbb2c106.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "13cbb2c1063a351adfef1ac26a4eb54c8f94cb125fc03323fb8b19106a0fd17d"
+  },
+  {
+    "theme": "white-silver-gold",
+    "theme_label": "White, Silver & Gold",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-moonlit-mountain-lake-7ebbcb08d4.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "7ebbcb08d4b8c73edf05191114e2066d6df1c8216c93121a5de96d9365ae420c"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-full-artwork-0c19a2a06b.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "0c19a2a06b341fa85ebcc3dec2ff316faea76c36266933bd4b889aa055f253c2"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-logo-focused-020d145791.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "020d1457913f54783f2937907a881841336a552025e393813777270f3cf26204"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-circuit-walker-8b2feebf78.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "8b2feebf78c401e4bbfc0f1f47b66d2ee81454f06d3b1932baf818eef8e1a7f9"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-seated-city-b0b6fbc122.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "b0b6fbc1226ff9cddca907e49fd84aee09592d5f8cfefec43852955281814bb7"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-circuit-corridor-0c5094c582.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "0c5094c582014a8bf42ea1f357ad5c8da5905b8064f58749d7a008df20e65a71"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-triangle-grid-cb3fd48f10.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "cb3fd48f1037d838593dabd021aa1e69f9f51085c06e5b186248da53f10e7e3d"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-waves-21ed1f5795.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "21ed1f5795421c790841496a938610bdb6b72e68c0aad0d546191d89e0f6c07c"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-hex-grid-48027fa067.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "48027fa06716793b88753ec614183dfe84f1567591dd3683df502981873f7d18"
+  },
+  {
+    "theme": "red-black",
+    "theme_label": "Red & Black",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-moonlit-mountain-lake-06cfebed35.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "06cfebed356fc1cff25b1492378bb4a27e1819b3413d10b5627fdeebb23348ab"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-full-artwork-02eb3bdc57.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "02eb3bdc57ce849f5b84bdfe570cfe6071b1ebb8b8bdeb7f5a3eb4380e64ef77"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-logo-focused-2da4437909.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "2da44379091999345f7c7b53c8dbc2eb6c1a2c211df1660379165ef3c31f8c77"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-circuit-walker-2989d417a8.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "2989d417a80fdad7e9006c844dc46460ac17fc4e34eeca3dba5e1224516c029d"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-seated-city-d5c9128961.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "d5c912896108e98fa28300f97fb3145e2ff75fcad2f40d13c997d2f202edf246"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-circuit-corridor-c56e73f18e.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "c56e73f18eeb2c9f338c4169315395f91c0df6bdabbdb1990c18bfe5ef99cc37"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-triangle-grid-ee854ab71d.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "ee854ab71da10dd14868a0328e4bf2677c8f9f264f6d58bc1c3286a4d0212fe7"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-waves-9a0490e6e7.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "9a0490e6e7de46fa635ee0b5a95ed9b1d91360711a5d6f11f6661660a2d467ae"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-hex-grid-a6bebdf76f.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "a6bebdf76faac9c387842f51162c4ddd5e42c03dd3ad52b3867d3d616347a5c4"
+  },
+  {
+    "theme": "woodland",
+    "theme_label": "Woodland",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-moonlit-mountain-lake-ed3eb81e8b.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "ed3eb81e8b73241874ed70cab3c7cc92b5880b070b4da2841b6788d629c37f6f"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-full-artwork-a55206e2f5.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "a55206e2f5f8f80560a7599938dfdf1c44f4e1dce239898ad0cbdff2a8780322"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-logo-focused-e21e759764.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "e21e7597643427446ccb16efcfe86c6f73990fbe8a6b06fbf87bd9a632d30111"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-circuit-walker-b024dbe9e5.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "b024dbe9e5dcea48f76a84c62303e530a34cfd96d321a70b2766c7155463d204"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-seated-city-639ac71e81.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "639ac71e81f8c6ce4556d7a4cf0f79ded668ba020ca3685cd3db5595bd64a073"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-circuit-corridor-a76dfe2ec5.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "a76dfe2ec5798e3850d3ae42776d36dce7f761ec9bca6c574bab21d3f4818845"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-triangle-grid-fec774e7da.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "fec774e7dac9ca5a65ebe41bcfe3359a32b8b5b087b361a3e0e4ad23c72e7376"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-waves-19c4ed0bd6.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "19c4ed0bd65c9871b0e87fde1b0094a831ac9a5e40b1842b1918f586adea2997"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-hex-grid-f6b50f0799.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "f6b50f07995f86940b9d41c5bdd484b8fe6f345bcf22cf0890147ccd60fe7494"
+  },
+  {
+    "theme": "hacker",
+    "theme_label": "Black & Green Hacker",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-moonlit-mountain-lake-77c5c6b2e8.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "77c5c6b2e87f241cef039b0972f5132ca2756938eff16d113459de2160504893"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-full-artwork-95e92488ea.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "95e92488eafa9250eb596d95decf4253719997a55019a6eb85a3efc3994e9a95"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-logo-focused-d7411eb70f.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "d7411eb70f7d1d697589ff1716e1dcd6ae1783f328e85a1b6fbff3e8dadaa41c"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-circuit-walker-e3131d9722.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "e3131d972201d0b7032ec361443a9983c5ea668a9951f10eb2a8b22caad1e9ae"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-seated-city-537b20ea27.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "537b20ea2732bbacb3a02abe4385158fedf260b9075090d7f1ee5f28b25278ae"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-circuit-corridor-71305616cd.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "71305616cd6583be67e712f2ea5d9c90b527f5b076ecfe077b0b1f492fbd059d"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-triangle-grid-c8254feb02.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "c8254feb025eab58ef57c4c0ce2fefc76261ea8cc138ebcad7e63da3f7452f01"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-waves-8716660803.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "87166608030d3fc958d2222c7f20e92f52da188e0e219c4db279b247ddbfc49c"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-hex-grid-b79fb29c6b.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "b79fb29c6b265144f14bb9a1214ad3816ff90d9baf1d3445e0dabc6a69f19fd1"
+  },
+  {
+    "theme": "black-blue",
+    "theme_label": "Black & Blue",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-moonlit-mountain-lake-b562d93a0e.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "b562d93a0e1ef41408b02d664cd49b7633d86739a55dc411809a45db23b98381"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-full-artwork-ef311a7785.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "ef311a7785c51b2ca404093ce2a3f4bc53e59cf11500db2958b9e379c542513e"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-logo-focused-46717eec21.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "46717eec21f394b47813c7fd4245591c9c0cd2254492d8a2b69bf6f825094fc8"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-circuit-walker-69a5e26d98.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "69a5e26d9808f285be53db8d2041bb6717db8b3bb95d6deccf1fc1b3723ac2d7"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-seated-city-25547e1d77.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "25547e1d77f0c4daed9e066f9f20d5232494ae6c280ed398954eb0e3c2634904"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-circuit-corridor-34ca9f2320.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "34ca9f232053402166ff47b64668be1bc20411b6aab4bfaa2f07fbfb5dc7da2e"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-triangle-grid-3abff5df32.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "3abff5df32016ed7a095f5fec62134323a9068e74668caff6fbdeae926e66d40"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-waves-77260fe639.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "77260fe6390ed3896f51f6583453f9f9de9622adbc17800fe2ede78d5a54d519"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-hex-grid-b215b707e0.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "b215b707e02799d2bd9887f52cae0cf01fecbb05e51845505f893f286a72e1c8"
+  },
+  {
+    "theme": "black-white",
+    "theme_label": "Black & White",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-moonlit-mountain-lake-3f3939cfd1.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "3f3939cfd1471cd23aa4e161afc821046a6add5b44a965993c4cbadb77d6baa1"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-circuit-walker-785c876daa.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "785c876daaef25753616e19bdb6d9eeb7abc5fd2edf9b6900f26e3f59e5fc2f1"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-triangle-grid-5457b0b9cd.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "5457b0b9cdeb4424bd4d6b8d48a46f175873a0f327e58db4ca1cc45db7603d4c"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-waves-d9e3b4d5c3.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "d9e3b4d5c3dd2723ef771321a35f7f6f8780736d7af86e5a6ded8b83fc96d54a"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-hex-grid-ac49ef2cb1.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "ac49ef2cb1f76ef2d40c2cb24b928e45d36e37cca2fe39e8a22182d255aaf5f0"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-moonlit-mountain-lake-01d056bd14.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "01d056bd148c818714ec32fc7c4b36372cdc9bf9fbbb01d65a0800037ec8bb7f"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Misty Ridges",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-professional-misty-ridges-6a43bc7e0f.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "6a43bc7e0f75bdfb19b61b818a905461b6841bfabcee1c99da8bb19068065d54"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Coastal Layers",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-professional-coastal-layers-8696b5b1d0.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "8696b5b1d02bc62181893a636679d514eb71ebee2bdf7acfd86b92d501de99d3"
+  },
+  {
+    "theme": "professional",
+    "theme_label": "Professional \u2014 Emerald",
+    "style": "Dune Contours",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-professional-dune-contours-eb74ec29a5.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "eb74ec29a5e5edf5f732f17c50f9319e34f459e3c2457b13af6f6412e3ab6949"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Digital Wraith",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-full-artwork-1606cccf70.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "1606cccf706c6e1a34108a4780444faa86d182643e2c57def6812ae9213d76e4"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Circuit Emblem",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-logo-focused-0f729e2496.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "0f729e24968cdf7e21f44732da849be7e97890a2e6eb29d66d7dc7e8999feb79"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-circuit-walker-e1acfb46eb.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "e1acfb46eb817068ed65e7ea8459c943765df29230c924ea680155ea80c6b27d"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Seated City",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-seated-city-a944890b81.webp",
+    "width": 1440,
+    "height": 720,
+    "source_sha256": "a944890b818b20cb5d3b46c4434e79d95ecf78e87f098bd1c6ea5da0ef4e7c24"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Circuit Corridor",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-circuit-corridor-04e53cab81.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "04e53cab8193e861c710a92d63b255bd20b78180a34d95ba206f649ee86f3512"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-triangle-grid-2e358ccd32.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "2e358ccd32475a8c73ee588debad5fed054ffb21b38304d3dbb82dbe4b6da8b3"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-waves-e25cb217f9.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "e25cb217f9b60b7509cdab36bfa86482dc17344881dc9059a00e82a2dea4338d"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-hex-grid-881e268c65.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "881e268c65ff0f03cc50f6a0952ead5b45e885350841df6583cdf66cf0a5249a"
+  },
+  {
+    "theme": "purple-black",
+    "theme_label": "Purple & Black",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-moonlit-mountain-lake-6f54725652.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "6f547256526371e6196ddf62dcee29945812e6d5b5354afdd4ffc402addc26cb"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-circuit-walker-2d65ede354.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "2d65ede354a31abd64578c88562bdb3798189ee274d4e482636ccf28552af616"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-triangle-grid-05c2be404d.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "05c2be404d68bbe23e2707f30675f6eab28f9eec15dc9604fdad137c22b4262f"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-waves-b17e406447.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "b17e406447227840697cec403d5a212b7153893c71eb0b6c6ca8d13a76e7fbb6"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-hex-grid-a6837787b3.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "a6837787b3bb2b6704830cfe15e0bb949a168d5b101e25923e23de6b525e22c7"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-moonlit-mountain-lake-c5dfb4904b.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "c5dfb4904bde950f445ebaeb8d4b6875952bab78ff7380e585d072bfdd7e1788"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Misty Ridges",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-professionalocean-misty-ridges-f444a33e05.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "f444a33e057ed3e1695562cca6641dd8c5ac677c4f81736ae7c38f9f1f6b7161"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Coastal Layers",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-professionalocean-coastal-layers-8bd8c54425.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "8bd8c54425620b43dd2456e54ca50cdb9ebda99f33a44fc2279794d9ca913095"
+  },
+  {
+    "theme": "professional-ocean",
+    "theme_label": "Professional \u2014 Ocean",
+    "style": "Dune Contours",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-ocean-professionalocean-dune-contours-4d412c647c.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "4d412c647c58512be83412d501c6cf390155137b41d454f90c71665163d68091"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-circuit-walker-e7288df591.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "e7288df59101bd072292d5dce1b31945d84be461373b680ac54f20406a810a7c"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-triangle-grid-61110d22ec.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "61110d22ec73806df0ed5c180a8d8bcdc418f2ed968c27cc5fbbfb63b0340436"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-waves-1b4e54bce9.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "1b4e54bce99886d95531c7b7627f9a2760b706905d1741b631e8ac4cf40d1f80"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-hex-grid-b2d0433b37.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "b2d0433b37e3f4903be4c46553fcce7065832502b894d9ab23b1b39699cf6617"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-moonlit-mountain-lake-d60c5d8ae4.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "d60c5d8ae4083976bb4aa505f32381d3a30775e3e9ab791e95550c89a6e70dc7"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Misty Ridges",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-professionalgraphite-misty-ridges-12571ea963.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "12571ea963cb0c8f8d0bd25f84db2f92e9f6e9cd1290a139efe3200ed2fa3255"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Coastal Layers",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-professionalgraphite-coastal-layers-2484e1a10b.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "2484e1a10be455ad900a73b2aad3fefcea87281d4b1e2a49fb937228d602e8e5"
+  },
+  {
+    "theme": "professional-graphite",
+    "theme_label": "Professional \u2014 Graphite",
+    "style": "Dune Contours",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-graphite-professionalgraphite-dune-contours-63ed804671.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "63ed804671dfda60aec12dbdced2ef9298fa5246f9cc3b1359b1873330be325d"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Night Walk",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-circuit-walker-bb1dac1766.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "bb1dac1766fe82eaa600e25a789187148c51f872998d49249ff12da2019c4578"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Triangle Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-triangle-grid-72c67fcda3.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "72c67fcda35c8c23211c8544c241d1105c886a21b3b19e914912f3ee8abb7a6e"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Waves",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-waves-a844acc9d1.webp",
+    "width": 836,
+    "height": 468,
+    "source_sha256": "a844acc9d1282635016fa6aecfa533ae488a13e1e95ea84a73fe238e417579ba"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Hex Grid",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-hex-grid-03ee1c0303.webp",
+    "width": 834,
+    "height": 468,
+    "source_sha256": "03ee1c0303a9780796f0c362752caf7b87bc54796a055ffcf13c9e6d8ae55f1f"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Moonlit Mountain Lake",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-moonlit-mountain-lake-baa4a22503.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "baa4a225031ab67427376850afcafd8b0ec391e5e7d2788f6a841da8c1bfc013"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Misty Ridges",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-professionalplum-misty-ridges-de97ff80ca.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "de97ff80cab8bf5e9509680f37d78064056deb914dec284d2cdd5b3e569d9b17"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Coastal Layers",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-professionalplum-coastal-layers-43a1c2ef6e.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "43a1c2ef6e7a8c77ca9aae867c827aa36d139be69f3338f3d8819c108e6917b4"
+  },
+  {
+    "theme": "professional-plum",
+    "theme_label": "Professional \u2014 Plum",
+    "style": "Dune Contours",
+    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/professional-plum-professionalplum-dune-contours-b7940a6752.webp",
+    "width": 1440,
+    "height": 810,
+    "source_sha256": "b7940a6752c437c0eda10d2d9aa01ef936627d9aa52ac7f4b13cd6f54db0f559"
+  }
+]

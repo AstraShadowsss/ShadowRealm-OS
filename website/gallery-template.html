@@ -1,0 +1,63 @@
+<section id="appearance" class="appearance-gallery" aria-labelledby="appearance-title">
+<h2 id="appearance-title">Wallpapers, your way</h2>
+<p>Browse by theme, choose a wallpaper style, or explore the whole collection. Open any image for a larger view.</p>
+<p class="gallery-preview-note">Appearance preview: the expanded collection is being prepared for the next desktop update.</p>
+<div class="gallery-toolbar" hidden>
+  <label>Theme <select class="gallery-theme" aria-label="Filter wallpaper theme"><option value="">All themes</option></select></label>
+  <label>Wallpaper <select class="gallery-style" aria-label="Filter wallpaper style"><option value="">All wallpapers</option></select></label>
+  <div class="gallery-navigation"><button type="button" class="gallery-previous" aria-label="Previous wallpaper">← Previous</button><button type="button" class="gallery-next" aria-label="Next wallpaper">Next →</button></div>
+</div>
+<div class="gallery-strip" tabindex="0" role="region" aria-label="Wallpaper collection. Scroll or use the arrow keys.">
+<!-- GALLERY CARDS -->
+</div>
+<p class="gallery-position" aria-live="polite" aria-atomic="true"></p>
+<noscript><p>Scroll sideways to browse the labeled collection.</p></noscript>
+</section>
+<style>
+.appearance-gallery{margin:42px 0}.gallery-preview-note{font-size:.9rem;color:#b9b4d6}
+.gallery-toolbar{display:flex;gap:16px;flex-wrap:wrap;align-items:end;margin:20px 0}.gallery-toolbar[hidden]{display:none}
+.gallery-toolbar label{display:grid;gap:6px;font-size:.95rem;flex:1;min-width:185px}
+.gallery-toolbar select,.gallery-navigation button{font:inherit;color:#edf0fa;background:#151a26;border:1px solid #56657f;border-radius:8px;padding:10px 12px;min-height:46px}
+.gallery-toolbar select:focus-visible,.gallery-navigation button:focus-visible,.gallery-strip:focus-visible{outline:3px solid #68e5f2;outline-offset:4px}
+.gallery-navigation{display:flex;gap:8px}.gallery-navigation button{cursor:pointer}.gallery-navigation button:hover{border-color:#68e5f2;background:#202a3b}.gallery-navigation button:disabled{opacity:.45;cursor:default}
+.gallery-strip{display:grid;grid-auto-flow:column;grid-auto-columns:min(88%,880px);gap:18px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;scrollbar-color:#6c84a0 #131a26;scroll-padding:2px;padding:3px 2px 16px}
+.gallery-strip[data-single="true"]{grid-auto-columns:100%}
+.gallery-card{margin:0;scroll-snap-align:start;border:1px solid #354057;border-radius:12px;overflow:hidden;background:#10151f;min-width:0}.gallery-card[hidden]{display:none}
+.gallery-card a{display:block;background:#080a10}.gallery-card img{display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover}
+.gallery-card figcaption{display:flex;gap:10px;flex-wrap:wrap;justify-content:space-between;padding:14px 18px;line-height:1.5}.gallery-card figcaption span{color:#b7c5d8}.gallery-position{color:#b7c5d8;font-size:.95rem;min-height:1.5em}
+@media(max-width:600px){.gallery-strip{grid-auto-columns:94%}.gallery-navigation{width:100%}.gallery-navigation button{flex:1}.gallery-card figcaption{display:grid;gap:2px}}
+@media(prefers-reduced-motion:no-preference){.gallery-strip{scroll-behavior:smooth}}
+</style>
+<script>
+(()=>{
+ const gallery=document.querySelector('.appearance-gallery');if(!gallery)return;
+ const strip=gallery.querySelector('.gallery-strip'),cards=[...strip.querySelectorAll('.gallery-card')];
+ const theme=gallery.querySelector('.gallery-theme'),style=gallery.querySelector('.gallery-style');
+ const previous=gallery.querySelector('.gallery-previous'),next=gallery.querySelector('.gallery-next'),position=gallery.querySelector('.gallery-position');
+ const themes=new Map(cards.map(c=>[c.dataset.theme,c.dataset.themeLabel]));
+ for(const [value,label] of themes)theme.add(new Option(label,value));
+ for(const value of [...new Set(cards.map(c=>c.dataset.style))].sort())style.add(new Option(value,value));
+ let visible=cards,frame=0;
+ function updatePosition(){
+  const left=strip.getBoundingClientRect().left;
+  let index=0,distance=Infinity;
+  visible.forEach((card,i)=>{const delta=Math.abs(card.getBoundingClientRect().left-left);if(delta<distance){distance=delta;index=i;}});
+  position.textContent=`${index+1} of ${visible.length} · ${visible[index].dataset.themeLabel} · ${visible[index].dataset.style}`;
+  previous.disabled=index===0;next.disabled=index===visible.length-1;return index;
+ }
+ function filter(){
+  const candidates=cards.filter(c=>!theme.value||c.dataset.theme===theme.value);
+  const styles=new Set(candidates.map(c=>c.dataset.style));
+  [...style.options].forEach(o=>{o.disabled=!!o.value&&!styles.has(o.value);});
+  if(style.selectedOptions[0].disabled)style.value='';
+  cards.forEach(c=>{c.hidden=!!((theme.value&&c.dataset.theme!==theme.value)||(style.value&&c.dataset.style!==style.value));});
+  visible=cards.filter(c=>!c.hidden);strip.dataset.single=String(visible.length===1);strip.scrollTo({left:0,behavior:'instant'});updatePosition();
+ }
+ function move(delta){const index=updatePosition(),target=visible[Math.max(0,Math.min(visible.length-1,index+delta))];strip.scrollTo({left:strip.scrollLeft+target.getBoundingClientRect().left-strip.getBoundingClientRect().left-2});}
+ previous.addEventListener('click',()=>move(-1));next.addEventListener('click',()=>move(1));
+ theme.addEventListener('change',filter);style.addEventListener('change',filter);
+ strip.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();move(e.key==='ArrowLeft'?-1:1);}});
+ strip.addEventListener('scroll',()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(updatePosition);},{passive:true});
+ gallery.querySelector('.gallery-toolbar').hidden=false;filter();
+})();
+</script>

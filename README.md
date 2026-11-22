@@ -2,9 +2,9 @@
 
 A Debian 13 desktop with its own look, built around Xfce and a set of small, integrated desktop tools.
 
-<p align="center"><img src="branding/banner-neon.png" alt="ShadowRealm-OS — SR logo and wordmark" width="880"></p>
+<p align="center"><img src="branding/banner-neon.png" alt="ShadowRealm-OS â€” SR logo and wordmark" width="880"></p>
 
-**2026.11 beta 1 · AMD64 · live desktop and installer**
+**2026.11 beta 1 Â· AMD64 Â· live desktop and installer**
 
 ![ShadowRealm-OS desktop](screenshots/desktop.png)
 
@@ -12,7 +12,7 @@ ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal
 
 ## Download and install
 
-[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) · [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) · [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
+[Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) Â· [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) Â· [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
 
 Check the ISO against `SHA256SUMS` before writing it to a USB drive or attaching it to a virtual machine.
 
@@ -28,7 +28,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 - Custom application menu with categories, favorites and adjustable sizing; editable dock and desktop shortcuts.
 - Coordinated GTK, window, icon, terminal, login and boot artwork using the SR identity.
 - Control Center for appearance, accounts, network, audio, Bluetooth and system tools. Hardware controls depend on the available device and driver.
-- Debian APT packages, signed LibreWolf and Jami repositories, and Flatpak support.
+- Debian APT packages, the signed LibreWolf repository, and Flatpak support.
 - LibreWolf, Thunderbird, LibreOffice, VLC, Thunar, Mousepad and other desktop applications. See the release package inventory for exact versions.
 - Shadow Shield controls for the firewall and privacy tools, plus AppArmor policies. These tools do not make a system anonymous or immune to attacks.
 - Drawing for simple painting; GNOME Clocks for alarms, timers, world clocks and stopwatch.
@@ -39,13 +39,11 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 ## Screenshots
 
-### Wallpaper collection
+### Wallpapers and themes
 
-![Red and Black, Black and Blue, Neon, and Hacker with four different wallpapers](screenshots/wallpaper-styles.png)
+[![A selection from the coordinated wallpaper collection](screenshots/wallpaper-styles.png)](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance)
 
-### Seated City
-
-![Six colors of the Seated City wallpaper](screenshots/seated-theme-styles.png)
+[Browse the labeled wallpaper carousel](https://astrashadowsss.github.io/ShadowRealm-OS/#appearance), with theme and collection filters. The expanded appearance collection is a preview of the next desktop update.
 
 ### Control Center
 
@@ -71,7 +69,9 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 ![Application menu](screenshots/application-menu.png)
 
-![The nine games in action](screenshots/games-in-action.png)
+[![The nine games in action](screenshots/games-in-action.png)](https://astrashadowsss.github.io/ShadowRealm-OS/#games)
+
+[Browse individual game screenshots](https://astrashadowsss.github.io/ShadowRealm-OS/#games).
 
 ## Shadow Games for Android
 
@@ -91,6 +91,6 @@ Original project work is supplied under the [MIT license](LICENSE). Linux, Debia
 
 This repository contains the custom source, configurations, artwork masters and build recipes. The ISO and matching third-party source distribution belong on SourceForge, outside Git history. Personal files and VM disks are not part of this repository.
 
-[Report a bug](https://github.com/AstraShadowsss/ShadowRealm-OS/issues) · [SourceForge](https://sourceforge.net/projects/shadowrealm-os/)
+[Report a bug](https://github.com/AstraShadowsss/ShadowRealm-OS/issues) Â· [SourceForge](https://sourceforge.net/projects/shadowrealm-os/)
 
 Created and maintained by AstraShadows
