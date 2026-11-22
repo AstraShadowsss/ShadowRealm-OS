@@ -1,0 +1,10 @@
+[
+  {"id":"system","title":"System overview","description":"CPU, memory, swap and system disk usage."},
+  {"id":"network","title":"Network","description":"Active interface, address and live transfer rates in Mb/s."},
+  {"id":"processes","title":"Processes","description":"Process names, PIDs, CPU and memory usage."},
+  {"id":"shield","title":"Shadow Shield","description":"Firewall, AppArmor, Tor and VPN service status."},
+  {"id":"clock","title":"Clock","description":"An independent, easy-to-read local clock."},
+  {"id":"calendar","title":"Calendar","description":"Month view with today's date highlighted."},
+  {"id":"notes","title":"Notes","description":"A small place to keep local notes and reminders."},
+  {"id":"weather","title":"Weather","description":"An optional forecast for a manually chosen location."}
+]

@@ -10,7 +10,7 @@ A Debian 13 desktop with its own look, built around Xfce and a set of small, int
 
 ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal and a package manager. Its custom panel, dock, widgets and Control Center bring the everyday controls together. Eight coordinated styles range from Neon and Hacker to White, Silver & Gold and a quieter Professional theme. Wallpapers can be changed separately.
 
-> **Website updates in progress:** We are reorganizing the project pages and refreshing screenshots. Some images and layouts may temporarily show earlier designs while this work is underway.
+> **Website updates in progress:** We are reorganizing the project pages and refreshing screenshots. Screenshots include upcoming desktop changes. The current beta download is unchanged.
 
 ## Download and install
 
@@ -43,9 +43,13 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 ### Terminal
 
+A familiar shell with live system information, adjustable text and desktop-matched colors.
+
 ![Terminal on the current desktop](screenshots/terminal-current.png)
 
 ### Control Center
+
+Network, audio, Bluetooth, accounts, appearance and software tools in one place.
 
 ![Searchable Control Center in Neon](screenshots/control-center-neon.png)
 
@@ -53,20 +57,40 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 ### Widgets and system tools
 
+Eight independent widgets, shown together in Professional styling. They follow your desktop theme and can be moved, resized and customized separately.
+
+| System overview | Network | Processes | Shadow Shield |
+| --- | --- | --- | --- |
+| ![System overview](screenshots/widgets/system.png) | ![Network](screenshots/widgets/network.png) | ![Processes](screenshots/widgets/processes.png) | ![Shadow Shield](screenshots/widgets/shield.png) |
+| CPU, memory, swap and system disk usage. | Active interface, address and live transfer rates in Mb/s. | Process names, PIDs, CPU and memory usage. | Firewall, AppArmor, Tor and VPN service status. |
+
 | Clock | Calendar | Notes | Weather |
 | --- | --- | --- | --- |
-| ![Clock widget showing the time](screenshots/widget-clock.png) | ![Calendar widget showing the month](screenshots/widget-calendar.png) | ![Notes widget showing saved notes](screenshots/widget-notes.png) | ![Weather widget showing forecast temperature and conditions](screenshots/widget-weather-professional-clean.png) |
+| ![Clock](screenshots/widgets/clock.png) | ![Calendar](screenshots/widgets/calendar.png) | ![Notes](screenshots/widgets/notes.png) | ![Weather](screenshots/widgets/weather.png) |
+| An independent, easy-to-read local clock. | Month view with today's date highlighted. | A small place to keep local notes and reminders. | An optional forecast for a manually chosen location. |
 
+<details>
+<summary>Arrange and customize your widgets</summary>
 
-![System Overview, Network, Processes and Shadow Shield](screenshots/widgets.png)
+Choose which panels appear, adjust their text, graph and bar colors, and set background transparency. Theme follows the shared background setting in Appearance.
 
-![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png)
+![Current widget controls](screenshots/widget-customization.png)
+
+</details>
 
 [Desktop widgets guide](docs/widgets.md)
 
-### Apps and games
+![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png)
+
+### Applications
+
+Search and browse installed applications by category. The dock keeps the shortcuts you choose.
 
 ![Application menu](screenshots/application-menu.png)
+
+### Games
+
+Nine lightweight arcade and card games, with local scores and settings. No accounts or advertisements.
 
 [![The nine games in action](screenshots/games-in-action.png)](https://astrashadowsss.github.io/ShadowRealm-OS/#games)
 
@@ -82,9 +106,9 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
 
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122)
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122b)
 
-![Professional Control Center](screenshots/control-center-professional.png?v=20261122)
+![Professional Control Center](screenshots/control-center-professional.png?v=20261122b)
 
 
 ## Shadow Games for Android
