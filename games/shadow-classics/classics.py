@@ -230,7 +230,7 @@ MAZE = (
 
 
 class Maze(Classic):
-    controls = "Arrows or WASD: Move | M: Sound"
+    controls = "Arrows / WASD / Swipe / Direction pad: Move | M: Sound"
     hint = "Recover data nodes. Overclock cells disable sentinels."
 
     def __init__(self):self.reset()
@@ -259,8 +259,19 @@ class Maze(Classic):
         x,y=p
         return [(x+dx,y+dy) for _,__,dx,dy in DIRECTIONS if self.open((x+dx,y+dy))]
 
+    def swipe(self,dx,dy):
+        if max(abs(dx),abs(dy))<18:return
+        self.pending=((1 if dx>0 else -1),0) if abs(dx)>abs(dy) else (0,(1 if dy>0 else -1))
+
+    def click(self,x,y):
+        for cx,cy,dx,dy in ((824,463,0,-1),(782,505,-1,0),(866,505,1,0),(824,547,0,1)):
+            if abs(x-cx)<=20 and abs(y-cy)<=20:
+                self.pending=(dx,dy);return
+
     def move(self,pos,i):
-        if self.power>0 or random.random()<.18+.09*i:return random.choice(self.near(pos))
+        nearby=self.near(pos)
+        if not nearby:return pos
+        if self.power>0 or random.random()<.18+.09*i:return random.choice(nearby)
         q=deque([(pos,pos)]);seen={pos}
         while q:
             cell,first=q.popleft()
@@ -331,6 +342,10 @@ class Maze(Classic):
             rect(c,-3,-2,7,4,WHITE)
             c.restore()
         if self.power:text(c,635,100,"POWER MODE",14,ICE)
+        for cx,cy,dx,dy in ((824,463,0,-1),(782,505,-1,0),(866,505,1,0),(824,547,0,1)):
+            rect(c,cx-19,cy-19,38,38,(.09,.17,.26))
+            c.save();c.translate(cx,cy);c.rotate(math.atan2(dy,dx))
+            poly(c,[(-7,-9),(8,0),(-7,9)],ICE);c.restore()
 
 
 SUITS=("S","H","C","D")
@@ -545,23 +560,44 @@ class Solitaire(Classic):
         text(c,19,616,self.message,15,GOLD)
 
 
-# An elliptical spiral with continuously changing curvature and open sight lines.
-PATH = []
-for i in range(241):
-    t = i / 240
-    angle = math.pi * (1.11 + 3.08*t)
-    PATH.append((450 + (396-265*t)*math.cos(angle), 346 + (229-138*t)*math.sin(angle)))
-PATH_LEN = [0.0]
-for a, b in zip(PATH, PATH[1:]):
-    PATH_LEN.append(PATH_LEN[-1] + math.dist(a, b))
+MARBLE_TRACKS = (
+    ('Orbital Gate',396,224,131,91,1.11,3.08,0),
+    ('Copper Coil',370,211,122,98,.35,2.85,12),
+    ('Lunar Circuit',382,216,142,90,1.75,3.15,-10),
+    ('Glass Vortex',350,226,115,108,.90,2.75,20),
+    ('Twin Current',390,204,130,88,1.45,3.00,-18),
+    ('Prism Loop',360,219,120,100,.15,3.20,16),
+    ('Ion Garden',384,222,145,104,1.95,2.80,-12),
+    ('Crimson Orbit',374,208,116,94,.65,3.10,22),
+    ('Starlight Bend',355,224,132,110,1.25,2.90,-20),
+    ('Quantum Coil',392,210,126,92,.05,3.18,10),
+    ('Obsidian Ring',368,218,138,100,1.60,2.85,-16),
+    ('Reactor Core',380,220,120,96,.80,3.12,18),
+)
+
+def marble_path(stage):
+    _,rx,ry,inner_x,inner_y,start,turns,wobble=MARBLE_TRACKS[stage-1]
+    points=[]
+    for i in range(241):
+        t=i/240;angle=math.pi*(start+turns*t)
+        ripple=wobble*math.sin(angle*3)*(1-t)*.45
+        points.append((450+(rx+(inner_x-rx)*t+ripple)*math.cos(angle),
+                       350+(ry+(inner_y-ry)*t+ripple*.55)*math.sin(angle)))
+    lengths=[0.0]
+    for a,b in zip(points,points[1:]):lengths.append(lengths[-1]+math.dist(a,b))
+    return points,lengths
+
+PATH,PATH_LEN=marble_path(1)
 
 
-def path_at(distance):
+def path_at(distance,points=None,lengths=None):
     from bisect import bisect_left
-    s = max(0, min(PATH_LEN[-1], distance))
-    i = max(1, bisect_left(PATH_LEN, s))
-    a, b = PATH[i-1:i+1]
-    f = (s-PATH_LEN[i-1]) / (PATH_LEN[i]-PATH_LEN[i-1])
+    points=PATH if points is None else points
+    lengths=PATH_LEN if lengths is None else lengths
+    s = max(0, min(lengths[-1], distance))
+    i = max(1, bisect_left(lengths, s))
+    a, b = points[i-1:i+1]
+    f = (s-lengths[i-1]) / (lengths[i]-lengths[i-1])
     return a[0]+f*(b[0]-a[0]), a[1]+f*(b[1]-a[1])
 
 
@@ -579,9 +615,12 @@ class Marble(Classic):
 
     def new_round(self):
         self.round+=1
+        self.path,self.path_lengths=marble_path(self.round)
+        self.track_name=MARBLE_TRACKS[self.round-1][0]
+        self.color_count=min(len(COLORS),4+(self.round-1)//4)
         colors=[]
-        while len(colors)<min(43,25+self.round*3):
-            colors.extend([random.randrange(len(COLORS))]*random.choice((1,2,2)))
+        while len(colors)<min(43,23+self.round*2):
+            colors.extend([random.randrange(self.color_count)]*random.choice((1,2,2)))
         self.chain=colors
         self.head=550
         self.shot=None
@@ -617,7 +656,7 @@ class Marble(Classic):
             index=a
         if not self.chain:
             self.score+=1000;self.effects.append("mission")
-            if self.round == 5:
+            if self.round == len(MARBLE_TRACKS):
                 self.over = self.won = True
             else:
                 self.new_round()
@@ -629,8 +668,8 @@ class Marble(Classic):
         if "space" in keys and "space" not in self.keys:
             self.current,self.next=self.next,self.current
         self.keys=set(keys)
-        self.head+=(36+self.round*9)*dt
-        if self.head>=PATH_LEN[-1]:
+        self.head+=(32+self.round*4)*dt
+        if self.head>=self.path_lengths[-1]:
             self.over=True;self.effects.append("drain");return
         if not self.shot:return
         x,y,vx,vy,color=self.shot
@@ -640,9 +679,9 @@ class Marble(Classic):
             for i in range(len(self.chain)):
                 s=self.head-i*self.spacing
                 if s<0:break
-                px,py=path_at(s)
+                px,py=path_at(s,self.path,self.path_lengths)
                 if math.hypot(x-px,y-py)<22:
-                    tx,ty=path_at(s+3)
+                    tx,ty=path_at(s+3,self.path,self.path_lengths)
                     index=i if (x-px)*(tx-px)+(y-py)*(ty-py)>0 else i+1
                     self.shot=None;self.hit(index,color);return
         if not (0<x<W and 60<y<H):self.shot=None
@@ -655,21 +694,21 @@ class Marble(Classic):
         self.paint(c)
         for width,col in ((38,(.13,.12,.27)),(30,(.075,.10,.21)),(2,(.28,.38,.61))):
             c.set_line_cap(1);c.set_line_join(1);c.set_line_width(width);c.set_source_rgb(*col)
-            c.move_to(*PATH[0])
-            for point in PATH[1:]:c.line_to(*point)
+            c.move_to(*self.path[0])
+            for point in self.path[1:]:c.line_to(*point)
             c.stroke()
-        end=PATH[-1];dot(c,*end,23,PINK,.62);dot(c,*end,14,(.06,.025,.10))
+        end=self.path[-1];dot(c,*end,23,PINK,.62);dot(c,*end,14,(.06,.025,.10))
         for i,color in enumerate(self.chain):
             s=self.head-i*self.spacing
             if s<0:break
-            self.marble(c,*path_at(s),11,color)
+            self.marble(c,*path_at(s,self.path,self.path_lengths),11,color)
         x,y=self.gun;a=math.atan2(self.aim[1]-y,self.aim[0]-x)
         dot(c,x,y,26,ICE,.15);dot(c,x,y,22,(.18,.24,.43))
         for i in range(2,7):dot(c,x+math.cos(a)*i*14,y+math.sin(a)*i*14,2,ICE,.6)
         self.marble(c,x,y,12,self.current)
         self.marble(c,x,y+31,7,self.next)
         if self.shot:self.marble(c,*self.shot[:2],10,self.shot[-1])
-        text(c,35,101,f"STAGE {self.round}/5   /   {len(self.chain)} MARBLES",15,GOLD)
+        text(c,35,101,f"STAGE {self.round}/{len(MARBLE_TRACKS)}   /   {self.track_name.upper()}",15,GOLD)
 
 
 class ClassicWindow(Arcade):
@@ -691,7 +730,7 @@ class ClassicWindow(Arcade):
         if e.button==1 and self.started and not self.paused and not self.model.over and hasattr(self.model,"click"):
             point = self.coords(e)
             self.model.click(*point)
-            if isinstance(self.model, Solitaire) and self.model.select:
+            if isinstance(self.model, Maze) or (isinstance(self.model, Solitaire) and self.model.select):
                 self.drag_origin = point
         return True
 
@@ -699,7 +738,9 @@ class ClassicWindow(Arcade):
         origin, self.drag_origin = self.drag_origin, None
         if e.button == 1 and origin and not self.paused and not self.model.over:
             point = self.coords(e)
-            if math.dist(origin,point) > 12:
+            if isinstance(self.model,Maze):
+                self.model.swipe(point[0]-origin[0],point[1]-origin[1])
+            elif math.dist(origin,point) > 12:
                 self.model.click(*point)
         return True
 

@@ -59,3 +59,8 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 | Disposable sessions | Prototype explicit persistence and network boundaries | Test what survives shutdown and whether traffic follows the intended route |
 | Compartmentalization | Assess isolated workspaces backed by virtualization | Document the threat model and test the boundaries before making privacy claims |
 | Emergency data protection | Explore recovery and realistic storage guarantees before designing any destructive action | Review clear consent, backups and failure consequences before implementation |
+
+
+## Games and Messenger
+
+The November 22 game updates add twelve Marble Reactor tracks, Circuit Chase direction controls and expanded Skull Invaders progression. Android control/gameplay updates and additional playthroughs remain open. Shadow Messenger has a separate development project under messenger/; it is not installed by default and must pass secure account storage, live-account, encryption and recovery gates before inclusion.

@@ -1,5 +1,5 @@
 import collections, math, random
-from classics import Solitaire, Marble, PATH, PATH_LEN, path_at
+from classics import Solitaire, Marble, PATH, PATH_LEN, path_at, MARBLE_TRACKS, marble_path
 for suits in (1,2,4):
     for seed in range(20):
         g=Solitaire(); g.suits=suits; g.reset(seed)
@@ -24,9 +24,17 @@ assert g.move(0,0,1) and g.won and g.over and len(g.completed)==8
 m=Marble()
 assert len(PATH)==241 and all(a<b for a,b in zip(PATH_LEN,PATH_LEN[1:]))
 assert math.dist(path_at(PATH_LEN[-1]),PATH[-1])<1e-6
-for stage in range(1,6):
+tracks=[]
+for stage in range(1,len(MARBLE_TRACKS)+1):
     assert m.round==stage
+    points,lengths=marble_path(stage)
+    assert all(a<b for a,b in zip(lengths,lengths[1:]))
+    assert all(30<x<870 and 112<y<590 for x,y in points)
+    assert min(math.dist(p,m.gun) for p in points)>65
+    assert math.dist(path_at(lengths[-1],points,lengths),points[-1])<1e-6
+    tracks.append(tuple(points))
     m.chain=[1,1];m.current=m.next=1;m.hit(1,1)
 assert m.won and m.over
-print('Spider: 60 seeded deals, legal moves, undo, conservation and win. Marble: rounded path and all five completion transitions.')
+assert len(set(tracks))==len(MARBLE_TRACKS)
+print('Spider: 60 seeded deals, legal moves, undo, conservation and win. Marble: 12 distinct bounded tracks and every completion transition.')
 

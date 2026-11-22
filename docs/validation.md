@@ -46,3 +46,9 @@ Desktop 0.2.15 installed cleanly on a fresh r4 VirtualBox guest booted from disk
 The three packages installed over the previous private candidates in the Debian VM with a clean dpkg audit. The package-owned per-user asset migration completed, all 12 palette boot/login/default-wallpaper paths resolved, and the Professional boot-image regeneration completed successfully. The visible dock followed the move control and returned to its original order. The installed Terminal and Control Center launched. Professional desktop and Control Center screenshots were captured from the installed packages.
 
 These checks do not constitute a new ISO installation, a fresh encrypted-install test, Secure Boot certification or physical-hardware coverage. Those remain separate release gates.
+
+## Game progression update
+
+Marble Reactor passed twelve distinct bounded tracks and all twelve completion transitions. Spider passed sixty seeded deals, legal stack moves, undo, card conservation and a completion transition. Circuit Chase passed objective reachability and direction-pad/swipe input checks. Skull Invaders passed weapon, shield, repair and three-boss progression checks plus twelve seeded movement/firing simulations. These rule tests passed in Debian and in the portable Windows runtime. Native GTK views of the three changed games were also inspected and captured.
+
+Eight shared-runtime game packages were accepted and installed from the public signed APT feed in the reference VM; dpkg audit was clean. Full manual playthroughs of all nine games and the Android changes are still separate checks. The installer remains r4.

@@ -179,7 +179,8 @@ class Invaders:
     def reset(self):
         self.x, self.t, self.score, self.hp, self.wave = 450,0,0,3,0
         self.effects, self.shots, self.bolts, self.drops, self.sparks = [],[],[],[],[]
-        self.fire = self.power = self.protect = 0
+        self.fire = self.power = self.protect = self.shield_until = 0
+        self.power_kind='double'
         self.over = False
         self.spawn()
 
@@ -187,10 +188,25 @@ class Invaders:
         self.wave += 1
         self.dive_at = self.t+2
         if self.wave % 4 == 0:
-            self.foes = [[450,155,0,0,16+self.wave,False,True]]
+            self.boss_kind=(self.wave//4-1)%3
+            self.boss_health_max=18+self.wave*2+self.boss_kind*5
+            self.foes = [[450,205,0,0,self.boss_health_max,False,True]]
         else:
-            self.foes = [[160+col*77,124+row*57,col,row,1+(row==0 and self.wave>1),False,False]
+            self.foes = [[160+col*77,124+row*57,col,row,1+((col+row+self.wave//3)%3==2 and self.wave>1),False,False]
                          for row in range(3) for col in range(8)]
+
+    def enemy_kind(self,foe):
+        return self.boss_kind if foe[-1] else (foe[2]+foe[3]+self.wave//3)%3
+
+    def enemy_fire(self,foe):
+        kind=self.enemy_kind(foe)
+        speed=245+self.wave*9
+        if foe[-1]:
+            velocities=((-70,0,70),(-120,-60,0,60,120),(-45,0,45))[kind]
+            aim=max(-160,min(160,(self.x-foe[0])*.55)) if kind==2 else 0
+        else:
+            velocities=(0,);aim=max(-120,min(120,(self.x-foe[0])*.3)) if kind==1 else 0
+        self.bolts.extend([foe[0],foe[1]+20,aim+vx,speed] for vx in velocities)
 
     def burst(self,x,y,color):
         for _ in range(9):
@@ -200,23 +216,25 @@ class Invaders:
         self.t += dt
         self.x = max(31,min(W-31,self.x+430*dt*(bool(keys&{"right","d"})-bool(keys&{"left","a"}))))
         if "space" in keys and self.t>=self.fire:
-            self.fire=self.t+(.11 if self.power>self.t else .24)
-            self.shots.append([self.x,555])
-            if self.power>self.t:self.shots.extend(([self.x-17,562],[self.x+17,562]))
+            self.fire=self.t+(.17 if self.power>self.t else .24)
+            offsets=(-10,10) if self.power>self.t and self.power_kind=='double' else (-17,0,17) if self.power>self.t else (0,)
+            self.shots.extend([self.x+offset,555] for offset in offsets)
             self.effects.append("bumper")
         if self.t>=self.dive_at and self.foes:
             self.dive_at=self.t+max(.43,1.7-self.wave*.095)
             foe=random.choice(self.foes)
             if foe[-1] or random.random()<.44:
-                self.bolts.extend([foe[0]+offset,foe[1]+10] for offset in ((-44,0,44) if foe[-1] else (0,)))
+                self.enemy_fire(foe)
             else:
                 foe[5]=True
         for foe in self.foes:
             if foe[-1]:
-                foe[0]=450+math.sin(self.t*1.4)*265
+                kind=self.enemy_kind(foe)
+                foe[0]=450+math.sin(self.t*(1.2,1.7,.95)[kind])*(265,210,270)[kind]
+                foe[1]=205+math.sin(self.t*(.8,1.6,.65)[kind])*(0,28,35)[kind]
             elif foe[5]:
                 foe[0]+=(self.x-foe[0])*dt*.7
-                foe[1]+=dt*(195+13*self.wave)
+                foe[1]+=dt*(195+13*self.wave)*(1.15 if self.enemy_kind(foe)==1 else 1)
                 if foe[1]>H+20:foe[5]=False
             else:
                 foe[0]=167+foe[2]*78+math.sin(self.t*(1.1+self.wave*.1))*67
@@ -232,12 +250,14 @@ class Invaders:
                         self.foes.remove(foe)
                         self.score+=1200 if foe[-1] else 125*self.wave
                         self.burst(foe[0],foe[1],PINK)
-                        if foe[-1] or random.random()<.13:self.drops.append([foe[0],foe[1]])
+                        if foe[-1] or random.random()<.10:
+                            kind=random.choice(('double','double','double','double','shield','shield','shield','shield','repair','triple'))
+                            self.drops.append([foe[0],foe[1],kind])
                         self.effects.append("mission" if foe[-1] else "target")
                     break
         for bolt in self.bolts[:]:
-            bolt[1]+=(260+self.wave*12)*dt
-            if bolt[1]>H:self.bolts.remove(bolt)
+            bolt[0]+=bolt[2]*dt;bolt[1]+=bolt[3]*dt
+            if bolt[1]>H or bolt[0]<-20 or bolt[0]>W+20:self.bolts.remove(bolt)
             elif abs(bolt[0]-self.x)<25 and abs(bolt[1]-579)<20:
                 self.bolts.remove(bolt)
                 self.damage()
@@ -248,7 +268,10 @@ class Invaders:
             if drop[1]>H:self.drops.remove(drop)
             elif abs(drop[0]-self.x)<37 and abs(drop[1]-579)<25:
                 self.drops.remove(drop)
-                self.power=self.t+8
+                kind=drop[2]
+                if kind=='shield':self.shield_until=self.t+8
+                elif kind=='repair':self.hp=min(5,self.hp+1)
+                else:self.power_kind=kind;self.power=self.t+(4 if kind=='triple' else 6)
                 self.effects.append("ramp")
         for spark in self.sparks[:]:
             spark[0]+=spark[2]*dt;spark[1]+=spark[3]*dt;spark[4]-=dt
@@ -257,6 +280,8 @@ class Invaders:
 
     def damage(self):
         if self.t<self.protect:return
+        if self.t<self.shield_until:
+            self.protect=self.t+.3;self.effects.append('bumper');return
         self.hp-=1;self.protect=self.t+1.5
         self.effects.append("drain")
         self.burst(self.x,579,ICE)
@@ -267,17 +292,24 @@ class Invaders:
         for x,y,z in self.stars:dot(c,x,(y+self.t*15*z)%H,z,ICE,.15+z*.18)
         for foe in self.foes:
             x,y=foe[:2];s=2.5 if foe[-1] else 1
+            kind=self.enemy_kind(foe);color=(PINK,ICE,GOLD)[kind]
             c.save();c.translate(x,y);c.scale(s,s)
-            dot(c,0,0,25,PINK,.12)
-            poly(c,[(-21,-11),(-11,-19),(11,-19),(21,-11),(18,9),(9,11),(8,18),(-8,18),(-9,11),(-18,9)],PINK)
+            dot(c,0,0,25,color,.12)
+            poly(c,[(-21,-11),(-11,-19),(11,-19),(21,-11),(18,9),(9,11),(8,18),(-8,18),(-9,11),(-18,9)],color)
+            if kind==1:
+                poly(c,[(-20,-7),(-31,-18),(-17,2)],color)
+                poly(c,[(20,-7),(31,-18),(17,2)],color)
+            elif kind==2:rect(c,-18,-22,36,7,color)
             poly(c,[(-17,-9),(-9,-15),(9,-15),(17,-9),(15,6),(7,8),(5,14),(-5,14),(-7,8),(-15,6)],(.17,.1,.25))
             dot(c,-8,-3,4,ICE);dot(c,8,-3,4,ICE)
             rect(c,-2,3,4,4,GOLD)
             c.restore()
         for x,y in self.shots:rect(c,x-2,y-9,4,18,ICE)
-        for x,y in self.bolts:dot(c,x,y,5,PINK)
-        for x,y in self.drops:
-            dot(c,x,y,14,ICE,.18);poly(c,[(x,y-9),(x+9,y),(x,y+9),(x-9,y)],ICE)
+        for x,y,_,__ in self.bolts:dot(c,x,y,5,PINK)
+        for x,y,kind in self.drops:
+            color=GOLD if kind=='repair' else ICE
+            dot(c,x,y,16,color,.18);poly(c,[(x,y-11),(x+11,y),(x,y+11),(x-11,y)],color)
+            text(c,x-4,y+5,{'double':'2','triple':'3','shield':'S','repair':'+'}[kind],12,(.04,.09,.15))
         for x,y,_,__,a,color in self.sparks:dot(c,x,y,3,color,a/.44)
         if self.t>=self.protect or int(self.t*13)%2:
             x=self.x
@@ -286,7 +318,14 @@ class Invaders:
             dot(c,x,578,5,GOLD)
             poly(c,[(x-7,589),(x+7,589),(x,614+5*math.sin(self.t*35))],PINK)
         text(c,26,88,f"WAVE {self.wave:02}   /   HULL {self.hp}",15,GOLD)
-        if self.power>self.t:text(c,625,88,"TRIPLE SHOT ACTIVE",14,ICE)
+        if self.power>self.t:text(c,625,88,self.power_kind.upper()+" SHOT ACTIVE",14,ICE)
+        if self.shield_until>self.t:
+            dot(c,self.x,579,37,ICE,.16)
+            text(c,26,109,f'SHIELD {self.shield_until-self.t:.0f}s',13,ICE)
+        boss=next((foe for foe in self.foes if foe[-1]),None)
+        if boss:
+            text(c,280,106,('REAPER','SPECTRE','WARDEN')[self.boss_kind],12,PINK)
+            rect(c,280,112,340,8,(.16,.10,.20));rect(c,280,112,340*max(0,boss[4])/self.boss_health_max,8,PINK)
 
 
 class Runner:

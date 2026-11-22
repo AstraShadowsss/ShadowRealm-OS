@@ -1,4 +1,12 @@
 # Release notes
+## Games update (2026-11-22)
+
+- Marble Reactor 0.3.0: twelve distinct rounded tracks, varied entry angles and curvature, gradual color/speed progression, and a complete twelve-stage finish.
+- Circuit Chase 0.2.0: swipe turns and an on-screen direction pad alongside keyboard controls; retain buffered turns and reachable objectives.
+- Skull Invaders 0.2.0: three enemy types, three boss patterns, visible boss health, temporary shields, repair drops, and less frequent, shorter shot upgrades.
+- Update the shared game runtime packages while retaining existing scores and settings.
+
+Android gameplay changes are not included in this update.
 ## Desktop 0.2.17 (2026-11-22)
 
 - Add Appearance → Icons & Dock to select an icon family independently of desktop colors and wallpapers, with a Follow desktop theme default.

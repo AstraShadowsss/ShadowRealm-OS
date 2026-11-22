@@ -4,7 +4,7 @@
 Existing package filenames are immutable. Indexes are replaced atomically,
 and InRelease is published last. Retain older by-hash files on the server.
 """
-import argparse,pathlib,paramiko,hashlib,urllib.request
+import argparse,pathlib,paramiko,hashlib,urllib.request,re
 p=argparse.ArgumentParser()
 p.add_argument('archive',type=pathlib.Path)
 p.add_argument('--host',default='web.sourceforge.net')
@@ -14,6 +14,11 @@ p.add_argument('--remote-root',default='/home/project-web/shadowrealm-os/htdocs/
 p.add_argument('--public-root',default='https://shadowrealm-os.sourceforge.io/apt')
 a=p.parse_args()
 assert (a.archive/'dists/trixie/InRelease').is_file()
+files=list(f for f in a.archive.rglob('*') if f.is_file())
+allowed=re.compile(r'(?:shadowrealm-os-archive-keyring\.gpg|pool/main/[^/]+/[^/]+\.deb|dists/trixie/(?:InRelease|Release|Release\.gpg|main/binary-amd64/(?:Packages|Packages\.gz|by-hash/(?:SHA256/[0-9a-f]{64}|SHA512/[0-9a-f]{128}))))')
+for f in files:
+ if f.is_symlink() or not allowed.fullmatch(f.relative_to(a.archive).as_posix()):
+  p.error('Unexpected repository artifact: '+str(f.relative_to(a.archive)))
 c=paramiko.SSHClient();c.load_system_host_keys();c.connect(a.host,username=a.user,key_filename=a.identity)
 s=c.open_sftp()
 def mkdir(path):
@@ -26,7 +31,7 @@ def digest(stream):
  h=hashlib.sha256()
  for block in iter(lambda:stream.read(1024*1024),b''):h.update(block)
  return h.hexdigest()
-files=sorted((f for f in a.archive.rglob('*') if f.is_file()),key=lambda f:(f.name=='InRelease',f.name=='Release.gpg',f.name=='Release',not f.relative_to(a.archive).as_posix().startswith('pool/'),str(f)))
+files=sorted(files,key=lambda f:(f.name=='InRelease',f.name=='Release.gpg',f.name=='Release',not f.relative_to(a.archive).as_posix().startswith('pool/'),str(f)))
 for f in files:
  rel=f.relative_to(a.archive).as_posix();remote=a.remote_root+'/'+rel
  mkdir(remote.rsplit('/',1)[0])

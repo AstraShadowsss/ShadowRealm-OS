@@ -2,12 +2,14 @@
 """Build nine independently removable native Linux game packages from source."""
 import argparse, shutil, subprocess, tempfile
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('output',type=Path);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
+p=argparse.ArgumentParser();p.add_argument('output',type=Path);p.add_argument('--game',action='append',default=[]);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 source=Path(__file__).resolve().parent
-GAMES=[('shadow-pinball','Shadow Pinball','0.3.3','pinball'),('skull-invaders','Skull Invaders','0.1.0','arcade'),('shadow-runner','Shadow Runner','0.1.1','arcade'),('circuit-chase','Circuit Chase','0.1.1','classic'),('marble-reactor','Marble Reactor','0.2.0','classic'),('neon-ascent','Neon Ascent','0.1.0','classic'),('neon-breaker','Neon Breaker','0.1.0','classic'),('shadow-snake','Shadow Snake','0.1.1','classic'),('shadow-solitaire','Shadow Spider Solitaire','0.2.0','classic')]
+GAMES=[('shadow-pinball','Shadow Pinball','0.3.3','pinball'),('skull-invaders','Skull Invaders','0.2.0','arcade'),('shadow-runner','Shadow Runner','0.1.2','arcade'),('circuit-chase','Circuit Chase','0.2.0','classic'),('marble-reactor','Marble Reactor','0.3.0','classic'),('neon-ascent','Neon Ascent','0.1.1','classic'),('neon-breaker','Neon Breaker','0.1.1','classic'),('shadow-snake','Shadow Snake','0.1.2','classic'),('shadow-solitaire','Shadow Spider Solitaire','0.2.1','classic')]
+if set(a.game)-{row[0] for row in GAMES}:p.error('Unknown game selection')
 def put(root,name,data,mode=0o644):
  path=root/name;path.parent.mkdir(parents=True,exist_ok=True);path.write_text(data);path.chmod(mode)
 for identity,title,upstream_version,kind in GAMES:
+ if a.game and identity not in a.game:continue
  version=upstream_version+'-1'
  with tempfile.TemporaryDirectory(prefix='shadowrealm-os-game-') as temp:
   root=Path(temp);assets=root/'usr/share/games'/identity;assets.mkdir(parents=True)
@@ -26,4 +28,8 @@ for identity,title,upstream_version,kind in GAMES:
   put(root,f'usr/share/applications/{identity}.desktop',f'[Desktop Entry]\nType=Application\nName={title}\nComment=Original offline ShadowRealm-OS arcade game\nExec={identity}\nIcon={identity}\nCategories=Game;ArcadeGame;\nTerminal=false\n')
   put(root,f'usr/share/doc/{identity}/copyright',(source/'LICENSE').read_text())
   put(root,'DEBIAN/control',f'Package: {identity}\nVersion: {version}\nSection: games\nPriority: optional\nArchitecture: all\nMaintainer: ShadowRealm-OS contributors <packages@shadowrealm-os.invalid>\nDepends: python3, python3-cairo, python3-gi, gir1.2-gtk-3.0, pulseaudio-utils\nDescription: {title}, an original offline ShadowRealm-OS game\n')
+  root.chmod(0o755)
+  for path in root.rglob('*'):
+   if path.is_symlink():continue
+   path.chmod(0o755 if path.is_dir() or path.stat().st_mode & 0o111 else 0o644)
   subprocess.run(['dpkg-deb','--root-owner-group','--build',str(root),str(a.output/f'{identity}_{version}_all.deb')],check=True)
