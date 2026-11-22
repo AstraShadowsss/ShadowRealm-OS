@@ -57,7 +57,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 | Clock | Calendar | Notes | Weather |
 | --- | --- | --- | --- |
-| ![Clock widget showing the time](screenshots/widget-clock.png) | ![Calendar widget showing the month](screenshots/widget-calendar.png) | ![Notes widget showing saved notes](screenshots/widget-notes.png) | ![Weather widget showing forecast temperature and conditions](screenshots/widget-weather-professional.png) |
+| ![Clock widget showing the time](screenshots/widget-clock.png) | ![Calendar widget showing the month](screenshots/widget-calendar.png) | ![Notes widget showing saved notes](screenshots/widget-notes.png) | ![Weather widget showing forecast temperature and conditions](screenshots/widget-weather-professional-clean.png) |
 
 ![Separate Clock, Calendar and Notes widgets alongside their settings](screenshots/widget-settings-professional.png)
 
