@@ -1,4 +1,10 @@
 # Release notes
+## Desktop 0.2.17 (2026-11-22)
+
+- Add Appearance → Icons & Dock to select an icon family independently of desktop colors and wallpapers, with a Follow desktop theme default.
+- Keep Signature dock shapes and dark surfaces consistent across palettes; Professional accents share their own coordinated family.
+- Correct the Bluetooth symbol and panel glyph scaling across all twelve palettes.
+- Label Weather location and temperature-unit settings together. Fahrenheit and Celsius selections persist independently of the forecast cache.
 ## Desktop 0.2.16, artwork 0.2.5 and Terminal 0.2.3 (2026-11-22)
 
 - Refresh the coordinated theme collection, including Purple & Black and four Professional accents with matching system, dock and panel icons.

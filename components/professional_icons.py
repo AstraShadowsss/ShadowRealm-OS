@@ -14,15 +14,20 @@ def build_professional_icons(root, modes, source=None):
     runtime = root / 'usr/share/shadowrealm-os/desktop/runtime/icons'
     donor = runtime / 'neon'
     glyphs = {}
+    def normalized(tree):
+        viewbox = [float(value) for value in tree.get('viewBox','0 0 64 64').split()]
+        x,y,width,height=viewbox
+        drawing=''.join(ET.tostring(c,encoding='unicode') for c in tree)
+        return f'<g transform="scale({64/width} {64/height}) translate({-x} {-y})">{drawing}</g>'
     for p in donor.glob('shadow-panel-*.svg'):
         tree = ET.fromstring(p.read_text())
-        glyphs[p.stem.removeprefix('shadow-panel-')] = ''.join(ET.tostring(c, encoding='unicode') for c in tree)
+        glyphs[p.stem.removeprefix('shadow-panel-')] = normalized(tree)
     if not glyphs and source:
         with tarfile.open(Path(source)/'shadowrealm-os-desktop-defaults-source.tar.gz') as archive:
             for member in archive:
                 if '/runtime/icons/neon/shadow-panel-' in member.name and member.name.endswith('.svg'):
                     tree=ET.fromstring(archive.extractfile(member).read())
-                    glyphs[Path(member.name).stem.removeprefix('shadow-panel-')]=''.join(ET.tostring(c,encoding='unicode') for c in tree)
+                    glyphs[Path(member.name).stem.removeprefix('shadow-panel-')]=normalized(tree)
     if not glyphs:
         return
     glyphs.setdefault('software','<g fill="none" stroke="#000000" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 21 20-10 20 10v26L32 57 12 47Z M12 21l20 10 20-10 M32 31v26 M22 16l20 10"/></g>')

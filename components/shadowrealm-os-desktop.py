@@ -290,6 +290,9 @@ def main():
         except (OSError, ValueError, KeyError, RuntimeError, subprocess.SubprocessError) as error:
             print(f"Desktop wallpaper startup will retry after setup: {error}", file=sys.stderr)
     base = provision(Path.home())
+    sys.path.insert(0,str(PAYLOAD / 'runtime/bin'))
+    from shadow_icon_style import migrate_icon_families
+    migrate_icon_families(base)
     if action == "prepare":
         # Keep Print consistent with the installed screenshot application.
         # Preserve deliberately chosen shortcuts on existing accounts.

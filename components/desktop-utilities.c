@@ -190,7 +190,7 @@ static void weather_settings(GtkButton *button, gpointer unused)
 {
     (void)unused;
     GtkWindow *parent = GTK_WINDOW(gtk_widget_get_toplevel(GTK_WIDGET(button)));
-    GtkWidget *dialog = gtk_dialog_new_with_buttons("Weather location", parent, GTK_DIALOG_MODAL,
+    GtkWidget *dialog = gtk_dialog_new_with_buttons("Weather location & units", parent, GTK_DIALOG_MODAL,
                                                    "Cancel", GTK_RESPONSE_CANCEL,
                                                    "Save location", GTK_RESPONSE_ACCEPT, NULL);
     GtkWidget *content = gtk_dialog_get_content_area(GTK_DIALOG(dialog));
@@ -255,7 +255,7 @@ static void widget_settings(void)
     GtkWidget *weather_enabled = gtk_check_button_new_with_label("Show Weather");
     gtk_toggle_button_set_active(GTK_TOGGLE_BUTTON(weather_enabled), widget_enabled(WIDGET_WEATHER));
     g_signal_connect(weather_enabled, "toggled", G_CALLBACK(widget_toggle), (gpointer)widget_keys[WIDGET_WEATHER]);
-    GtkWidget *location = gtk_button_new_with_label("Weather location…");
+    GtkWidget *location = gtk_button_new_with_label("Weather location & units…");
     g_signal_connect(location, "clicked", G_CALLBACK(weather_settings), NULL);
     gtk_box_pack_start(GTK_BOX(weather_controls), weather_enabled, FALSE, FALSE, 0);
     gtk_box_pack_end(GTK_BOX(weather_controls), location, FALSE, FALSE, 0);

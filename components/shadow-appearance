@@ -18,7 +18,7 @@ class Backgrounds(Gtk.Application):
  def open_page(self,app,command):
   page=command.get_arguments()[-1].lstrip('-')
   self.activate()
-  self.tabs.set_current_page({'wallpapers':1,'transparency':2,'icons':3}.get(page,0))
+  self.tabs.set_current_page({'wallpapers':1,'transparency':2,'icons':3,'icon-style':4}.get(page,0))
   return 0
  def activate(self,*args):
   if hasattr(self,'window'):self.window.present();return
@@ -54,12 +54,41 @@ class Backgrounds(Gtk.Application):
   self.selected=None;self.buttons=[];self.build_transparency(tabs)
   desktop=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10,margin=18)
   tabs.append_page(desktop,Gtk.Label(label='Desktop Shortcuts'))
-  desktop.pack_start(Gtk.Label(label='Choose which shortcuts appear on the desktop, such as Home and Trash. To change icon colors, use Themes.',xalign=0,wrap=True),False,False,0)
+  desktop.pack_start(Gtk.Label(label='Choose which shortcuts appear on the desktop, such as Home and Trash. To mix icon styles with another theme, use Icons & Dock.',xalign=0,wrap=True),False,False,0)
   options=Gtk.Button(label='Open Desktop Icon Options...')
   options.set_halign(Gtk.Align.START)
   options.connect('clicked',lambda *_:subprocess.Popen(['/usr/bin/xfdesktop-settings']))
   desktop.pack_start(options,False,False,0)
+  self.build_icon_style(tabs)
   self.choose_wall_palette();self.window.show_all()
+ def build_icon_style(self,tabs):
+  page=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=16,margin=20)
+  tabs.append_page(page,Gtk.Label(label='Icons & Dock'))
+  page.pack_start(Gtk.Label(label='Choose icons independently of your desktop colors and wallpaper. This also changes custom dock icons and panel symbols. Third-party applications keep their native artwork.',xalign=0,wrap=True),False,False,0)
+  self.icon_style=Gtk.ComboBoxText();self.icon_style.append('default','Follow desktop theme')
+  for identity,entry in self.modes.items():self.icon_style.append(identity,entry['label'])
+  path=HOME/'.config/shadowrealm-os/icon-style'
+  saved=path.read_text().strip() if path.is_file() else 'default'
+  self.icon_style.set_active_id(saved if saved in self.modes else 'default')
+  page.pack_start(self.icon_style,False,False,0)
+  page.pack_start(Gtk.Label(label='For example: keep Black & Blue desktop colors and use Neon icons. Choose Follow desktop theme to restore matching defaults.',xalign=0,wrap=True),False,False,0)
+  self.icon_apply=Gtk.Button(label='Apply Icon & Dock Style');self.icon_apply.set_halign(Gtk.Align.START)
+  self.icon_apply.connect('clicked',self.apply_icon_style);page.pack_start(self.icon_apply,False,False,0)
+  self.icon_status=Gtk.Label(xalign=0,wrap=True);page.pack_start(self.icon_status,False,False,0)
+ def apply_icon_style(self,*unused):
+  choice=self.icon_style.get_active_id() or 'default'
+  path=HOME/'.config/shadowrealm-os/appearance-mode';current=path.read_text().strip()
+  self.icon_apply.set_sensitive(False);self.icon_status.set_text('Applying icons...')
+  pool=concurrent.futures.ThreadPoolExecutor(max_workers=1)
+  future=pool.submit(subprocess.run,['/usr/bin/python3',str(HOME/'.local/share/shadow-link/bin/shadow-appearance-apply'),current,'--icons-only','--icon-style',choice],capture_output=True,text=True,timeout=90)
+  def finished(result):
+   try:
+    process=result.result();message=process.stdout.strip() if process.returncode==0 else process.stderr.strip() or 'Could not apply icon style.'
+   except Exception as error:message=str(error)
+   def show():
+    self.icon_apply.set_sensitive(True);self.icon_status.set_text(message);pool.shutdown(wait=False);return False
+   GLib.idle_add(show)
+  future.add_done_callback(finished)
  def choose_wall_palette(self,*args):
   if not hasattr(self,'flow'):return
   selected=self.wall_palette.get_active_id()
@@ -100,7 +129,7 @@ class Backgrounds(Gtk.Application):
   dialog.destroy()
  def build_style(self,tabs):
   page=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10,margin=16);tabs.append_page(page,Gtk.Label(label='Themes'))
-  page.pack_start(Gtk.Label(label='Choose a complete desktop look. Apply Theme switches colors, icons, dock, wallpaper and widgets in one step. Boot and login follow the selected theme.',xalign=0,wrap=True),False,False,0)
+  page.pack_start(Gtk.Label(label='Choose a complete desktop look. Apply Theme switches desktop colors, wallpaper and widgets. Icons follow the theme unless you choose an override in Icons & Dock. Boot and login follow the desktop theme.',xalign=0,wrap=True),False,False,0)
   base=HOME/'.local/share/shadow-link';self.modes=json.loads((base/'appearance-modes.json').read_text());current=(HOME/'.config/shadowrealm-os/appearance-mode').read_text().strip();current=current if current in self.modes else 'neon';self.style_choice=current
   base_choice=self.modes[current].get('variant_of',current)
   self.professional_accent=Gtk.ComboBoxText()
@@ -242,6 +271,7 @@ class Backgrounds(Gtk.Application):
 def main():
  page='themes'
  if '--transparency' in sys.argv:page='transparency'
+ elif '--icon-style' in sys.argv:page='icon-style'
  elif '--desktop-icons' in sys.argv:page='icons'
  elif '--desktop-settings' in sys.argv or '--wallpapers' in sys.argv:page='wallpapers'
  return Backgrounds().run([sys.argv[0],page])

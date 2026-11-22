@@ -6,6 +6,8 @@ from gi.repository import Gio,GLib,Gtk,GdkPixbuf
 from PIL import Image,ImageColor,ImageOps
 
 def matching_icons(mode,base,files):
+    from shadow_icon_style import repair_icons
+    repair_icons(mode, base)
     home=Path.home()
     original_theme=Gtk.IconTheme.new()
     original_theme.set_custom_theme('Adwaita')

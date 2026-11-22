@@ -114,6 +114,9 @@ def render_wallpaper(source, target, palette):
 
 
 def recolor_svg(text, palette):
+    if 'id="plate"' in text and 'id="rim"' in text:
+        from shadow_icon_style import signature_dock_svg
+        return signature_dock_svg(text,palette)
     text = recolor_text(text, palette)
     if 'data:image/' not in text:
         return text
