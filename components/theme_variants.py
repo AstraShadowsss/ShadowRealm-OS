@@ -413,6 +413,8 @@ def apply_wallpaper_finish(root, source, modes):
         overrides = source / 'palette-overrides'
     for mode, palette in modes.items():
         family = palette['wallpaper_palette']
+        (desktop / f'ShadowRealm-OS-{family}-Circuit-Walker.png').unlink(missing_ok=True)
+        (backgrounds / 'circuit-walker' / f'ShadowRealm-OS-{family}.png').unlink(missing_ok=True)
         if palette.get('unbranded'):
             for old in desktop.glob(f'ShadowRealm-OS-{family}-*.png'):
                 old.unlink()

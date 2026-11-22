@@ -20,15 +20,6 @@
   {
     "theme": "neon",
     "theme_label": "Neon",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-circuit-walker-3381015f9a.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "3381015f9a0bb2c539dad6129355a3a15aa52648c90e48625807d11d85572d55"
-  },
-  {
-    "theme": "neon",
-    "theme_label": "Neon",
     "style": "Seated City",
     "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/neon-seated-city-ba97aa8bfd.webp",
     "width": 1440,
@@ -97,15 +88,6 @@
     "width": 1440,
     "height": 810,
     "source_sha256": "d945f57f994db78550f910cd0b20b8e2b8439425241ab681e60cdf0a61cc2b3b"
-  },
-  {
-    "theme": "white-silver-gold",
-    "theme_label": "White, Silver & Gold",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/white-silver-gold-circuit-walker-8ed2d3af73.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "8ed2d3af735c422106be3d8c27c3905a16ff933ebd8e6e31a1828801028cc9d8"
   },
   {
     "theme": "white-silver-gold",
@@ -182,15 +164,6 @@
   {
     "theme": "red-black",
     "theme_label": "Red & Black",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-circuit-walker-40190f5187.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "40190f5187db43286cc42ba4a4abaaed73bca5149fbf4cf2c5ac7991bcefdc62"
-  },
-  {
-    "theme": "red-black",
-    "theme_label": "Red & Black",
     "style": "Seated City",
     "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/red-black-seated-city-cdd83c328f.webp",
     "width": 1440,
@@ -259,15 +232,6 @@
     "width": 1440,
     "height": 810,
     "source_sha256": "d6802c4f190404e3aff4fe9738036a01b08efdf4cf10f9c75f0f7cd1cbde8545"
-  },
-  {
-    "theme": "woodland",
-    "theme_label": "Woodland",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/woodland-circuit-walker-93c39e930b.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "93c39e930b2dee3c1f40910faa4f21451409668c9724174e41d0ae51eb8f46c2"
   },
   {
     "theme": "woodland",
@@ -344,15 +308,6 @@
   {
     "theme": "hacker",
     "theme_label": "Black & Green Hacker",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-circuit-walker-267cf9097e.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "267cf9097e6cd07a5ed70f02d80cefb0f7418ffad3245ed65ea9385a2812996a"
-  },
-  {
-    "theme": "hacker",
-    "theme_label": "Black & Green Hacker",
     "style": "Seated City",
     "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/hacker-seated-city-3e2fb0a7ad.webp",
     "width": 1440,
@@ -425,15 +380,6 @@
   {
     "theme": "black-blue",
     "theme_label": "Black & Blue",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-circuit-walker-27a1c04e65.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "27a1c04e65435bb7b24bb83924715548da4f0b0623ee773c8f59e74f38a33dee"
-  },
-  {
-    "theme": "black-blue",
-    "theme_label": "Black & Blue",
     "style": "Seated City",
     "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-blue-seated-city-03fda1c138.webp",
     "width": 1440,
@@ -502,15 +448,6 @@
     "width": 1440,
     "height": 810,
     "source_sha256": "46717eec21f394b47813c7fd4245591c9c0cd2254492d8a2b69bf6f825094fc8"
-  },
-  {
-    "theme": "black-white",
-    "theme_label": "Black & White",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/black-white-circuit-walker-69a5e26d98.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "69a5e26d9808f285be53db8d2041bb6717db8b3bb95d6deccf1fc1b3723ac2d7"
   },
   {
     "theme": "black-white",
@@ -610,15 +547,6 @@
     "width": 1440,
     "height": 810,
     "source_sha256": "1b29d9add0789b10e9373f615d75ae79e7145e636f8da75a439238ca169566f4"
-  },
-  {
-    "theme": "purple-black",
-    "theme_label": "Purple & Black",
-    "style": "Night Walk",
-    "image": "https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/wallpapers/purple-black-circuit-walker-43cd02accf.webp",
-    "width": 1440,
-    "height": 810,
-    "source_sha256": "43cd02accf2dd679a8570c433ce33eb44103ae3ed35c87b6ecbb7e664796f0fd"
   },
   {
     "theme": "purple-black",
