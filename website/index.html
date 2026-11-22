@@ -298,6 +298,7 @@
  gallery.querySelectorAll('.gallery-family').forEach(button=>button.addEventListener('click',()=>{family=button.dataset.family;style.value='';themeOptions();filter();}));
  strip.addEventListener('keydown',e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();move(e.key==='ArrowLeft'?-1:1);}});
  strip.addEventListener('scroll',()=>{cancelAnimationFrame(frame);frame=requestAnimationFrame(updatePosition);},{passive:true});
+ window.addEventListener('hashchange',()=>{if(location.hash==='#professional'){family='professional';style.value='';themeOptions();filter();}});
  gallery.querySelector('.gallery-toolbar').hidden=false;filter();
 })();
 </script>
