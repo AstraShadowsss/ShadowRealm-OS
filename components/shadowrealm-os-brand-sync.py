@@ -46,7 +46,7 @@ def main():
   if mode is None:return
   name,theme=PALETTES[mode]
   logo=approved(P('/usr/share/shadowrealm-os/branding')/('ShadowRealm-OS-Circular-'+name+'.png'))
-  wall=(P('/usr/share/backgrounds/shadowrealm-os/professional')/(name+'-Misty-Ridges.png') if mode.startswith('professional') else P('/usr/share/backgrounds/shadowrealm-os/logo-focused')/('ShadowRealm-OS-'+name+'.png'))
+  wall=(P('/usr/share/backgrounds/shadowrealm-os/professional')/(name+'-Satin-Bloom.png') if mode.startswith('professional') else P('/usr/share/backgrounds/shadowrealm-os/logo-focused')/('ShadowRealm-OS-'+name+'.png'))
   image=approved(wall)
   progress=approved(P('/usr/share/shadowrealm-os/branding')/('Progress-Fill-'+name+'.png'))
   state=P('/var/lib/shadowrealm-os/branding.json')
