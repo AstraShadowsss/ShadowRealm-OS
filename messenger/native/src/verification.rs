@@ -20,6 +20,8 @@ impl VerificationFlow {
         request.accept().await.map_err(|_|"The verification request could not be accepted.")?;
         Ok(Self{client:client.clone(),request,sas:None})
     }
+    pub fn request_handle(&self)->VerificationRequest{self.request.clone()}
+    pub fn sas_handle(&self)->Option<SasVerification>{self.sas.clone()}
     pub fn flow_id(&self)->&str{self.request.flow_id()}
     pub async fn refresh(&mut self)->Result<State,String>{
         if self.sas.is_none(){
@@ -49,4 +51,15 @@ impl VerificationFlow {
         if let Some(sas)=self.sas.as_ref(){sas.cancel().await}else{self.request.cancel().await}
             .map_err(|_|"The verification cancellation could not be sent.".into())
     }
+}
+
+#[derive(Clone)]
+pub struct DeviceInfo {pub id:String,pub name:String,pub verified:bool,pub current:bool}
+pub async fn own_devices(client:&Client)->Result<(String,Vec<DeviceInfo>),String>{
+    let user=client.user_id().ok_or("Sign in first.")?;
+    let _=client.encryption().request_user_identity(user).await.map_err(|_|"Device keys could not be refreshed.")?;
+    let devices=client.encryption().get_user_devices(user).await.map_err(|_|"Devices could not be loaded.")?;
+    let mut devices:Vec<_>=devices.devices().map(|device|DeviceInfo{id:device.device_id().to_string(),name:device.display_name().unwrap_or("Unnamed Matrix device").to_owned(),verified:device.is_verified(),current:Some(device.device_id())==client.device_id()}).collect();
+    devices.sort_by(|a,b|b.current.cmp(&a.current).then_with(||a.name.to_lowercase().cmp(&b.name.to_lowercase())).then_with(||a.id.cmp(&b.id)));
+    Ok((user.to_string(),devices))
 }

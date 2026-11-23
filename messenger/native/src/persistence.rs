@@ -38,7 +38,7 @@ async fn saved()->Result<Option<Zeroizing<String>>,String>{
         .map_err(|_|"The keyring request could not finish.".to_owned())?.map_err(str::to_owned)
 }
 
-fn client_builder(server:&str)->Result<matrix_sdk::ClientBuilder,String>{
+pub(crate) fn client_builder(server:&str)->Result<matrix_sdk::ClientBuilder,String>{
     let builder=Client::builder().homeserver_url(server).with_encryption_settings(matrix_sdk::encryption::EncryptionSettings{auto_enable_cross_signing:false,auto_enable_backups:false,backup_download_strategy:matrix_sdk::encryption::BackupDownloadStrategy::AfterDecryptionFailure});
     #[cfg(test)]
     let builder=if let Ok(path)=std::env::var("SHADOW_MESSENGER_TEST_CA"){

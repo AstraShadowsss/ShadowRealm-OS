@@ -12,10 +12,17 @@ pub enum Command {
     LoadOlder,
     Send{room_id:String,body:String,allow_unencrypted:bool},
     RetryPending,
+    Devices,
+    VerifyDevice{user_id:String,device_id:String},
+    VerificationTick(String),
+    ConfirmVerification(String),
+    CancelVerification(String),
     Logout,
 }
 pub enum Event {
     Connected,
+    Devices{user_id:String,devices:Vec<crate::verification::DeviceInfo>},
+    Verification{flow_id:String,state:crate::verification::State},
     Queued{room_id:String,body:String},
     RoomSecurity{room_id:String,encrypted:bool},
     Rooms(Vec<Connection>),
@@ -26,6 +33,7 @@ pub enum Event {
 pub fn start()->(Sender<Command>,Receiver<Event>){
     let (commands,requests)=async_channel::bounded(4);
     let (events,updates)=async_channel::bounded(8);
+    let internal_commands=commands.clone();
     std::thread::Builder::new().name("Messenger account".into()).spawn(move||{
         let runtime=match tokio::runtime::Builder::new_multi_thread().worker_threads(2).thread_name("Messenger IO").enable_all().build(){
             Ok(runtime)=>runtime,
@@ -33,6 +41,10 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
         };
         runtime.block_on(async move {
             let mut session:Option<Session>=None;
+            let mut verification:Option<crate::verification::VerificationFlow>=None;
+            let mut verification_tasks:Vec<tokio::task::JoinHandle<()>>=Vec::new();
+            let mut sas_observed=false;
+
             let mut sync_task:Option<tokio::task::JoinHandle<()>>=None;
             let mut timeline:Option<crate::timeline::RoomTimeline>=None;
             let mut forward:Option<tokio::task::JoinHandle<()>>=None;
@@ -82,9 +94,42 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::RetryPending=>{
                             timeline.as_ref().ok_or("Choose a conversation first.")?.retry_pending();
                         }
+                        Command::Devices=>{
+                            let account=session.as_ref().ok_or("Sign in first.")?;
+                            let (user_id,devices)=crate::verification::own_devices(account.client()).await?;
+                            let _=events.send(Event::Devices{user_id,devices}).await;
+                        }
+                        Command::VerifyDevice{user_id,device_id}=>{
+                            if verification.as_ref().is_some_and(|flow|!matches!(flow.state(),crate::verification::State::Verified|crate::verification::State::Cancelled)){return Err("Finish or cancel the current verification first.".into());}
+                            for task in verification_tasks.drain(..){task.abort();}sas_observed=false;
+                            let user:matrix_sdk::ruma::OwnedUserId=user_id.parse().map_err(|_|"Invalid Matrix account.")?;
+                            let device:matrix_sdk::ruma::OwnedDeviceId=device_id.into();
+                            let flow=crate::verification::VerificationFlow::request(session.as_ref().ok_or("Sign in first.")?.client(),&user,&device).await?;
+                            let request=flow.request_handle();let tx=internal_commands.clone();let id=flow.flow_id().to_owned();
+                            verification_tasks.push(tokio::spawn(async move{use futures_util::StreamExt;let mut changes=Box::pin(request.changes());while changes.next().await.is_some(){if tx.send(Command::VerificationTick(id.clone())).await.is_err(){break;}}}));
+                            let _=events.send(Event::Verification{flow_id:flow.flow_id().to_owned(),state:flow.state()}).await;
+                            verification=Some(flow);
+                        }
+                        Command::VerificationTick(id)=>{
+                            let Some(flow)=verification.as_mut().filter(|flow|flow.flow_id()==id) else{return Ok(())};
+                            let mut state=flow.refresh().await?;
+                            if state==crate::verification::State::Ready&&flow.sas_handle().is_none(){flow.start_numbers().await?;state=flow.state();}
+                            if !sas_observed{if let Some(sas)=flow.sas_handle(){let tx=internal_commands.clone();let id=id.clone();verification_tasks.push(tokio::spawn(async move{use futures_util::StreamExt;let mut changes=Box::pin(sas.changes());while changes.next().await.is_some(){if tx.send(Command::VerificationTick(id.clone())).await.is_err(){break;}}}));sas_observed=true;}}
+                            if matches!(state,crate::verification::State::Verified|crate::verification::State::Cancelled){for task in verification_tasks.drain(..){task.abort();}}
+                            let _=events.send(Event::Verification{flow_id:id,state}).await;
+                        }
+                        Command::ConfirmVerification(id)=>{
+                            let flow=verification.as_ref().filter(|flow|flow.flow_id()==id).ok_or("This verification is no longer active.")?;
+                            flow.confirm_match().await?;
+                        }
+                        Command::CancelVerification(id)=>{
+                            let flow=verification.as_ref().filter(|flow|flow.flow_id()==id).ok_or("This verification is no longer active.")?;
+                            flow.cancel().await?;let _=events.send(Event::Verification{flow_id:id,state:crate::verification::State::Cancelled}).await;
+                            for task in verification_tasks.drain(..){task.abort();}
+                        }
                         Command::Logout=>{
                             if let Some(account)=session.as_ref(){account.logout().await?;}
-                            if let Some(task)=forward.take(){task.abort();}if let Some(task)=sync_task.take(){task.abort();}timeline=None;session=None;let _=events.send(Event::SignedOut).await;
+                            if let Some(task)=forward.take(){task.abort();}if let Some(task)=sync_task.take(){task.abort();}for task in verification_tasks.drain(..){task.abort();}verification=None;timeline=None;session=None;let _=events.send(Event::SignedOut).await;
                         }
                     }
                     Ok(())
