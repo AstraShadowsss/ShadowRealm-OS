@@ -1,4 +1,11 @@
 # Release notes
+
+## Desktop 0.2.18 (2026-11-22)
+
+- Put Bluetooth power, device pairing and adapter preferences in one panel.
+- Keep controller output and paired device addresses under a collapsed Technical Details section.
+- Clearly distinguish unavailable, disabled and enabled Bluetooth states.
+
 ## Games update (2026-11-22)
 
 - Marble Reactor 0.3.1: twelve distinct rounded tracks, varied entry angles and curvature, gradual color/speed progression, and a complete twelve-stage finish.

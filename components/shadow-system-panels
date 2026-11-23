@@ -187,7 +187,16 @@ class Panel(Gtk.Application):
   if action=='disconnect' and not self.confirm('Disconnect '+device+'? Network applications and remote connections will stop.'):return
   self.action(['nmcli','--wait','6','device',action,device])
  def build_bluetooth(self):
-  box=page(self.tabs,'Controller');self.btinfo=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.btinfo,False,False,0);self.power=Gtk.CheckButton(label='Bluetooth enabled');self.power.connect('toggled',self.bt_power);box.pack_start(self.power,False,False,0);self.bt_devices=self.button(box,'Find, pair and manage devices',lambda *_:self.launch('blueman-manager'));self.bt_adapter=self.button(box,'Bluetooth adapter settings',lambda *_:self.launch('blueman-adapters'));self.paired=textview(box);self.button(box,'Refresh controller and devices',lambda *_:self.refresh())
+  box=page(self.tabs,'Bluetooth')
+  self.bt_summary=Gtk.Label(xalign=0,wrap=True);box.pack_start(self.bt_summary,False,False,0)
+  self.power=Gtk.CheckButton(label='Bluetooth enabled');self.power.connect('toggled',self.bt_power);box.pack_start(self.power,False,False,0)
+  self.bt_devices=self.button(box,'Find, pair and manage devices',lambda *_:self.launch('blueman-manager'))
+  self.bt_adapter=self.button(box,'Adapter name and visibility',lambda *_:self.launch('blueman-adapters'))
+  details=Gtk.Expander(label='Technical details and paired device addresses')
+  info=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=10)
+  self.btinfo=Gtk.Label(xalign=0,wrap=True);self.btinfo.set_selectable(True);info.pack_start(self.btinfo,False,False,0)
+  self.paired=textview(info);details.add(info);box.pack_start(details,True,True,0)
+  self.button(box,'Refresh Bluetooth',lambda *_:self.refresh())
   self.bt_devices.set_sensitive(False);self.bt_adapter.set_sensitive(False)
  def bt_power(self,toggle):
   if not self.syncing:self.action(['bluetoothctl','power','on' if toggle.get_active() else 'off'])
@@ -269,7 +278,7 @@ class Panel(Gtk.Application):
     if len(p)>1:values[p[0]]=':'.join(p[1:])
    labels=[('GENERAL.CONNECTION','Connection'),('GENERAL.STATE','Status'),('GENERAL.TYPE','Device type'),('GENERAL.HWADDR','Hardware address'),('IP4.ADDRESS[1]','IPv4 address'),('IP4.GATEWAY','Gateway'),('IP4.DNS[1]','DNS server')];self.netinfo.set_text('\n\n'.join(label+': '+values.get(key,'—') for key,label in labels));self.wifi.get_buffer().set_text(wifi)
   else:
-   controllers,details,paired=data;available=bool(controllers);self.btinfo.set_text(details if available else 'No Bluetooth controller is available. Connect a Bluetooth adapter to this system; in VirtualBox it must be passed through to the VM.');self.power.set_sensitive(available);self.bt_devices.set_sensitive(available);self.bt_adapter.set_sensitive(available);self.power.set_active('Powered: yes' in details);self.paired.get_buffer().set_text(paired or ('No paired devices.' if available else 'Pairing and discovery become available when a controller is connected.'))
+   controllers,details,paired=data;available=bool(controllers);self.bt_summary.set_text(('Bluetooth is on. Find nearby devices to pair or manage existing connections.' if 'Powered: yes' in details else 'Bluetooth is off. Enable it to pair or connect devices.') if available else 'No Bluetooth adapter detected. Connect an adapter; VirtualBox requires USB passthrough.');self.btinfo.set_text(details if available else 'No Bluetooth controller is available. Connect a Bluetooth adapter to this system; in VirtualBox it must be passed through to the VM.');self.power.set_sensitive(available);self.bt_devices.set_sensitive(available);self.bt_adapter.set_sensitive(available);self.power.set_active('Powered: yes' in details);self.paired.get_buffer().set_text(paired or ('No paired devices.' if available else 'Pairing and discovery become available when a controller is connected.'))
   self.syncing=False;return False
 
 if __name__=='__main__':
