@@ -39,7 +39,7 @@ async fn saved()->Result<Option<Zeroizing<String>>,String>{
 }
 
 fn client_builder(server:&str)->Result<matrix_sdk::ClientBuilder,String>{
-    let builder=Client::builder().homeserver_url(server);
+    let builder=Client::builder().homeserver_url(server).with_encryption_settings(matrix_sdk::encryption::EncryptionSettings{auto_enable_cross_signing:false,auto_enable_backups:false,backup_download_strategy:matrix_sdk::encryption::BackupDownloadStrategy::AfterDecryptionFailure});
     #[cfg(test)]
     let builder=if let Ok(path)=std::env::var("SHADOW_MESSENGER_TEST_CA"){
         if server!="https://localhost:18448"{return Err("The test CA is restricted to the local fixture.".into());}
@@ -204,5 +204,47 @@ mod device_verification_integration {
             assert!(first.encryption().get_device(second.user_id().unwrap(),second.device_id().unwrap()).await.unwrap().unwrap().is_verified());
             a_sync.abort();b_sync.abort();second.logout().await.unwrap();forget(&first).await.unwrap();
         }).await.expect("Device verification exceeded its time limit");
+    }
+}
+
+#[cfg(test)]
+mod recovery_integration {
+    use super::*;
+    #[tokio::test(flavor="multi_thread",worker_threads=2)]
+    #[ignore = "requires a fresh disposable account and isolated Secret Service"]
+    async fn recovery_key_restores_cross_signing_on_a_new_device(){
+        assert_eq!(std::env::var("SHADOW_MESSENGER_ISOLATED_KEYRING_TEST").as_deref(),Ok("1"));
+        tokio::time::timeout(std::time::Duration::from_secs(90),async{
+            let account:serde_json::Value=serde_json::from_str(&fs::read_to_string(std::env::var("SHADOW_MESSENGER_MATRIX_FIXTURE").unwrap()).unwrap()).unwrap();
+            let server=account["server"].as_str().unwrap();let username=account["recovery_username"].as_str().unwrap();let password=account["recovery_password"].as_str().unwrap();
+            let first=login(server.into(),username.into(),Zeroizing::new(password.into())).await.unwrap();first.sync_once(matrix_sdk::config::SyncSettings::default()).await.unwrap();
+            if let Err(error)=first.encryption().bootstrap_cross_signing_if_needed(None).await{
+                let response=error.as_uiaa_response().expect("Cross-signing setup failed without an authentication challenge");
+                let mut auth=matrix_sdk::ruma::api::client::uiaa::Password::new(matrix_sdk::ruma::api::client::uiaa::UserIdentifier::from(first.user_id().unwrap().to_owned()),password.into());
+                auth.session=response.session.clone();first.encryption().bootstrap_cross_signing(Some(matrix_sdk::ruma::api::client::uiaa::AuthData::Password(auth))).await.unwrap();
+            }
+            eprintln!("recovery stage: cross-signing ready");
+            let sync_client=first.clone();let first_sync=tokio::spawn(async move{sync_client.sync(matrix_sdk::config::SyncSettings::default().timeout(std::time::Duration::from_secs(1))).await});
+            let room=first.create_room(matrix_sdk::ruma::api::client::room::create_room::v3::Request::new()).await.unwrap();room.enable_encryption().await.unwrap();
+            let body="Disposable backup recovery history message";
+            room.send(matrix_sdk::ruma::events::room::message::RoomMessageEventContent::text_plain(body)).await.unwrap();
+            eprintln!("recovery stage: encrypted event stored");
+            let key=crate::recovery::enable(&first).await.unwrap();assert!(!key.is_empty());
+            eprintln!("recovery stage: key created");
+            tokio::time::timeout(std::time::Duration::from_secs(20),crate::recovery::wait_for_upload(&first)).await.expect("Encrypted backup upload timed out").unwrap();first_sync.abort();
+            eprintln!("recovery stage: encrypted key backup uploaded");
+
+            let second=client_builder(server).unwrap().build().await.unwrap();second.matrix_auth().login_username(username,password).send().await.unwrap();second.sync_once(matrix_sdk::config::SyncSettings::default()).await.unwrap();
+            assert!(crate::recovery::restore_key(&second,Zeroizing::new("invalid recovery key".into())).await.is_err());
+            eprintln!("recovery stage: new device ready");
+            crate::recovery::restore_key(&second,Zeroizing::new(key.to_string())).await.unwrap();
+            eprintln!("recovery stage: identity restored");
+            assert!(second.encryption().cross_signing_status().await.unwrap().is_complete());
+            assert!(crate::recovery::state(&second)==matrix_sdk::encryption::recovery::RecoveryState::Enabled);
+            let timeline=crate::timeline::RoomTimeline::open(&second,room.room_id().as_str()).await.unwrap();
+            eprintln!("recovery stage: historical timeline open");
+            loop{let messages=timeline.updates.recv().await.unwrap();if messages.iter().any(|message|message.body==body){break;}}
+            drop(timeline);second.logout().await.unwrap();forget(&first).await.unwrap();
+        }).await.expect("Recovery fixture exceeded its time limit");
     }
 }

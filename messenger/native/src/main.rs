@@ -5,6 +5,7 @@ mod persistence;
 mod worker;
 mod timeline;
 mod verification;
+mod recovery;
 use gtk::{glib,prelude::*};
 
 fn main() -> glib::ExitCode {
