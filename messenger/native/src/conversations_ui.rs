@@ -8,6 +8,7 @@ pub struct ConversationsView {
 impl ConversationsView {
     pub fn new(parent:&gtk::ApplicationWindow,commands:Sender<Command>)->Self{
         let window=gtk::Window::builder().title("Conversations & invitations").transient_for(parent).destroy_with_parent(true).default_width(650).default_height(560).build();
+        window.add_css_class("messenger-window");
         let outer=gtk::Box::new(gtk::Orientation::Vertical,12);outer.set_margin_top(20);outer.set_margin_bottom(20);outer.set_margin_start(20);outer.set_margin_end(20);
         let heading=gtk::Label::new(Some("Invitations"));heading.set_xalign(0.0);heading.add_css_class("heading");outer.append(&heading);
         let list=gtk::Box::new(gtk::Orientation::Vertical,10);let scroll=gtk::ScrolledWindow::builder().child(&list).min_content_height(130).vexpand(true).build();outer.append(&scroll);

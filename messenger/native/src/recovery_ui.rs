@@ -20,6 +20,7 @@ pub struct RecoveryView {
 impl RecoveryView {
     pub fn new(parent:&gtk::ApplicationWindow,commands:Sender<Command>)->Self{
         let window=gtk::Window::builder().title("Account recovery").transient_for(parent).destroy_with_parent(true).default_width(630).default_height(560).build();
+        window.add_css_class("messenger-window");
         let outer=gtk::Box::new(gtk::Orientation::Vertical,12);outer.set_margin_top(20);outer.set_margin_bottom(20);outer.set_margin_start(20);outer.set_margin_end(20);
         let intro=gtk::Label::new(Some("Your Matrix provider stores an encrypted backup of message keys. Your recovery key unlocks it. Keep the key outside this device; do not send it to anyone."));intro.set_wrap(true);intro.set_xalign(0.0);outer.append(&intro);
         let status=gtk::Label::new(Some("Checking account recovery..."));status.set_wrap(true);status.set_xalign(0.0);outer.append(&status);

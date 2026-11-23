@@ -19,6 +19,7 @@ pub struct SecurityView {
 impl SecurityView {
     pub fn new(parent:&gtk::ApplicationWindow,commands:Sender<Command>)->Self{
         let window=gtk::Window::builder().title("Devices & security").transient_for(parent).destroy_with_parent(true).default_width(620).default_height(520).build();
+        window.add_css_class("messenger-window");
         let outer=gtk::Box::new(gtk::Orientation::Vertical,12);for setter in [gtk::Widget::set_margin_top,gtk::Widget::set_margin_bottom,gtk::Widget::set_margin_start,gtk::Widget::set_margin_end]{setter(outer.upcast_ref(),20);}
         let account=gtk::Label::new(Some("Loading account devices..."));account.set_xalign(0.0);account.set_wrap(true);outer.append(&account);
         let list=gtk::Box::new(gtk::Orientation::Vertical,8);let scroll=gtk::ScrolledWindow::builder().vexpand(true).child(&list).build();outer.append(&scroll);

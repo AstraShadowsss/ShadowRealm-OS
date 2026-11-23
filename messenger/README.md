@@ -8,6 +8,10 @@ The native application builds and opens on Debian 13. Its account worker support
 
 Device verification and recovery controls are implemented and tested against a private fixture. Extended history, independent-client interoperability and the rest of the release checklist are not complete. Do not use this build for personal conversations. A successful compiler check does not establish working end-to-end messaging.
 
+Incoming SAS verification has an intermittent timeout in the combined fixture test. Successful isolated runs do not resolve that failure; verification reliability remains a release blocker.
+
+The development window follows the selected desktop palette through GTK4 application styles, including its account dialogs. It uses rounded surfaces, client-side window controls, a scrolling connection list and wrapping action groups. The signed-out layout passed a 900 × 600 resize check, and all twelve factory palette styles parsed without errors. These checks do not establish the final design or complete accessibility coverage.
+
 ## Stack
 
 Rust, GTK4/gtk4-rs, GTK CSS, Matrix Rust SDK, Tokio, SDK-supported SQLite storage and Secret Service. Timeline integration uses matrix-sdk-ui 0.19.1. GIO/D-Bus notifications and Debian packaging remain planned. The primary interface does not embed a browser.
@@ -31,6 +35,8 @@ cargo test --locked --manifest-path native/Cargo.toml ui_tests:: -- --ignored --
 ```
 
 The Secret Service round-trip test must run in a separate disposable keyring session, not against the owner's desktop keyring.
+
+`tests/palette-windows.py` checks live palette switching in an isolated configuration using the installed development launcher. It captures the twelve window variants and checks their content backgrounds against the factory palette. It requires the X11 desktop, `wmctrl`, Python GI/GDK3 and the installed development binary. It does not change the active user's appearance settings.
 
 ## Measured baseline
 

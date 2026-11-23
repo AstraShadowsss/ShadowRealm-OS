@@ -10,10 +10,10 @@ ShadowRealm-OS is a Debian 13 and Xfce desktop with a recognizable visual identi
 
 ## Desktop and system controls
 
-The signed desktop updates include Local Search, searchable settings, independent widgets, Notes, opt-in Weather and dock editing. Desktop 0.2.16 refreshes the theme collection and improves dock reordering and widget settings; artwork 0.2.5 and Terminal 0.2.3 provide the matching assets and Terminal fixes.
+The signed desktop updates include Local Search, searchable settings, independent widgets, Notes, opt-in Weather and dock editing. Desktop 0.2.19 and artwork 0.2.6 include package-removal controls, light-theme readability improvements and the restored gold Circuit Corridor logo. Terminal remains 0.2.3.
 - Show current state at the point of action. Explain whether Bluetooth is off or an adapter is missing and why an administrative action failed. Provide visible keyboard focus, readable toggle labels, and clear confirmation for changes that can interrupt connectivity.
 - Check the settings on smaller displays and with larger text. Carry the same focus and status conventions into the remaining system windows.
-- Keep the dock's drag-and-drop behavior consistent on smaller displays. Add local search and make any online weather lookups optional.
+- Keep the dock's drag-and-drop behavior consistent on smaller displays. Check Local Search performance and keep Weather lookups optional.
 
 ## Implementation order
 
@@ -63,4 +63,8 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 
 ## Games and Messenger
 
-The November 22 game updates add twelve Marble Reactor tracks, Circuit Chase direction controls and expanded Skull Invaders progression. Android control/gameplay updates and additional playthroughs remain open. Shadow Messenger has a separate development project under messenger/; it is not installed by default and must pass secure account storage, live-account, encryption and recovery gates before inclusion.
+The November 22 game updates add twelve Marble Reactor tracks, Circuit Chase direction controls and expanded Skull Invaders progression. Android 1.0.1 includes the updated touch controls, twelve Marble tracks and expanded Skull Invaders progression. Emulator input/rendering and rule tests passed; physical-phone coverage and longer playthroughs remain open. Shadow Messenger has a separate development project under messenger/; it is not installed by default and must pass secure account storage, live-account, encryption and recovery gates before inclusion.
+
+## Next desktop refinements
+
+Native Terminal tabs and a new-tab control; modern rounded window decorations; readable neutral text with theme-colored selection and focus; a theme-following Control Center logo; and a clean bottom dock strip. Continue dock drag/drop, small-screen and monitor-change coverage alongside the design work.

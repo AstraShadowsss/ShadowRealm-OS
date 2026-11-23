@@ -10,6 +10,7 @@ mod security_ui;
 mod recovery_ui;
 mod conversations;
 mod conversations_ui;
+mod appearance;
 use gtk::{glib,prelude::*};
 
 fn main() -> glib::ExitCode {
@@ -20,12 +21,16 @@ fn main() -> glib::ExitCode {
 
 fn build(app:&gtk::Application) {
     if let Some(window)=app.windows().into_iter().find(|window|window.widget_name().as_str()=="shadow-messenger-main"){window.present();return;}
+    if let Some(display)=gtk::gdk::Display::default(){let css=gtk::CssProvider::new();css.load_from_data(include_str!("style.css"));gtk::style_context_add_provider_for_display(&display,&css,gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);}
     let (commands,updates)=worker::start();
-    let window=gtk::ApplicationWindow::builder().application(app).title("Shadow Messenger — Development")
+    let window=gtk::ApplicationWindow::builder().application(app).title("Shadow Messenger â€” Development")
         .default_width(980).default_height(650).build();
-    window.set_widget_name("shadow-messenger-main");
+    window.set_widget_name("shadow-messenger-main");appearance::attach(&window);
+    let chrome=gtk::HeaderBar::new();
+    let chrome_title=gtk::Label::new(Some("Shadow Messenger"));chrome_title.add_css_class("heading");
+    chrome.set_title_widget(Some(&chrome_title));window.set_titlebar(Some(&chrome));
     let commands_close=commands.clone();let updates_close=updates.clone();window.connect_destroy(move |_|{commands_close.close();updates_close.close();});
-    let shell=gtk::Box::new(gtk::Orientation::Vertical,18);
+    let shell=gtk::Box::new(gtk::Orientation::Vertical,12);
     shell.set_margin_top(24);shell.set_margin_bottom(24);shell.set_margin_start(24);shell.set_margin_end(24);
     let conversation_views=std::rc::Rc::new(std::cell::RefCell::new(None::<conversations_ui::ConversationsView>));
     let conversation_button=gtk::Button::with_label("Conversations");conversation_button.set_sensitive(false);
@@ -37,35 +42,36 @@ fn build(app:&gtk::Application) {
     let views=recovery_views.clone();let parent=window.downgrade();let tx=commands.clone();recovery_button.connect_clicked(move |_|{if let Some(parent)=parent.upgrade(){let mut views=views.borrow_mut();let view=views.get_or_insert_with(||recovery_ui::RecoveryView::new(&parent,tx.clone()));view.present();let _=tx.try_send(worker::Command::RecoveryStatus);}});
     let security_button=gtk::Button::with_label("Devices & security");security_button.set_sensitive(false);
     let views=security_views.clone();let parent=window.downgrade();let tx=commands.clone();security_button.connect_clicked(move |_|{if let Some(parent)=parent.upgrade(){let mut views=views.borrow_mut();let view=views.get_or_insert_with(||security_ui::SecurityView::new(&parent,tx.clone()));view.present();let _=tx.try_send(worker::Command::Devices);}});
-    let title=gtk::Label::new(Some("Shadow Messenger"));title.add_css_class("title-1");title.set_xalign(0.0);title.set_hexpand(true);let header=gtk::Box::new(gtk::Orientation::Horizontal,12);header.append(&title);header.append(&conversation_button);header.append(&security_button);header.append(&recovery_button);shell.append(&header);
+    let title=gtk::Label::new(Some("Shadow Messenger"));title.add_css_class("title-1");title.set_xalign(0.0);title.set_hexpand(true);let header=gtk::Box::new(gtk::Orientation::Horizontal,12);header.append(&title);let navigation=gtk::FlowBox::builder().selection_mode(gtk::SelectionMode::None).min_children_per_line(1).max_children_per_line(3).column_spacing(8).row_spacing(6).build();for button in [&conversation_button,&security_button,&recovery_button]{navigation.insert(button,-1);}header.append(&navigation);shell.append(&header);
     let notice=gtk::Label::new(Some("Development build. Use a test account while compatibility and release checks are completed."));
-    notice.set_wrap(true);notice.set_xalign(0.0);shell.append(&notice);
+    notice.add_css_class("messenger-notice");notice.set_wrap(true);notice.set_xalign(0.0);shell.append(&notice);
     let split=gtk::Paned::new(gtk::Orientation::Horizontal);split.set_vexpand(true);split.set_position(270);
-    let sidebar=gtk::Box::new(gtk::Orientation::Vertical,12);
+    let sidebar=gtk::Box::new(gtk::Orientation::Vertical,12);sidebar.add_css_class("messenger-sidebar");sidebar.set_size_request(220,-1);split.set_shrink_start_child(false);
     let label=gtk::Label::new(Some("Connections"));label.set_xalign(0.0);label.add_css_class("heading");sidebar.append(&label);
     let search=gtk::SearchEntry::new();search.set_placeholder_text(Some("Search connections"));sidebar.append(&search);
     let list=gtk::ListBox::new();list.set_vexpand(true);
     let query=search.downgrade();list.set_filter_func(move|row|{let Some(query)=query.upgrade() else{return true};let query=query.text().trim().to_lowercase();query.is_empty()||row.child().and_then(|child|child.downcast::<gtk::Label>().ok()).is_some_and(|label|label.text().to_lowercase().contains(&query))});
     let filtered=list.downgrade();search.connect_search_changed(move |_|{if let Some(list)=filtered.upgrade(){list.invalidate_filter();}});
-    sidebar.append(&list);split.set_start_child(Some(&sidebar));
+    let connection_scroll=gtk::ScrolledWindow::builder().child(&list).vexpand(true).hscrollbar_policy(gtk::PolicyType::Never).build();sidebar.append(&connection_scroll);split.set_start_child(Some(&sidebar));
     let room_ids=std::rc::Rc::new(std::cell::RefCell::new(Vec::<String>::new()));
     let drafts=std::rc::Rc::new(std::cell::RefCell::new(std::collections::HashMap::<String,String>::new()));
     let selected_room=std::rc::Rc::new(std::cell::RefCell::new(None::<String>));
     let content=gtk::Box::new(gtk::Orientation::Vertical,12);content.set_margin_start(18);
     let empty=gtk::Label::new(Some("No account connected"));content.append(&empty);
-    let history=gtk::TextView::new();history.set_editable(false);history.set_cursor_visible(false);history.set_wrap_mode(gtk::WrapMode::WordChar);
-    let history_scroll=gtk::ScrolledWindow::builder().vexpand(true).min_content_height(100).child(&history).build();content.append(&history_scroll);
-    let older=gtk::Button::with_label("Load older messages");older.set_sensitive(false);content.append(&older);
+    let conversation_area=gtk::Box::new(gtk::Orientation::Vertical,12);conversation_area.set_vexpand(true);conversation_area.set_visible(false);content.append(&conversation_area);
+    let history=gtk::TextView::new();history.add_css_class("messenger-history");history.set_left_margin(14);history.set_right_margin(14);history.set_top_margin(12);history.set_bottom_margin(12);history.set_pixels_above_lines(3);history.set_pixels_below_lines(3);history.set_editable(false);history.set_cursor_visible(false);history.set_wrap_mode(gtk::WrapMode::WordChar);
+    let history_scroll=gtk::ScrolledWindow::builder().vexpand(true).min_content_height(100).child(&history).build();conversation_area.append(&history_scroll);
+    let older=gtk::Button::with_label("Load older messages");older.set_sensitive(false);conversation_area.append(&older);
     let room_encrypted=std::rc::Rc::new(std::cell::Cell::new(None::<bool>));
-    let security_label=gtk::Label::new(None);security_label.set_xalign(0.0);security_label.set_wrap(true);content.append(&security_label);
-    let plain_messages=gtk::CheckButton::with_label("Allow unencrypted messages in this room");plain_messages.set_visible(false);content.append(&plain_messages);
-    let compose=gtk::TextView::new();compose.set_wrap_mode(gtk::WrapMode::WordChar);compose.set_sensitive(false);
-    let compose_scroll=gtk::ScrolledWindow::builder().min_content_height(65).max_content_height(100).child(&compose).build();content.append(&compose_scroll);
+    let security_label=gtk::Label::new(None);security_label.set_xalign(0.0);security_label.set_wrap(true);conversation_area.append(&security_label);
+    let plain_messages=gtk::CheckButton::with_label("Allow unencrypted messages in this room");plain_messages.set_visible(false);conversation_area.append(&plain_messages);
+    let compose=gtk::TextView::new();compose.add_css_class("messenger-composer");compose.set_left_margin(12);compose.set_right_margin(12);compose.set_top_margin(10);compose.set_bottom_margin(10);compose.set_wrap_mode(gtk::WrapMode::WordChar);compose.set_sensitive(false);
+    let compose_scroll=gtk::ScrolledWindow::builder().min_content_height(65).max_content_height(100).child(&compose).build();conversation_area.append(&compose_scroll);
     let send_row=gtk::Box::new(gtk::Orientation::Horizontal,8);let send=gtk::Button::with_label("Send");send.set_sensitive(false);
-    let retry=gtk::Button::with_label("Retry pending messages");retry.set_sensitive(false);send_row.append(&send);send_row.append(&retry);content.append(&send_row);
+    let retry=gtk::Button::with_label("Retry pending messages");retry.set_sensitive(false);send_row.append(&send);send_row.append(&retry);conversation_area.append(&send_row);
     let server=gtk::Entry::builder().placeholder_text("HTTPS homeserver").build();
     let user=gtk::Entry::builder().placeholder_text("Matrix account").build();
-    let password=gtk::PasswordEntry::new();password.set_show_peek_icon(true);
+    let password=gtk::PasswordEntry::new();password.set_show_peek_icon(true);password.set_placeholder_text(Some("Password"));
     for widget in [server.upcast_ref::<gtk::Widget>(),user.upcast_ref(),password.upcast_ref()] {content.append(widget);}
     let status=gtk::Label::new(Some("Use a test account only. Saved sessions use the desktop keyring and an SDK-encrypted local store."));status.set_wrap(true);status.set_xalign(0.0);content.append(&status);
     let validate=gtk::Button::with_label("Check server address");
@@ -73,12 +79,13 @@ fn build(app:&gtk::Application) {
         status_copy.set_text(match shadow_messenger_core::validate_homeserver(server_check.text().as_str()) {Ok(_)=>"Server address accepted. No connection was made.",Err(message)=>message});
     });content.append(&validate);
     let consent=gtk::CheckButton::with_label("Use a test account; verification and recovery are unfinished");content.append(&consent);
-    let buttons=gtk::Box::new(gtk::Orientation::Horizontal,8);
+    let buttons=gtk::FlowBox::builder().selection_mode(gtk::SelectionMode::None).min_children_per_line(1).max_children_per_line(4).column_spacing(8).row_spacing(6).build();
     let login=gtk::Button::with_label("Sign in");login.set_sensitive(false);
+    let login_from_password=login.clone();password.connect_activate(move |_|{if login_from_password.is_sensitive(){login_from_password.emit_clicked();}});
     let restore=gtk::Button::with_label("Restore saved account");
     let refresh=gtk::Button::with_label("Refresh connections");refresh.set_sensitive(false);
     let logout=gtk::Button::with_label("Sign out");logout.set_sensitive(false);
-    for button in [&login,&restore,&refresh,&logout]{buttons.append(button);}content.append(&buttons);
+    for button in [&login,&restore,&refresh,&logout]{buttons.insert(button,-1);}content.append(&buttons);
     let login_copy=login.clone();consent.connect_toggled(move|c|login_copy.set_sensitive(c.is_active()));
     let tx=commands.clone();let status_copy=status.clone();let server_copy=server.clone();let user_copy=user.clone();let password_copy=password.clone();
     login.connect_clicked(move|button|{
@@ -126,7 +133,7 @@ fn build(app:&gtk::Application) {
         let mut room_signature=None;
         while let Ok(event)=updates.recv().await{
             match event{
-                worker::Event::Connected=>{conversation_button.set_sensitive(true);recovery_button.set_sensitive(true);security_button.set_sensitive(true);room_signature=None;server.set_visible(false);user.set_visible(false);password.set_visible(false);validate.set_visible(false);consent.set_visible(false);login.set_visible(false);empty.set_text("Connected. Choose a conversation.");refresh.set_sensitive(true);logout.set_sensitive(true);consent.set_sensitive(false);login.set_sensitive(false);status.set_text("Connected. Loading joined conversations...");}
+                worker::Event::Connected=>{conversation_area.set_visible(true);conversation_button.set_sensitive(true);recovery_button.set_sensitive(true);security_button.set_sensitive(true);room_signature=None;server.set_visible(false);user.set_visible(false);password.set_visible(false);validate.set_visible(false);consent.set_visible(false);login.set_visible(false);empty.set_text("Connected. Choose a conversation.");refresh.set_sensitive(true);logout.set_sensitive(true);consent.set_sensitive(false);login.set_sensitive(false);status.set_text("Connected. Loading joined conversations...");}
                 worker::Event::Rooms(rooms)=>{
                     let signature:Vec<_>=rooms.iter().map(|room|(room.room_id.clone(),room.name.clone())).collect();
                     if room_signature.as_ref()==Some(&signature){continue;}room_signature=Some(signature);
@@ -164,7 +171,7 @@ fn build(app:&gtk::Application) {
                     let buffer=compose.buffer();if selected_room.borrow().as_deref()==Some(room_id.as_str())&&buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).as_str()==body{buffer.set_text("");}
                     status.set_text("Message queued. Its timeline status will update when the server accepts it.");
                 }
-                worker::Event::SignedOut=>{conversation_button.set_sensitive(false);conversation_button.set_label("Conversations");if let Some(view)=conversation_views.borrow().as_ref(){view.signed_out();}recovery_button.set_sensitive(false);if let Some(view)=recovery_views.borrow().as_ref(){view.signed_out();}if let Some(view)=security_views.borrow().as_ref(){view.signed_out();}security_button.set_sensitive(false);room_signature=None;room_encrypted.set(None);plain_messages.set_visible(false);plain_messages.set_active(false);security_label.set_text("");server.set_visible(true);user.set_visible(true);password.set_visible(true);validate.set_visible(true);consent.set_visible(true);login.set_visible(true);compose.set_sensitive(false);send.set_sensitive(false);retry.set_sensitive(false);room_ids.borrow_mut().clear();*selected_room.borrow_mut()=None;history.buffer().set_text("");older.set_sensitive(false);while let Some(child)=list.first_child(){list.remove(&child);}empty.set_text("No account connected");refresh.set_sensitive(false);logout.set_sensitive(false);consent.set_sensitive(true);login.set_sensitive(consent.is_active());status.set_text("No account connected. Choose a test account to continue development checks.");}
+                worker::Event::SignedOut=>{conversation_area.set_visible(false);conversation_button.set_sensitive(false);conversation_button.set_label("Conversations");if let Some(view)=conversation_views.borrow().as_ref(){view.signed_out();}recovery_button.set_sensitive(false);if let Some(view)=recovery_views.borrow().as_ref(){view.signed_out();}if let Some(view)=security_views.borrow().as_ref(){view.signed_out();}security_button.set_sensitive(false);room_signature=None;room_encrypted.set(None);plain_messages.set_visible(false);plain_messages.set_active(false);security_label.set_text("");server.set_visible(true);user.set_visible(true);password.set_visible(true);validate.set_visible(true);consent.set_visible(true);login.set_visible(true);compose.set_sensitive(false);send.set_sensitive(false);retry.set_sensitive(false);room_ids.borrow_mut().clear();*selected_room.borrow_mut()=None;history.buffer().set_text("");older.set_sensitive(false);while let Some(child)=list.first_child(){list.remove(&child);}empty.set_text("No account connected");refresh.set_sensitive(false);logout.set_sensitive(false);consent.set_sensitive(true);login.set_sensitive(consent.is_active());status.set_text("No account connected. Choose a test account to continue development checks.");}
                 worker::Event::Error(message)=>{if let Some(view)=conversation_views.borrow().as_ref(){view.error(&message);}if let Some(view)=recovery_views.borrow().as_ref(){view.error(&message);}if let Some(view)=security_views.borrow().as_ref(){view.error(&message);}status.set_text(&message);let buffer=compose.buffer();send.set_sensitive(selected_room.borrow().is_some()&&!buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).trim().is_empty()&&(room_encrypted.get()==Some(true)||(room_encrypted.get()==Some(false)&&plain_messages.is_active())));if consent.is_sensitive(){login.set_sensitive(consent.is_active());}}
             }
         }
@@ -194,6 +201,13 @@ mod ui_tests {
         button.emit_clicked();
         assert!(widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>())
             .any(|label|label.text().contains("Use an HTTPS homeserver address.")));
+        window.set_default_size(900,600);
+        wait_until(||window.width()>0&&window.width()<=900&&window.height()<=600);
+        for label in ["Sign in","Restore saved account","Refresh connections","Sign out"]{
+            let control=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|b|b.label().as_deref()==Some(label)).unwrap();
+            let bounds=control.compute_bounds(&window).unwrap();
+            assert!(bounds.x()>=0.&&bounds.y()>=0.&&bounds.x()+bounds.width()<=window.width() as f32&&bounds.y()+bounds.height()<=window.height() as f32,"{label} is outside the resized login window");
+        }
         if std::env::var("SHADOW_MESSENGER_MATRIX_FIXTURE").is_ok(){
             assert_eq!(std::env::var("SHADOW_MESSENGER_ISOLATED_KEYRING_TEST").as_deref(),Ok("1"));
             let account:serde_json::Value=serde_json::from_str(&std::fs::read_to_string(std::env::var("SHADOW_MESSENGER_MATRIX_FIXTURE").unwrap()).unwrap()).unwrap();
@@ -241,15 +255,15 @@ mod ui_tests {
             let mut comparison=None;wait_until(||{comparison=peer.numbers.try_recv().ok();comparison.is_some()});
             let (a,b,c)=comparison.unwrap();let expected=format!("{a}   {b}   {c}");
             wait_until(||security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text()==expected));
-            let confirm=security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|button|button.label().as_deref()==Some("Numbers match")).unwrap();assert!(confirm.is_sensitive());confirm.emit_clicked();peer.confirm.send(()).unwrap();
+            let confirm=security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|button|button.label().as_deref()==Some("Numbers match")).unwrap();assert!(confirm.is_sensitive());eprintln!("GTK verification: numbers displayed; confirming both devices");confirm.emit_clicked();peer.confirm.send(()).unwrap();
             wait_until(||security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text()=="Device verified."));wait_until(||peer.done.try_recv().is_ok());
             let accept=security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|button|button.label().as_deref()==Some("Accept verification")).unwrap();
             let cancel=security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|button|button.label().as_deref()==Some("Cancel verification")).unwrap();
             eprintln!("GTK integration: incoming cancellation");peer.request.send(()).unwrap();wait_until(||accept.is_visible());assert!(!confirm.is_sensitive());cancel.emit_clicked();
             wait_until(||security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text().contains("Verification cancelled.")));wait_until(||peer.done.try_recv().is_ok());
-            eprintln!("GTK integration: incoming confirmation");peer.request.send(()).unwrap();wait_until(||accept.is_visible());accept.emit_clicked();
-            let mut incoming=None;wait_until(||{incoming=peer.numbers.try_recv().ok();incoming.is_some()});let (a,b,c)=incoming.unwrap();let expected=format!("{a}   {b}   {c}");
-            wait_until(||security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text()==expected));assert!(confirm.is_sensitive());confirm.emit_clicked();peer.confirm.send(()).unwrap();
+            eprintln!("GTK integration: incoming confirmation");peer.request.send(()).unwrap();wait_until(||accept.is_visible());accept.emit_clicked();eprintln!("GTK incoming: accepted request");
+            let mut incoming=None;wait_until(||{incoming=peer.numbers.try_recv().ok();incoming.is_some()});eprintln!("GTK incoming: peer numbers ready");let (a,b,c)=incoming.unwrap();let expected=format!("{a}   {b}   {c}");
+            wait_until(||security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text()==expected));assert!(confirm.is_sensitive());eprintln!("GTK verification: numbers displayed; confirming both devices");confirm.emit_clicked();peer.confirm.send(()).unwrap();
             wait_until(||security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text()=="Device verified."));wait_until(||peer.done.try_recv().is_ok());dialog.close();peer.thread.join().unwrap();
             eprintln!("GTK integration: verification complete; sign out");let logout=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|b|b.label().as_deref()==Some("Sign out")).unwrap();logout.emit_clicked();
             wait_until(||!logout.is_sensitive());assert!(!send.is_sensitive());
