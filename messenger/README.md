@@ -4,15 +4,15 @@ A native GTK4 Matrix client under development for ShadowRealm-OS. It is not incl
 
 ## Current implementation
 
-The native application builds and opens on Debian 13. Its account worker supports test-account sign-in, saved-session restoration, joined-room refresh and sign-out without blocking GTK. Saved session credentials and the SDK store passphrase go to Secret Service; the SDK encrypts private data in the local SQLite store. There is no plaintext credential fallback. The sign-in controls require an explicit test-account selection.
+The native application builds and opens on Debian 13. Its account worker supports test-account sign-in, saved-session restoration, joined-room updates and sign-out without blocking GTK. A single SDK long-poll sync feeds room updates. Room selection opens an SDK-managed timeline, with a 200-event preview, older-message fetching, a composer, queued/failed status and a retry control. Drafts are kept separately while changing rooms. Saved session credentials and the SDK store passphrase go to Secret Service; the SDK encrypts private data in the local SQLite store. There is no plaintext credential fallback. The sign-in controls require an explicit test-account selection.
 
-Conversation timelines, device verification, key recovery and interoperability testing are not complete. Do not use this build for personal conversations. A successful compiler check does not establish working end-to-end messaging.
+Device verification, key recovery, extended history and independent-client interoperability are not complete. Do not use this build for personal conversations. A successful compiler check does not establish working end-to-end messaging.
 
 ## Stack
 
-Rust, GTK4/gtk4-rs, GTK CSS, Matrix Rust SDK, Tokio, SDK-supported SQLite storage and Secret Service. Timeline integration will use matrix-sdk-ui. GIO/D-Bus notifications and Debian packaging remain planned. The primary interface does not embed a browser.
+Rust, GTK4/gtk4-rs, GTK CSS, Matrix Rust SDK, Tokio, SDK-supported SQLite storage and Secret Service. Timeline integration uses matrix-sdk-ui 0.19.1. GIO/D-Bus notifications and Debian packaging remain planned. The primary interface does not embed a browser.
 
-One account worker owns the session. Network and keyring work run outside GTK, with two Tokio worker threads and bounded command queues. No background synchronization loop is enabled yet. Passwords, tokens, recovery material and message content must not be logged.
+One account worker owns the session. Network and keyring work run outside GTK, with two Tokio worker threads and bounded command queues. One SDK long-poll synchronization task runs per connected account. A failed sync requires an explicit reconnect through Restore saved account. Passwords, tokens, recovery material and message content must not be logged.
 
 ## Build and checks
 
@@ -35,6 +35,10 @@ The Secret Service round-trip test must run in a separate disposable keyring ses
 ## Measured baseline
 
 The unconnected development window used 200,848 KiB resident memory and 0% of one CPU core during a five-second idle sample in a software-rendered VirtualBox guest. This is a baseline for the empty shell, not a benchmark for a connected messaging session or a performance guarantee. Connected idle, synchronization, history, attachments and calls still require measurements.
+
+## Verified development checks
+
+A disposable loopback-only Synapse fixture passed protected login, same-device session restoration and sign-out. A two-account test confirmed that the server stored `m.room.encrypted` while the receiving SDK timeline decrypted the expected body. The actual GTK controls passed test-account login, existing-room selection, queued send, server acceptance and sign-out. The fixture uses a test-only CA hook; normal builds do not add this certificate or bypass TLS verification. The owner's desktop keyring is not used by these tests. These checks do not replace external-client interoperability, recovery or independent security review.
 
 ## Release gates
 
