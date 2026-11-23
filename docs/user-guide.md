@@ -51,3 +51,8 @@ Choose Bouncing SR logo, Circuit flow or ShadowRealm-OS digital rain, then use S
 **Drawing**, under Graphics, is the lightweight paint application. Its own Help explains the tools.
 
 Click the top-bar time to open Clocks, with world clocks, alarms, timers and a stopwatch. The application-menu entry opens the same app.
+
+
+### Removing applications
+
+In Software & Updates, select an application under Installed. Flatpak apps offer **Remove Flatpak**. Debian applications offer **Remove Package**, which opens APT in Terminal so you can review every proposed removal before confirming. Several launchers can belong to the same package. Built-in desktop tools explain when they share the desktop package and cannot be removed individually from this list. Application files and personal settings are separate; this removal path retains user files and does not run an automatic cleanup of other packages.

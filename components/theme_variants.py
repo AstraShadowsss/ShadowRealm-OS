@@ -331,6 +331,7 @@ def build_variants(root, source, include_icons=True):
                                  widget_secondary='#b8d6c9', wallpaper='Professional-Satin-Bloom.png')
     if modes_file.is_file():
         modes_file.write_text(json.dumps(modes, indent=2) + '\n')
+    apply_control_finish(root)
     write_progress_assets(root / 'usr/share/shadowrealm-os/branding', modes)
     for mode, palette in modes.items():
         if not palette.get('unbranded'):
@@ -497,6 +498,23 @@ def apply_wallpaper_finish(root, source, modes):
 <defs><filter id="chroma" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="{strength}"/></filter></defs>
 <image width="{width}" height="{height}" href="data:image/png;base64,{data}" filter="url(#chroma)"/></svg>'''
             target.write_bytes(render_svg(svg))
+
+
+
+
+def apply_control_finish(root):
+    """Use consistent panel/tab geometry and explicit light-theme text contrast."""
+    for theme in (root / 'usr/share/themes').glob('ShadowRealm-OS-*'):
+        for toolkit in ('gtk-3.0','gtk-4.0'):
+            target=theme/toolkit/'gtk.css'
+            if not target.is_file():continue
+            text=target.read_text()
+            if '/* ShadowRealm control finish */' in text:continue
+            text+='\n/* ShadowRealm control finish */\n.xfce4-panel button, .xfce4-panel .tasklist button, .xfce4-panel .pager button { border-radius: 7px; }\nnotebook > header > tabs > tab { border-radius: 7px 7px 0 0; }\n'
+            if theme.name=='ShadowRealm-OS-White-Silver-Gold':
+                text+='label, entry, textview text, treeview.view, iconview.view, combobox label, menuitem label { color: #242932; }\n.dim-label { color: #38404b; opacity: .88; }\nbutton:disabled label, entry:disabled { color: #626873; }\ntooltip, tooltip label { background-color: #242932; color: #ffffff; }\n'
+            text+="/* End ShadowRealm control finish */\n"
+            target.write_text(text)
 
 
 if __name__ == '__main__':

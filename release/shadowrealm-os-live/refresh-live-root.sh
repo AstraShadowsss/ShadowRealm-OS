@@ -25,7 +25,7 @@ printf 'LANG=en_US.UTF-8\n' > "$root/etc/default/locale"
 # Retired default messengers are removed only from this disposable release root.
 rm -f -- "$root/etc/apt/sources.list.d/jami.list" "$root/usr/share/keyrings/jami-archive-keyring.gpg"
 retired=()
-for name in jami jami-daemon libqt-jami hexchat hexchat-common; do
+for name in jami jami-daemon libqt-jami hexchat hexchat-common hexchat-lua hexchat-perl hexchat-plugins hexchat-python3; do
  if chroot "$root" dpkg-query -W -f='${Status}' "$name" 2>/dev/null | grep -qx 'install ok installed'; then retired+=("$name"); fi
 done
 if ((${#retired[@]})); then chroot "$root" apt-get purge -y "${retired[@]}"; fi

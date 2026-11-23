@@ -29,7 +29,7 @@ def rows(text,columns):
  return [line.split('\t',columns-1) for line in text.splitlines() if line.strip() and len(line.split('\t',columns-1))==columns]
 def installed():
  flat=rows(command(['flatpak','list','--app','--columns=application,name,version,installation']),4)
- result=[(name,version or 'Not provided','Flatpak · '+scope,identity,True) for identity,name,version,scope in flat]
+ result=[(name,version or 'Not provided','Flatpak · '+scope,identity,True,'') for identity,name,version,scope in flat]
  ids={r[3] for r in result}
  try:versions=json.loads(pathlib.Path('/var/lib/shadowrealm-os/application-versions.json').read_text())
  except (OSError,ValueError):versions={}
@@ -50,10 +50,10 @@ def installed():
   owner=owners.get(filename) or (owners.get('/usr/bin/'+executable) if executable not in {'xfce4-terminal','xdg-open'} else None)
   if owner in native_versions:version=native_versions[owner];source='Native package'
   if (app.get_id() or '').startswith('shadow-') and 'shadow-link' in (app.get_commandline() or ''):version='Built-in';source='ShadowRealm-OS application'
-  result.append((app.get_display_name(),version,source,app.get_id(),False))
+  result.append((app.get_display_name(),version,source,app.get_id(),False,owner or ''))
  names={r[0].casefold() for r in result}
  for key,(name,args) in BUILTINS.items():
-  if name.casefold() not in names and (BASE/args[0]).is_file():result.append((name,'Built-in','ShadowRealm-OS application','builtin:'+key,False))
+  if name.casefold() not in names and (BASE/args[0]).is_file():result.append((name,'Built-in','ShadowRealm-OS application','builtin:'+key,False,''))
  return sorted(result,key=lambda r:r[0].casefold())
 def debian_updates():
  import apt
@@ -89,11 +89,12 @@ class Software(Gtk.Application):
   outer.pack_start(heading('Software & Updates'),False,False,0)
   notice=Gtk.Label(label='Debian maintains native packages, security fixes, and the kernel. Flatpak manages its apps and runtimes separately.',xalign=0,wrap=True);notice.set_width_chars(1);notice.set_max_width_chars(72);outer.pack_start(notice,False,False,0)
   tabs=Gtk.Notebook();outer.pack_start(tabs,True,True,0)
-  self.apps,self.appview,installed_page=self.table(tabs,'Installed',['Application','Version','Source'],[str,str,str,str,bool])
+  self.apps,self.appview,installed_page=self.table(tabs,'Installed',['Application','Version','Source'],[str,str,str,str,bool,str])
   toolbar=Gtk.Box(spacing=10);installed_page.pack_start(toolbar,False,False,0)
   search=Gtk.SearchEntry(placeholder_text='Filter installed applications');toolbar.pack_start(search,True,True,0)
   self.filter=self.apps.filter_new();self.filter.set_visible_func(lambda model,it,data:search.get_text().casefold() in model[it][0].casefold());self.appview.set_model(self.filter);search.connect('search-changed',lambda *_:self.filter.refilter())
   self.button(toolbar,'Open',self.open_app);self.remove=self.button(toolbar,'Remove…',self.remove_app);self.button(toolbar,'Refresh',self.refresh)
+  self.removal_note=Gtk.Label(label='Select an application to see its removal options.',xalign=0,wrap=True);installed_page.pack_start(self.removal_note,False,False,0)
   self.appview.get_selection().connect('changed',self.app_selected)
   self.permissions=self.button(toolbar,'Flatpak Permissions…',self.flatpak_permissions)
   self.permissions.set_sensitive(False)
@@ -197,8 +198,16 @@ class Software(Gtk.Application):
   model,it=view.get_selection().get_selected();return list(model[it]) if it else None
  def app_selected(self,*unused):
   row=self.selected(self.appview)
-  self.remove.set_sensitive(bool(row and row[4]))
+  native=bool(row and row[5] and row[2]!='ShadowRealm-OS application' and re.fullmatch(r'[a-z0-9][a-z0-9+.-]*(?::[a-z0-9-]+)?',row[5]))
+  self.remove.set_sensitive(bool(row and (row[4] or native)))
+  self.remove.set_label('Remove Flatpak…' if row and row[4] else 'Remove Package…')
   self.permissions.set_sensitive(bool(row and row[4]))
+  if not row:message='Select an application to see its removal options.'
+  elif row[4]:message='This Flatpak application can be removed. Saved settings and data will be retained.'
+  elif native:message='Installed by Debian package '+row[5]+'. APT will show the proposed removals for your approval. Shared package contents are removed together.'
+  elif row[2]=='ShadowRealm-OS application' or row[3].startswith('builtin:'):message='This tool is part of the shared desktop package, not a separately removable application. Removing the desktop package would remove its other tools too.'
+  else:message='No owning Debian package was found for this launcher. Remove it with the method used to install it.'
+  self.removal_note.set_text(message);self.remove.set_tooltip_text(message)
  def details(self,title,content):
   dialog=Gtk.Dialog(title=title,transient_for=self.window,modal=True)
   dialog.add_button('Close',Gtk.ResponseType.CLOSE)
@@ -250,10 +259,15 @@ class Software(Gtk.Application):
   dialog=Gtk.MessageDialog(transient_for=self.window,modal=True,message_type=Gtk.MessageType.QUESTION,buttons=Gtk.ButtonsType.OK_CANCEL,text=title);dialog.format_secondary_text(message);answer=dialog.run();dialog.destroy();return answer==Gtk.ResponseType.OK
  def remove_app(self,*unused):
   row=self.selected(self.appview)
-  if not row or not row[4]:return
-  if not self.confirm('Remove '+row[0]+'?','The application will be removed. Its saved settings and data will be retained.'):return
-  scope='--user' if row[2].endswith('user') else '--system'
-  self.work('Removing '+row[0]+'…',lambda:command(['flatpak','uninstall',scope,'--noninteractive',row[3]],900))
+  if not row:return
+  if row[4]:
+   if not self.confirm('Remove '+row[0]+'?','The application will be removed. Its saved settings and data will be retained.'):return
+   scope='--user' if row[2].endswith('user') else '--system'
+   self.work('Removing '+row[0]+'…',lambda:command(['flatpak','uninstall',scope,'--noninteractive',row[3]],900))
+  elif row[5] and row[2]!='ShadowRealm-OS application' and re.fullmatch(r'[a-z0-9][a-z0-9+.-]*(?::[a-z0-9-]+)?',row[5]):
+   if not self.confirm('Review removal of '+row[5]+'?','APT will open in Terminal and list all affected packages before asking you to continue. Review that list carefully. Other applications in the same package are removed together. Saved user files are retained.'):return
+   self.debian_terminal('Remove '+row[5],'sudo /usr/bin/apt remove -- '+shlex.quote(row[5]))
+   self.status.set_text('Review the removal plan in Terminal, then refresh Installed when finished.')
  def check_updates(self,*unused):
   if self.busy:return
   self.updates.clear();self.apply_button.set_sensitive(False)

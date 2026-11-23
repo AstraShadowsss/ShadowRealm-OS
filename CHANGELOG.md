@@ -1,5 +1,14 @@
 # Release notes
 
+## Desktop 0.2.19 and artwork 0.2.6 (2026-11-23)
+
+- Add Debian package removal to Software & Updates, with APT's interactive removal plan and an explanation for shared desktop tools.
+- Restore the SR logo and wordmark on White, Silver & Gold's Circuit Corridor wallpaper.
+- Refresh unchanged factory corridor copies while preserving custom backgrounds.
+- Round panel buttons and notebook tabs consistently, and strengthen default light-theme text contrast.
+- Apply the control styles to existing local theme copies without replacing their other edits.
+- Exclude the retired HexChat add-ons from the next installer build.
+
 ## Desktop 0.2.18 (2026-11-22)
 
 - Put Bluetooth power, device pairing and adapter preferences in one panel.

@@ -76,7 +76,7 @@ def write_default(path, text):
 
 def refresh_corridor_wallpapers(home, payload):
     manifest = payload / "corridor-wallpaper-previous.json"
-    marker = home / ".local/state/shadowrealm-os/corridor-wallpapers-v1"
+    marker = home / ".local/state/shadowrealm-os/corridor-wallpapers-v2"
     target = home / "Pictures/Backgrounds"
     if marker.exists() or not manifest.is_file() or not target.resolve().is_relative_to(home.resolve()):
         return
@@ -85,7 +85,8 @@ def refresh_corridor_wallpapers(home, payload):
         existing = target / name
         if existing.is_symlink() or not existing.is_file() or not source.is_file():
             continue
-        if hashlib.sha256(existing.read_bytes()).hexdigest() != previous_hash:
+        known_hashes = previous_hash if isinstance(previous_hash, list) else [previous_hash]
+        if hashlib.sha256(existing.read_bytes()).hexdigest() not in known_hashes:
             continue
         with tempfile.NamedTemporaryFile(dir=target, delete=False) as temp:
             temporary = Path(temp.name)
@@ -95,6 +96,36 @@ def refresh_corridor_wallpapers(home, payload):
         finally:
             temporary.unlink(missing_ok=True)
     write_default(marker, "1\n")
+
+
+def refresh_control_finish(home, system_share):
+    start = "/* ShadowRealm control finish */"
+    end = "/* End ShadowRealm control finish */"
+    for shipped in (system_share / "themes").glob("ShadowRealm-OS-*/gtk-*/gtk.css"):
+        local = home / ".themes" / shipped.relative_to(system_share / "themes")
+        if (not local.is_file() or local.is_symlink() or
+                not local.resolve().is_relative_to(home.resolve())):
+            continue
+        factory = shipped.read_text()
+        if start not in factory:
+            continue
+        fragment = start + factory.partition(start)[2].partition(end)[0] + end
+        text = local.read_text()
+        if start in text and end in text:
+            before, _, rest = text.partition(start)
+            text = before + fragment + rest.partition(end)[2]
+        else:
+            text += "\n" + fragment + "\n"
+        if text == local.read_text():
+            continue
+        with tempfile.NamedTemporaryFile(dir=local.parent, delete=False) as temp:
+            temporary = Path(temp.name)
+            temp.write(text.encode("utf-8"))
+            os.chmod(temp.name, 0o644)
+        try:
+            os.replace(temporary, local)
+        finally:
+            temporary.unlink(missing_ok=True)
 
 
 def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
@@ -176,6 +207,7 @@ def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
                 os.replace(temp.name, local_theme)
             finally:
                 Path(temp.name).unlink(missing_ok=True)
+    refresh_control_finish(home, system_share)
     if marker.is_file():
         refresh_corridor_wallpapers(home, payload)
         return base

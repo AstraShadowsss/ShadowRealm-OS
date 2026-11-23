@@ -4,6 +4,9 @@
   "ShadowRealm-OS-Hacker-circuit-corridor.png": "aea695c398fb06e9c446459dd87f2d5360ca2322bd8590c156ac67d9dd2b25f5",
   "ShadowRealm-OS-Neon-circuit-corridor.png": "5552ac13892a27e6af86e8693d636979683ab1a89f12bb725787d18db0d2a88c",
   "ShadowRealm-OS-RedBlack-circuit-corridor.png": "a0d69a14883435367634c6a6962736f7759a06b7f0eee6cf9abb3253fe6fdabf",
-  "ShadowRealm-OS-WhiteSilverGold-circuit-corridor.png": "65f6c39d9fe2d78644d41ee78df35c86a5ccad1e2a2c54ae8d58c4495b5e116a",
+  "ShadowRealm-OS-WhiteSilverGold-circuit-corridor.png": [
+    "65f6c39d9fe2d78644d41ee78df35c86a5ccad1e2a2c54ae8d58c4495b5e116a",
+    "f05cc294c97c586d19ce60b1279b84a2e97f072341f191ce7f77cfcec211cf26"
+  ],
   "ShadowRealm-OS-Woodland-circuit-corridor.png": "51ad2d155591cde4babe8eda7bc0db543f3599b414a631e69d53de2f18b41716"
 }
