@@ -115,7 +115,7 @@ Professional pairs these three unbranded designs with Emerald, Ocean, Graphite o
 
 ## Shadow Games for Android
 
-Play nine offline games with touch controls on Android. [Download the APK](https://github.com/AstraShadowsss/ShadowRealm-OS/releases/tag/shadow-games-android-v1.0.0) or see the [installation guide and screenshots](docs/shadow-games-android.md).
+Play nine offline games with touch controls on Android. [Download the APK](https://github.com/AstraShadowsss/ShadowRealm-OS/releases/tag/shadow-games-android-v1.0.1) or see the [installation guide and screenshots](docs/shadow-games-android.md).
 
 ## Beta status
 

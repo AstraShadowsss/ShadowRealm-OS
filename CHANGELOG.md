@@ -1,5 +1,14 @@
 # Release notes
 
+## Shadow Games for Android 1.0.1 (2026-11-23)
+
+- Equal Pinball flippers, centered Launch and working first-press/multitouch input.
+- Keep landscape controls beside each game and repair selected-stack dragging in Spider Solitaire.
+- Add twelve rounded Marble Reactor tracks and expanded Skull Invaders enemies, bosses and power-ups.
+- Buffer quick Snake direction taps, fix Back navigation and stop game progression after fatal hits.
+- Refresh Android screenshots and installation instructions. Preserve the existing app ID, signing certificate and local score storage.
+- Validate all nine games in the installed emulator APK and run rule/progression checks. Physical-device coverage remains outstanding.
+
 ## Desktop 0.2.19 and artwork 0.2.6 (2026-11-23)
 
 - Add Debian package removal to Software & Updates, with APT's interactive removal plan and an explanation for shared desktop tools.
@@ -23,7 +32,7 @@
 - Stop level progression and power-up collection after a fatal hit.
 - Update the shared game runtime packages while retaining existing scores and settings.
 
-Android gameplay changes are not included in this update.
+The November 22 Linux update is separate from the Android 1.0.1 release above.
 ## Desktop 0.2.17 (2026-11-22)
 
 - Add Appearance → Icons & Dock to select an icon family independently of desktop colors and wallpapers, with a Follow desktop theme default.
