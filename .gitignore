@@ -11,3 +11,5 @@ protected-vms.local.json
 *.local.json
 .DS_Store
 Thumbs.db
+
+messenger/**/target/

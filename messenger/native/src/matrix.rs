@@ -1,17 +1,16 @@
 use matrix_sdk::{Client, config::SyncSettings, ruma::{OwnedRoomId, events::room::message::RoomMessageEventContent}};
-use shadow_messenger_core::{Connection,sort_connections,validate_homeserver,validate_message};
+use shadow_messenger_core::{Connection,sort_connections,validate_message};
 use zeroize::Zeroizing;
 
 pub struct Session { client: Client }
 
 impl Session {
     pub async fn login(server: String, username: String, password: Zeroizing<String>) -> Result<Self,String> {
-        let server=validate_homeserver(&server).map_err(str::to_owned)?;
-        let client=Client::builder().homeserver_url(server).build().await.map_err(|_| "Could not connect to the selected homeserver.".to_owned())?;
-        client.matrix_auth().login_username(username,password.as_str())
-            .initial_device_display_name("Shadow Messenger development")
-            .send().await.map_err(|_| "Sign-in failed. Check the account, server and supported login method.".to_owned())?;
+        let client=crate::persistence::login(server,username,password).await?;
         Ok(Self{client})
+    }
+    pub async fn restore() -> Result<Option<Self>,String> {
+        Ok(crate::persistence::restore().await?.map(|client|Self{client}))
     }
     pub async fn connections(&self) -> Result<Vec<Connection>,String> {
         self.client.sync_once(SyncSettings::default()).await.map_err(|_| "Could not refresh conversations.".to_owned())?;
@@ -30,6 +29,6 @@ impl Session {
         Ok(())
     }
     pub async fn logout(&self) -> Result<(),String> {
-        self.client.logout().await.map_err(|_| "Server sign-out could not be confirmed.".to_owned())?;Ok(())
+        crate::persistence::forget(&self.client).await
     }
 }
