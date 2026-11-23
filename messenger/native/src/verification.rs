@@ -18,6 +18,7 @@ impl VerificationFlow {
         let request=peer.request_verification().await.map_err(|_|"The verification request could not be sent.")?;
         Ok(Self{client:client.clone(),request,sas:None,accepted:true,peer_device:String::new()})
     }
+    #[cfg(test)]
     pub async fn accept(client:&Client,request:VerificationRequest)->Result<Self,String>{
         request.accept().await.map_err(|_|"The verification request could not be accepted.")?;
         Ok(Self{client:client.clone(),request,sas:None,accepted:true,peer_device:String::new()})

@@ -8,6 +8,8 @@ mod verification;
 mod recovery;
 mod security_ui;
 mod recovery_ui;
+mod conversations;
+mod conversations_ui;
 use gtk::{glib,prelude::*};
 
 fn main() -> glib::ExitCode {
@@ -25,6 +27,9 @@ fn build(app:&gtk::Application) {
     let commands_close=commands.clone();let updates_close=updates.clone();window.connect_destroy(move |_|{commands_close.close();updates_close.close();});
     let shell=gtk::Box::new(gtk::Orientation::Vertical,18);
     shell.set_margin_top(24);shell.set_margin_bottom(24);shell.set_margin_start(24);shell.set_margin_end(24);
+    let conversation_views=std::rc::Rc::new(std::cell::RefCell::new(None::<conversations_ui::ConversationsView>));
+    let conversation_button=gtk::Button::with_label("Conversations");conversation_button.set_sensitive(false);
+    let views=conversation_views.clone();let parent=window.downgrade();let tx=commands.clone();conversation_button.connect_clicked(move |_|{if let Some(parent)=parent.upgrade(){let mut views=views.borrow_mut();let view=views.get_or_insert_with(||conversations_ui::ConversationsView::new(&parent,tx.clone()));view.present();let _=tx.try_send(worker::Command::Invitations);}});
     let security_views=std::rc::Rc::new(std::cell::RefCell::new(None::<security_ui::SecurityView>));
     let recovery_views=std::rc::Rc::new(std::cell::RefCell::new(None::<recovery_ui::RecoveryView>));
     let views_close=recovery_views.clone();window.connect_close_request(move |_|{if let Some(view)=views_close.borrow().as_ref(){if view.has_unsaved_key(){view.present();return gtk::glib::Propagation::Stop;}}gtk::glib::Propagation::Proceed});
@@ -32,7 +37,7 @@ fn build(app:&gtk::Application) {
     let views=recovery_views.clone();let parent=window.downgrade();let tx=commands.clone();recovery_button.connect_clicked(move |_|{if let Some(parent)=parent.upgrade(){let mut views=views.borrow_mut();let view=views.get_or_insert_with(||recovery_ui::RecoveryView::new(&parent,tx.clone()));view.present();let _=tx.try_send(worker::Command::RecoveryStatus);}});
     let security_button=gtk::Button::with_label("Devices & security");security_button.set_sensitive(false);
     let views=security_views.clone();let parent=window.downgrade();let tx=commands.clone();security_button.connect_clicked(move |_|{if let Some(parent)=parent.upgrade(){let mut views=views.borrow_mut();let view=views.get_or_insert_with(||security_ui::SecurityView::new(&parent,tx.clone()));view.present();let _=tx.try_send(worker::Command::Devices);}});
-    let title=gtk::Label::new(Some("Shadow Messenger"));title.add_css_class("title-1");title.set_xalign(0.0);title.set_hexpand(true);let header=gtk::Box::new(gtk::Orientation::Horizontal,12);header.append(&title);header.append(&security_button);header.append(&recovery_button);shell.append(&header);
+    let title=gtk::Label::new(Some("Shadow Messenger"));title.add_css_class("title-1");title.set_xalign(0.0);title.set_hexpand(true);let header=gtk::Box::new(gtk::Orientation::Horizontal,12);header.append(&title);header.append(&conversation_button);header.append(&security_button);header.append(&recovery_button);shell.append(&header);
     let notice=gtk::Label::new(Some("Development build. Use a test account while compatibility and release checks are completed."));
     notice.set_wrap(true);notice.set_xalign(0.0);shell.append(&notice);
     let split=gtk::Paned::new(gtk::Orientation::Horizontal);split.set_vexpand(true);split.set_position(270);
@@ -121,7 +126,7 @@ fn build(app:&gtk::Application) {
         let mut room_signature=None;
         while let Ok(event)=updates.recv().await{
             match event{
-                worker::Event::Connected=>{recovery_button.set_sensitive(true);security_button.set_sensitive(true);room_signature=None;server.set_visible(false);user.set_visible(false);password.set_visible(false);validate.set_visible(false);consent.set_visible(false);login.set_visible(false);empty.set_text("Connected. Choose a conversation.");refresh.set_sensitive(true);logout.set_sensitive(true);consent.set_sensitive(false);login.set_sensitive(false);status.set_text("Connected. Loading joined conversations...");}
+                worker::Event::Connected=>{conversation_button.set_sensitive(true);recovery_button.set_sensitive(true);security_button.set_sensitive(true);room_signature=None;server.set_visible(false);user.set_visible(false);password.set_visible(false);validate.set_visible(false);consent.set_visible(false);login.set_visible(false);empty.set_text("Connected. Choose a conversation.");refresh.set_sensitive(true);logout.set_sensitive(true);consent.set_sensitive(false);login.set_sensitive(false);status.set_text("Connected. Loading joined conversations...");}
                 worker::Event::Rooms(rooms)=>{
                     let signature:Vec<_>=rooms.iter().map(|room|(room.room_id.clone(),room.name.clone())).collect();
                     if room_signature.as_ref()==Some(&signature){continue;}room_signature=Some(signature);
@@ -131,6 +136,9 @@ fn build(app:&gtk::Application) {
                     if let Some(id)=previous_selection{if let Some(index)=room_ids.borrow().iter().position(|item|item==&id){list.select_row(list.row_at_index(index as i32).as_ref());}else{*selected_room.borrow_mut()=None;compose.set_sensitive(false);send.set_sensitive(false);history.buffer().set_text("");}}
                     status.set_text(&format!("{count} joined conversations. Verification and recovery remain unfinished."));
                 }
+                worker::Event::Invitations(invites)=>{conversation_button.set_label(&if invites.is_empty(){"Conversations".into()}else{format!("Conversations ({} invites)",invites.len())});if let Some(view)=conversation_views.borrow().as_ref(){view.invitations(invites);}}
+                worker::Event::ConversationAction(message)=>{if let Some(view)=conversation_views.borrow().as_ref(){view.action(&message);}status.set_text(&message);}
+                worker::Event::ConversationCreated{room_id,message}=>{if let Some(view)=conversation_views.borrow().as_ref(){view.created(&message);}if let Some(index)=room_ids.borrow().iter().position(|id|id==&room_id){list.select_row(list.row_at_index(index as i32).as_ref());}status.set_text(&message);}
                 worker::Event::RecoveryStatus{message,can_create}=>{if let Some(view)=recovery_views.borrow().as_ref(){view.status(&message,can_create);}}
                 worker::Event::RecoveryKey(key)=>{if let Some(view)=recovery_views.borrow().as_ref(){view.created(key);}}
                 worker::Event::RecoveryRestored=>{if let Some(view)=recovery_views.borrow().as_ref(){view.restored();}}
@@ -156,8 +164,8 @@ fn build(app:&gtk::Application) {
                     let buffer=compose.buffer();if selected_room.borrow().as_deref()==Some(room_id.as_str())&&buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).as_str()==body{buffer.set_text("");}
                     status.set_text("Message queued. Its timeline status will update when the server accepts it.");
                 }
-                worker::Event::SignedOut=>{recovery_button.set_sensitive(false);if let Some(view)=recovery_views.borrow().as_ref(){view.signed_out();}if let Some(view)=security_views.borrow().as_ref(){view.signed_out();}security_button.set_sensitive(false);room_signature=None;room_encrypted.set(None);plain_messages.set_visible(false);plain_messages.set_active(false);security_label.set_text("");server.set_visible(true);user.set_visible(true);password.set_visible(true);validate.set_visible(true);consent.set_visible(true);login.set_visible(true);compose.set_sensitive(false);send.set_sensitive(false);retry.set_sensitive(false);room_ids.borrow_mut().clear();*selected_room.borrow_mut()=None;history.buffer().set_text("");older.set_sensitive(false);while let Some(child)=list.first_child(){list.remove(&child);}empty.set_text("No account connected");refresh.set_sensitive(false);logout.set_sensitive(false);consent.set_sensitive(true);login.set_sensitive(consent.is_active());status.set_text("No account connected. Choose a test account to continue development checks.");}
-                worker::Event::Error(message)=>{if let Some(view)=recovery_views.borrow().as_ref(){view.error(&message);}if let Some(view)=security_views.borrow().as_ref(){view.error(&message);}status.set_text(&message);let buffer=compose.buffer();send.set_sensitive(selected_room.borrow().is_some()&&!buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).trim().is_empty()&&(room_encrypted.get()==Some(true)||(room_encrypted.get()==Some(false)&&plain_messages.is_active())));if consent.is_sensitive(){login.set_sensitive(consent.is_active());}}
+                worker::Event::SignedOut=>{conversation_button.set_sensitive(false);conversation_button.set_label("Conversations");if let Some(view)=conversation_views.borrow().as_ref(){view.signed_out();}recovery_button.set_sensitive(false);if let Some(view)=recovery_views.borrow().as_ref(){view.signed_out();}if let Some(view)=security_views.borrow().as_ref(){view.signed_out();}security_button.set_sensitive(false);room_signature=None;room_encrypted.set(None);plain_messages.set_visible(false);plain_messages.set_active(false);security_label.set_text("");server.set_visible(true);user.set_visible(true);password.set_visible(true);validate.set_visible(true);consent.set_visible(true);login.set_visible(true);compose.set_sensitive(false);send.set_sensitive(false);retry.set_sensitive(false);room_ids.borrow_mut().clear();*selected_room.borrow_mut()=None;history.buffer().set_text("");older.set_sensitive(false);while let Some(child)=list.first_child(){list.remove(&child);}empty.set_text("No account connected");refresh.set_sensitive(false);logout.set_sensitive(false);consent.set_sensitive(true);login.set_sensitive(consent.is_active());status.set_text("No account connected. Choose a test account to continue development checks.");}
+                worker::Event::Error(message)=>{if let Some(view)=conversation_views.borrow().as_ref(){view.error(&message);}if let Some(view)=recovery_views.borrow().as_ref(){view.error(&message);}if let Some(view)=security_views.borrow().as_ref(){view.error(&message);}status.set_text(&message);let buffer=compose.buffer();send.set_sensitive(selected_room.borrow().is_some()&&!buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).trim().is_empty()&&(room_encrypted.get()==Some(true)||(room_encrypted.get()==Some(false)&&plain_messages.is_active())));if consent.is_sensitive(){login.set_sensitive(consent.is_active());}}
             }
         }
     });
@@ -209,6 +217,22 @@ mod ui_tests {
             wait_until(||{let b=compose.buffer();b.text(&b.start_iter(),&b.end_iter(),false).is_empty()});
             wait_until(||{let b=history.buffer();b.text(&b.start_iter(),&b.end_iter(),false).contains(&body)});
             wait_until(||{let b=history.buffer();let text=b.text(&b.start_iter(),&b.end_iter(),false);!text.contains("[Queued]")&&!text.contains("[Not sent]")});
+            eprintln!("GTK integration: conversation invitations and creation");
+            let invited=invitation_peer(account.clone());wait_until(||invited.ready.try_recv().is_ok());
+            let conversation_button=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|button|button.label().as_deref().is_some_and(|label|label.starts_with("Conversations"))).unwrap();conversation_button.emit_clicked();
+            let conversation_dialog=gtk::Window::list_toplevels().into_iter().filter_map(|w|w.downcast::<gtk::Window>().ok()).find(|w|w.title().as_deref()==Some("Conversations & invitations")).unwrap();
+            let mut conversation_widgets=Vec::new();
+            for (name,action) in [(&invited.accept_name,"Accept invitation"),(&invited.decline_name,"Decline invitation")]{
+                wait_until(||{conversation_widgets.clear();descendants(conversation_dialog.upcast_ref(),&mut conversation_widgets);conversation_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text().starts_with(name))});
+                let label=conversation_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).find(|label|label.text().starts_with(name)).unwrap();let mut row_widgets=Vec::new();descendants(&label.parent().unwrap(),&mut row_widgets);
+                row_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|button|button.label().as_deref()==Some(action)).unwrap().emit_clicked();
+                let expected=if action.starts_with("Accept"){"Invitation accepted."}else{"Invitation declined."};
+                wait_until(||{conversation_widgets.clear();descendants(conversation_dialog.upcast_ref(),&mut conversation_widgets);conversation_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text()==expected)});
+            }
+            let people=conversation_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Entry>()).find(|entry|entry.placeholder_text().as_deref()==Some("Matrix addresses, separated by commas")).unwrap().clone();
+            let create=conversation_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|button|button.label().as_deref()==Some("Create encrypted conversation")).unwrap().clone();
+            people.set_text("not-an-address");create.emit_clicked();wait_until(||conversation_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text().starts_with("Use full Matrix addresses")));assert!(create.is_sensitive());assert_eq!(people.text().as_str(),"not-an-address");
+            people.set_text(&format!("@{}:localhost",account["bob_username"].as_str().unwrap()));create.emit_clicked();wait_until(||conversation_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text().starts_with("Encrypted conversation created.")));assert!(people.text().is_empty());conversation_dialog.close();invited.done.send(()).unwrap();invited.thread.join().unwrap();
             eprintln!("GTK integration: message accepted; outgoing verification");let security=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|b|b.label().as_deref()==Some("Devices & security")).unwrap();security.emit_clicked();
             let dialog=gtk::Window::list_toplevels().into_iter().filter_map(|w|w.downcast::<gtk::Window>().ok()).find(|w|w.title().as_deref()==Some("Devices & security")).unwrap();
             let mut security_widgets=Vec::new();wait_until(||{security_widgets.clear();descendants(dialog.upcast_ref(),&mut security_widgets);security_widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Label>()).any(|label|label.text().contains(&peer.name))});
@@ -267,6 +291,19 @@ mod ui_tests {
     fn wait_until(mut condition:impl FnMut()->bool){
         let limit=std::time::Instant::now()+std::time::Duration::from_secs(60);
         while !condition(){assert!(std::time::Instant::now()<limit,"GTK integration action timed out");while gtk::glib::MainContext::default().iteration(false){}std::thread::sleep(std::time::Duration::from_millis(10));}
+    }
+    struct InvitationPeer {accept_name:String,decline_name:String,ready:std::sync::mpsc::Receiver<()>,done:std::sync::mpsc::Sender<()>,thread:std::thread::JoinHandle<()>}
+    fn invitation_peer(account:serde_json::Value)->InvitationPeer{
+        let prefix=format!("GTK invitation {}",std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());let accept_name=format!("{prefix} accept");let decline_name=format!("{prefix} decline");let names=[accept_name.clone(),decline_name.clone()];
+        let (ready_tx,ready)=std::sync::mpsc::channel();let (done,done_rx)=std::sync::mpsc::channel();
+        let thread=std::thread::spawn(move||{tokio::runtime::Builder::new_multi_thread().worker_threads(2).enable_all().build().unwrap().block_on(async move{
+            tokio::time::timeout(std::time::Duration::from_secs(120),async{
+                let client=crate::persistence::client_builder(account["server"].as_str().unwrap()).unwrap().build().await.unwrap();client.matrix_auth().login_username(account["bob_username"].as_str().unwrap(),account["bob_password"].as_str().unwrap()).send().await.unwrap();
+                client.sync_once(matrix_sdk::config::SyncSettings::default()).await.unwrap();let copy=client.clone();let sync=tokio::spawn(async move{copy.sync(matrix_sdk::config::SyncSettings::default().timeout(std::time::Duration::from_secs(1))).await});
+                let address=format!("@{}:localhost",account["username"].as_str().unwrap());for name in names{crate::conversations::create(&client,&name,&address).await.unwrap();}
+                ready_tx.send(()).unwrap();tokio::task::spawn_blocking(move||done_rx.recv_timeout(std::time::Duration::from_secs(90)).unwrap()).await.unwrap();sync.abort();client.logout().await.unwrap();
+            }).await.expect("GUI invitation peer timed out");
+        });});InvitationPeer{accept_name,decline_name,ready,done,thread}
     }
     struct Peer {name:String,request:std::sync::mpsc::Sender<()>,ready:std::sync::mpsc::Receiver<()>,numbers:std::sync::mpsc::Receiver<(u16,u16,u16)>,confirm:std::sync::mpsc::Sender<()>,done:std::sync::mpsc::Receiver<()>,thread:std::thread::JoinHandle<()>}
     fn verification_peer(account:serde_json::Value)->Peer{

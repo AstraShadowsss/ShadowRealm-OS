@@ -12,6 +12,9 @@ pub enum Command {
     LoadOlder,
     Send{room_id:String,body:String,allow_unencrypted:bool},
     RetryPending,
+    Invitations,
+    RespondInvitation{room_id:String,accept:bool},
+    CreateConversation{name:String,people:String},
     Devices,
     RecoveryStatus,
     EnableRecovery(Option<Zeroizing<String>>),
@@ -26,6 +29,9 @@ pub enum Command {
 }
 pub enum Event {
     Connected,
+    Invitations(Vec<crate::conversations::Invitation>),
+    ConversationAction(String),
+    ConversationCreated{room_id:String,message:String},
     RecoveryStatus{message:String,can_create:bool},
     RecoveryKey(Zeroizing<String>),
     RecoveryRestored,
@@ -101,6 +107,19 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         }
                         Command::RetryPending=>{
                             timeline.as_ref().ok_or("Choose a conversation first.")?.retry_pending();
+                        }
+                        Command::Invitations=>{
+                            let client=session.as_ref().ok_or("Sign in first.")?.client();let _=events.send(Event::Invitations(crate::conversations::invitations(client).await)).await;
+                        }
+                        Command::RespondInvitation{room_id,accept}=>{
+                            let account=session.as_ref().ok_or("Sign in first.")?;crate::conversations::respond(account.client(),&room_id,accept).await?;
+                            let _=events.send(Event::Invitations(crate::conversations::invitations(account.client()).await)).await;
+                            let _=events.send(Event::Rooms(account.connections().await?)).await;
+                            let _=events.send(Event::ConversationAction(if accept{"Invitation accepted."}else{"Invitation declined."}.into())).await;
+                        }
+                        Command::CreateConversation{name,people}=>{
+                            let account=session.as_ref().ok_or("Sign in first.")?;let (room_id,message)=crate::conversations::create(account.client(),&name,&people).await?;
+                            let _=events.send(Event::Rooms(account.connections().await?)).await;let _=events.send(Event::ConversationCreated{room_id,message}).await;
                         }
                         Command::RecoveryStatus=>{
                             let client=session.as_ref().ok_or("Sign in first.")?.client();
@@ -206,6 +225,7 @@ fn start_sync(account:Session,events:Sender<Event>,commands:Sender<Command>)->to
                     Ok(rooms)=>if updates.send(Event::Rooms(rooms)).await.is_err(){return matrix_sdk::LoopCtrl::Break;},
                     Err(message)=>{let _=updates.send(Event::Error(message)).await;}
                 }
+                if updates.send(Event::Invitations(crate::conversations::invitations(account.client()).await)).await.is_err(){return matrix_sdk::LoopCtrl::Break;}
                 matrix_sdk::LoopCtrl::Continue
             }
         }).await;

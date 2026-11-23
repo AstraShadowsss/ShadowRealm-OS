@@ -5,6 +5,7 @@ use zeroize::Zeroizing;
 pub fn state(client:&Client)->RecoveryState{client.encryption().recovery().state()}
 
 /// Called only after the user explicitly requests recovery setup.
+#[cfg(test)]
 pub async fn enable(client:&Client)->Result<Zeroizing<String>,String>{
     enable_with_password(client,None).await
 }
