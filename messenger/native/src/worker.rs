@@ -10,13 +10,14 @@ pub enum Command {
     Refresh,
     OpenRoom(String),
     LoadOlder,
-    Send{room_id:String,body:String},
+    Send{room_id:String,body:String,allow_unencrypted:bool},
     RetryPending,
     Logout,
 }
 pub enum Event {
     Connected,
     Queued{room_id:String,body:String},
+    RoomSecurity{room_id:String,encrypted:bool},
     Rooms(Vec<Connection>),
     SignedOut,
     Timeline{room_id:String,messages:Vec<crate::timeline::Message>},
@@ -60,6 +61,7 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::OpenRoom(room_id)=>{
                             let account=session.as_ref().ok_or("Sign in first.")?;
                             let opened=crate::timeline::RoomTimeline::open(account.client(),&room_id).await?;
+                            let _=events.send(Event::RoomSecurity{room_id:room_id.clone(),encrypted:opened.encrypted().await?}).await;
                             if let Some(task)=forward.take(){task.abort();}
                             let messages=opened.updates.clone();let events=events.clone();
                             forward=Some(tokio::spawn(async move{
@@ -72,10 +74,10 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::LoadOlder=>{
                             timeline.as_ref().ok_or("Choose a conversation first.")?.older_messages().await?;
                         }
-                        Command::Send{room_id,body}=>{
+                        Command::Send{room_id,body,allow_unencrypted}=>{
                             let opened=timeline.as_ref().ok_or("Choose a conversation first.")?;
                             if opened.room_id()!=room_id{return Err("The selected conversation changed. Your draft was kept.".into());}
-                            opened.queue_message(&body).await?;let _=events.send(Event::Queued{room_id,body}).await;
+                            opened.queue_message(&body,allow_unencrypted).await?;let _=events.send(Event::Queued{room_id,body}).await;
                         }
                         Command::RetryPending=>{
                             timeline.as_ref().ok_or("Choose a conversation first.")?.retry_pending();

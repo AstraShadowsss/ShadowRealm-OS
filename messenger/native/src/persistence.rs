@@ -140,6 +140,8 @@ mod encrypted_message_integration {
             let a=alice.clone();let a_sync=tokio::spawn(async move{a.sync(matrix_sdk::config::SyncSettings::default().timeout(Duration::from_secs(1))).await});
             let b=bob.clone();let b_sync=tokio::spawn(async move{b.sync(matrix_sdk::config::SyncSettings::default().timeout(Duration::from_secs(1))).await});
             let room=alice.create_room(matrix_sdk::ruma::api::client::room::create_room::v3::Request::new()).await.unwrap();
+            let unencrypted=crate::timeline::RoomTimeline::open(&alice,room.room_id().as_str()).await.unwrap();
+            assert!(unencrypted.queue_message("Must not be sent without consent",false).await.is_err());drop(unencrypted);
             room.enable_encryption().await.unwrap();
             room.invite_user_by_id(bob.user_id().unwrap()).await.unwrap();
             let bob_room=bob.join_room_by_id(room.room_id()).await.unwrap();
@@ -154,5 +156,53 @@ mod encrypted_message_integration {
             loop{let rows=timeline.updates.recv().await.unwrap();if rows.iter().any(|message|message.body==body){break;}}
             drop(timeline);a_sync.abort();b_sync.abort();bob.logout().await.unwrap();forget(&alice).await.unwrap();
         }).await.expect("Encrypted fixture exchange exceeded its time limit");
+    }
+}
+
+#[cfg(test)]
+mod device_verification_integration {
+    use super::*;
+    use crate::verification::{VerificationFlow,State};
+    use std::time::Duration;
+    #[tokio::test(flavor="multi_thread",worker_threads=2)]
+    #[ignore = "requires disposable Matrix accounts and isolated Secret Service"]
+    async fn matching_numbers_verify_the_other_device(){
+        assert_eq!(std::env::var("SHADOW_MESSENGER_ISOLATED_KEYRING_TEST").as_deref(),Ok("1"));
+        tokio::time::timeout(Duration::from_secs(90),async{
+            let account:serde_json::Value=serde_json::from_str(&fs::read_to_string(std::env::var("SHADOW_MESSENGER_MATRIX_FIXTURE").unwrap()).unwrap()).unwrap();
+            let server=account["server"].as_str().unwrap();let username=account["username"].as_str().unwrap();let password=account["password"].as_str().unwrap();
+            let first=login(server.into(),username.into(),Zeroizing::new(password.into())).await.unwrap();
+            let second=client_builder(server).unwrap().build().await.unwrap();second.matrix_auth().login_username(username,password).send().await.unwrap();
+            second.sync_once(matrix_sdk::config::SyncSettings::default()).await.unwrap();
+            first.sync_once(matrix_sdk::config::SyncSettings::default()).await.unwrap();
+            let _=first.encryption().request_user_identity(second.user_id().unwrap()).await.unwrap();
+            let a=first.clone();let a_sync=tokio::spawn(async move{a.sync(matrix_sdk::config::SyncSettings::default().timeout(Duration::from_secs(1))).await});
+            let b=second.clone();let b_sync=tokio::spawn(async move{b.sync(matrix_sdk::config::SyncSettings::default().timeout(Duration::from_secs(1))).await});
+            loop{if first.encryption().get_device(second.user_id().unwrap(),second.device_id().unwrap()).await.unwrap().is_some(){break;}tokio::time::sleep(Duration::from_millis(100)).await;}
+            eprintln!("verification stage: device available");
+            let cancelled=VerificationFlow::request(&first,second.user_id().unwrap(),second.device_id().unwrap()).await.unwrap();
+            assert!(cancelled.confirm_match().await.is_err());
+            cancelled.cancel().await.unwrap();assert!(cancelled.state()==State::Cancelled);
+            assert!(!first.encryption().get_device(second.user_id().unwrap(),second.device_id().unwrap()).await.unwrap().unwrap().is_verified());
+            eprintln!("verification stage: cancellation checked");
+            let mut outgoing=VerificationFlow::request(&first,second.user_id().unwrap(),second.device_id().unwrap()).await.unwrap();
+            let request=loop{if let Some(request)=second.encryption().get_verification_request(first.user_id().unwrap(),outgoing.flow_id()).await{break request;}tokio::time::sleep(Duration::from_millis(100)).await;};
+            eprintln!("verification stage: retry received");
+            let mut incoming=VerificationFlow::accept(&second,request).await.unwrap();
+            while outgoing.refresh().await.unwrap()!=State::Ready{tokio::time::sleep(Duration::from_millis(100)).await;}
+            eprintln!("verification stage: request ready");
+            outgoing.start_numbers().await.unwrap();
+            let numbers=loop{
+                let a=outgoing.refresh().await.unwrap();let b=incoming.refresh().await.unwrap();
+                if let (State::Compare(a),State::Compare(b))=(a,b){assert_eq!(a,b);break a;}
+                tokio::time::sleep(Duration::from_millis(100)).await;
+            };
+            assert!(numbers.0>=1000&&numbers.1>=1000&&numbers.2>=1000);
+            eprintln!("verification stage: numbers match");
+            outgoing.confirm_match().await.unwrap();incoming.confirm_match().await.unwrap();
+            while outgoing.refresh().await.unwrap()!=State::Verified||incoming.refresh().await.unwrap()!=State::Verified{tokio::time::sleep(Duration::from_millis(100)).await;}
+            assert!(first.encryption().get_device(second.user_id().unwrap(),second.device_id().unwrap()).await.unwrap().unwrap().is_verified());
+            a_sync.abort();b_sync.abort();second.logout().await.unwrap();forget(&first).await.unwrap();
+        }).await.expect("Device verification exceeded its time limit");
     }
 }

@@ -4,6 +4,7 @@ mod vault;
 mod persistence;
 mod worker;
 mod timeline;
+mod verification;
 use gtk::{glib,prelude::*};
 
 fn main() -> glib::ExitCode {
@@ -34,6 +35,9 @@ fn build(app:&gtk::Application) {
     let history=gtk::TextView::new();history.set_editable(false);history.set_cursor_visible(false);history.set_wrap_mode(gtk::WrapMode::WordChar);
     let history_scroll=gtk::ScrolledWindow::builder().vexpand(true).min_content_height(100).child(&history).build();content.append(&history_scroll);
     let older=gtk::Button::with_label("Load older messages");older.set_sensitive(false);content.append(&older);
+    let room_encrypted=std::rc::Rc::new(std::cell::Cell::new(None::<bool>));
+    let security_label=gtk::Label::new(None);security_label.set_xalign(0.0);security_label.set_wrap(true);content.append(&security_label);
+    let plain_messages=gtk::CheckButton::with_label("Allow unencrypted messages in this room");plain_messages.set_visible(false);content.append(&plain_messages);
     let compose=gtk::TextView::new();compose.set_wrap_mode(gtk::WrapMode::WordChar);compose.set_sensitive(false);
     let compose_scroll=gtk::ScrolledWindow::builder().min_content_height(65).max_content_height(100).child(&compose).build();content.append(&compose_scroll);
     let send_row=gtk::Box::new(gtk::Orientation::Horizontal,8);let send=gtk::Button::with_label("Send");send.set_sensitive(false);
@@ -68,29 +72,31 @@ fn build(app:&gtk::Application) {
             if tx.try_send(command).is_ok(){status_copy.set_text("Working...");}else{status_copy.set_text("An account request is already pending.");}
         });
     }
-    let ids_copy=room_ids.clone();let selected_copy=selected_room.clone();let tx=commands.clone();let status_copy=status.clone();let compose_copy=compose.clone();let drafts_copy=drafts.clone();
+    let ids_copy=room_ids.clone();let selected_copy=selected_room.clone();let tx=commands.clone();let status_copy=status.clone();let compose_copy=compose.clone();let drafts_copy=drafts.clone();let encrypted_copy=room_encrypted.clone();let plain_copy=plain_messages.clone();
     list.connect_row_selected(move|_,row|{
         let Some(row)=row else{return};
         if let Some(id)=ids_copy.borrow().get(row.index() as usize).cloned(){
             if selected_copy.borrow().as_deref()==Some(id.as_str()){return;}
-            *selected_copy.borrow_mut()=Some(id.clone());compose_copy.set_sensitive(true);let draft=drafts_copy.borrow().get(&id).cloned().unwrap_or_default();compose_copy.buffer().set_text(&draft);
+            *selected_copy.borrow_mut()=Some(id.clone());encrypted_copy.set(None);plain_copy.set_active(false);compose_copy.set_sensitive(true);let draft=drafts_copy.borrow().get(&id).cloned().unwrap_or_default();compose_copy.buffer().set_text(&draft);
             if tx.try_send(worker::Command::OpenRoom(id)).is_ok(){status_copy.set_text("Loading conversation...");}
         }
     });
     let tx=commands.clone();older.connect_clicked(move |_|{let _=tx.try_send(worker::Command::LoadOlder);});
-    let selected_copy=selected_room.clone();let drafts_copy=drafts.clone();let send_copy=send.clone();
+    let selected_copy=selected_room.clone();let drafts_copy=drafts.clone();let send_copy=send.clone();let encrypted_copy=room_encrypted.clone();let plain_copy=plain_messages.clone();
     compose.buffer().connect_changed(move|buffer|{
         let body=buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).to_string();
-        let room=selected_copy.borrow().clone();send_copy.set_sensitive(room.is_some()&&!body.trim().is_empty());
+        let room=selected_copy.borrow().clone();send_copy.set_sensitive(room.is_some()&&!body.trim().is_empty()&&(encrypted_copy.get()==Some(true)||(encrypted_copy.get()==Some(false)&&plain_copy.is_active())));
         if let Some(room)=room{drafts_copy.borrow_mut().insert(room,body);}
     });
-    let tx=commands.clone();let selected_copy=selected_room.clone();let compose_copy=compose.clone();let status_copy=status.clone();
+    let tx=commands.clone();let selected_copy=selected_room.clone();let compose_copy=compose.clone();let status_copy=status.clone();let plain_copy=plain_messages.clone();
     send.connect_clicked(move|button|{
         if let Some(room_id)=selected_copy.borrow().clone(){let buffer=compose_copy.buffer();let body=buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).to_string();
-            if tx.try_send(worker::Command::Send{room_id,body}).is_ok(){button.set_sensitive(false);status_copy.set_text("Queuing message...");}
+            if tx.try_send(worker::Command::Send{room_id,body,allow_unencrypted:plain_copy.is_active()}).is_ok(){button.set_sensitive(false);status_copy.set_text("Queuing message...");}
             else{status_copy.set_text("An account request is already pending. Your draft was kept.");}
         }
     });
+    let compose_copy=compose.clone();let send_copy=send.clone();let encrypted_copy=room_encrypted.clone();let selected_copy=selected_room.clone();
+    plain_messages.connect_toggled(move|button|{let b=compose_copy.buffer();send_copy.set_sensitive(selected_copy.borrow().is_some()&&!b.text(&b.start_iter(),&b.end_iter(),false).trim().is_empty()&&(encrypted_copy.get()==Some(true)||(encrypted_copy.get()==Some(false)&&button.is_active())));});
     let tx=commands.clone();retry.connect_clicked(move |_|{let _=tx.try_send(worker::Command::RetryPending);});
     gtk::glib::MainContext::default().spawn_local(async move {
         let mut room_signature=None;
@@ -106,6 +112,12 @@ fn build(app:&gtk::Application) {
                     if let Some(id)=previous_selection{if let Some(index)=room_ids.borrow().iter().position(|item|item==&id){list.select_row(list.row_at_index(index as i32).as_ref());}else{*selected_room.borrow_mut()=None;compose.set_sensitive(false);send.set_sensitive(false);history.buffer().set_text("");}}
                     status.set_text(&format!("{count} joined conversations. Verification and recovery remain unfinished."));
                 }
+                worker::Event::RoomSecurity{room_id,encrypted}=>{
+                    if selected_room.borrow().as_deref()!=Some(room_id.as_str()){continue;}
+                    room_encrypted.set(Some(encrypted));plain_messages.set_visible(!encrypted);plain_messages.set_active(false);
+                    security_label.set_text(if encrypted{"Encrypted room. Device verification is still in development."}else{"Not encrypted: the server can read messages sent to this room."});
+                    let b=compose.buffer();send.set_sensitive(encrypted&&!b.text(&b.start_iter(),&b.end_iter(),false).trim().is_empty());
+                }
                 worker::Event::Timeline{room_id,messages}=>{
                     if selected_room.borrow().as_deref()!=Some(room_id.as_str()){continue;}
                     let count=messages.len();let mut text=String::new();for message in messages{text.push_str(&message.sender);if !message.state.is_empty(){text.push_str(" [");text.push_str(message.state);text.push_str("]");}text.push_str("\n");text.push_str(&message.body);text.push_str("\n\n");}
@@ -116,8 +128,8 @@ fn build(app:&gtk::Application) {
                     let buffer=compose.buffer();if selected_room.borrow().as_deref()==Some(room_id.as_str())&&buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).as_str()==body{buffer.set_text("");}
                     status.set_text("Message queued. Its timeline status will update when the server accepts it.");
                 }
-                worker::Event::SignedOut=>{room_signature=None;server.set_visible(true);user.set_visible(true);password.set_visible(true);validate.set_visible(true);consent.set_visible(true);login.set_visible(true);compose.set_sensitive(false);send.set_sensitive(false);retry.set_sensitive(false);room_ids.borrow_mut().clear();*selected_room.borrow_mut()=None;history.buffer().set_text("");older.set_sensitive(false);while let Some(child)=list.first_child(){list.remove(&child);}empty.set_text("No account connected");refresh.set_sensitive(false);logout.set_sensitive(false);consent.set_sensitive(true);login.set_sensitive(consent.is_active());status.set_text("No account connected. Choose a test account to continue development checks.");}
-                worker::Event::Error(message)=>{status.set_text(&message);let buffer=compose.buffer();send.set_sensitive(selected_room.borrow().is_some()&&!buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).trim().is_empty());if consent.is_sensitive(){login.set_sensitive(consent.is_active());}}
+                worker::Event::SignedOut=>{room_signature=None;room_encrypted.set(None);plain_messages.set_visible(false);plain_messages.set_active(false);security_label.set_text("");server.set_visible(true);user.set_visible(true);password.set_visible(true);validate.set_visible(true);consent.set_visible(true);login.set_visible(true);compose.set_sensitive(false);send.set_sensitive(false);retry.set_sensitive(false);room_ids.borrow_mut().clear();*selected_room.borrow_mut()=None;history.buffer().set_text("");older.set_sensitive(false);while let Some(child)=list.first_child(){list.remove(&child);}empty.set_text("No account connected");refresh.set_sensitive(false);logout.set_sensitive(false);consent.set_sensitive(true);login.set_sensitive(consent.is_active());status.set_text("No account connected. Choose a test account to continue development checks.");}
+                worker::Event::Error(message)=>{status.set_text(&message);let buffer=compose.buffer();send.set_sensitive(selected_room.borrow().is_some()&&!buffer.text(&buffer.start_iter(),&buffer.end_iter(),false).trim().is_empty()&&(room_encrypted.get()==Some(true)||(room_encrypted.get()==Some(false)&&plain_messages.is_active())));if consent.is_sensitive(){login.set_sensitive(consent.is_active());}}
             }
         }
     });
@@ -151,7 +163,7 @@ mod ui_tests {
             let account:serde_json::Value=serde_json::from_str(&std::fs::read_to_string(std::env::var("SHADOW_MESSENGER_MATRIX_FIXTURE").unwrap()).unwrap()).unwrap();
             let user=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Entry>()).find(|e|e.placeholder_text().as_deref()==Some("Matrix account")).unwrap();
             let password=widgets.iter().find_map(|w|w.downcast_ref::<gtk::PasswordEntry>()).unwrap();
-            let consent=widgets.iter().find_map(|w|w.downcast_ref::<gtk::CheckButton>()).unwrap();
+            let consent=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::CheckButton>()).find(|c|c.label().as_deref().is_some_and(|label|label.starts_with("Use a test account;"))).unwrap();
             let login=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::Button>()).find(|b|b.label().as_deref()==Some("Sign in")).unwrap();
             let list=widgets.iter().find_map(|w|w.downcast_ref::<gtk::ListBox>()).unwrap();
             let history=widgets.iter().filter_map(|w|w.downcast_ref::<gtk::TextView>()).find(|v|!v.is_editable()).unwrap();

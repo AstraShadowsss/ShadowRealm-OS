@@ -19,7 +19,7 @@ fn rows(items:impl Iterator<Item=Arc<TimelineItem>>)->Vec<Message>{
         let Some(event)=item.as_event() else{continue};
         let body=event.content().as_message()
             .map(|message|message.body().chars().take(12_000).collect())
-            .unwrap_or_else(||"[This event is not displayed in the development preview]".into());
+            .unwrap_or_else(||if event.content().is_unable_to_decrypt(){"Encrypted message: keys unavailable. Verification and recovery controls are still in development.".into()}else if event.content().is_redacted(){"Message removed.".into()}else{"[Unsupported event]".into()});
         if messages.len()==200{messages.pop_front();}
         let state=match event.send_state(){Some(EventSendState::NotSentYet{..})=>"Queued",Some(EventSendState::SendingFailed{..})=>"Not sent",Some(EventSendState::Sent{..})=>"Sent",None=>""};
         messages.push_back(Message{sender:event.sender().to_string(),body,state});
@@ -50,7 +50,9 @@ impl RoomTimeline {
     pub async fn older_messages(&self)->Result<bool,String>{
         self.timeline.paginate_backwards(50).await.map_err(|_|"Older messages could not be loaded. Try again when connected.".into())
     }
-    pub async fn queue_message(&self,body:&str)->Result<(),String>{
+    pub async fn encrypted(&self)->Result<bool,String>{self.timeline.room().latest_encryption_state().await.map(|state|state.is_encrypted()).map_err(|_|"The room encryption state could not be checked.".into())}
+    pub async fn queue_message(&self,body:&str,allow_unencrypted:bool)->Result<(),String>{
+        if !self.encrypted().await?&&!allow_unencrypted{return Err("This room is not encrypted. Explicit permission is required before sending.".into());}
         shadow_messenger_core::validate_message(body).map_err(str::to_owned)?;
         self.timeline.send(RoomMessageEventContent::text_plain(body).into()).await
             .map_err(|_|"The message could not be queued. Try again when connected.".to_owned())?;
