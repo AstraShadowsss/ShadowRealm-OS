@@ -6,9 +6,28 @@ pub fn state(client:&Client)->RecoveryState{client.encryption().recovery().state
 
 /// Called only after the user explicitly requests recovery setup.
 pub async fn enable(client:&Client)->Result<Zeroizing<String>,String>{
+    enable_with_password(client,None).await
+}
+
+pub async fn enable_with_password(client:&Client,password:Option<Zeroizing<String>>)->Result<Zeroizing<String>,String>{
+    match state(client){
+        RecoveryState::Enabled=>return Err("Recovery is already enabled. Keep using your existing recovery key.".into()),
+        RecoveryState::Incomplete=>return Err("This account already has recovery. Restore its existing key before continuing.".into()),
+        RecoveryState::Unknown=>return Err("Recovery status is not ready. Wait for account sync and refresh.".into()),
+        RecoveryState::Disabled=>{},
+    }
     let encryption=client.encryption();
-    encryption.bootstrap_cross_signing_if_needed(None).await
-        .map_err(|_|"Cross-signing setup requires authentication. Existing identities have not been reset.".to_owned())?;
+    if let Err(error)=encryption.bootstrap_cross_signing_if_needed(None).await{
+        let response=error.as_uiaa_response().ok_or("Cross-signing setup could not connect or complete. No identity reset was requested.")?;
+        let password=password.filter(|value|!value.is_empty()).ok_or("Your homeserver requires authentication. Enter your account password and retry setup.")?;
+        if !response.flows.iter().any(|flow|flow.stages.iter().any(|stage|stage.as_str()=="m.login.password")){
+            return Err("This homeserver requires an authentication method not supported here. Set up recovery with another Matrix client, then restore its key here.".into());
+        }
+        let user=client.user_id().ok_or("Sign in first.")?;
+        let mut auth=matrix_sdk::ruma::api::client::uiaa::Password::new(matrix_sdk::ruma::api::client::uiaa::UserIdentifier::from(user.to_owned()),password.to_string());auth.session=response.session.clone();
+        encryption.bootstrap_cross_signing_if_needed(Some(matrix_sdk::ruma::api::client::uiaa::AuthData::Password(auth))).await
+            .map_err(|_|"Account authentication did not complete. Check the password; no identity reset was requested.")?;
+    }
     if !encryption.cross_signing_status().await.is_some_and(|status|status.is_complete()){
         return Err("Verify this device or restore the existing recovery key before creating a backup.".into());
     }

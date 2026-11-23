@@ -5,26 +5,34 @@ pub struct VerificationFlow {
     client:Client,
     request:VerificationRequest,
     sas:Option<SasVerification>,
+    accepted:bool,
+    peer_device:String,
 }
 #[derive(Clone,PartialEq,Eq)]
-pub enum State {Waiting,Ready,Compare((u16,u16,u16)),Verified,Cancelled}
+pub enum State {Requested{user:String,device:String},Waiting,Ready,Compare((u16,u16,u16)),Verified,Cancelled}
 impl VerificationFlow {
     pub async fn request(client:&Client,user:&UserId,device:&DeviceId)->Result<Self,String>{
         let _=client.encryption().request_user_identity(user).await.map_err(|_|"Could not refresh the selected user's device keys.")?;
         let peer=client.encryption().get_device(user,device).await.map_err(|_|"Could not load the selected device.")?
             .ok_or("The selected device is unavailable. Refresh devices first.")?;
         let request=peer.request_verification().await.map_err(|_|"The verification request could not be sent.")?;
-        Ok(Self{client:client.clone(),request,sas:None})
+        Ok(Self{client:client.clone(),request,sas:None,accepted:true,peer_device:String::new()})
     }
     pub async fn accept(client:&Client,request:VerificationRequest)->Result<Self,String>{
         request.accept().await.map_err(|_|"The verification request could not be accepted.")?;
-        Ok(Self{client:client.clone(),request,sas:None})
+        Ok(Self{client:client.clone(),request,sas:None,accepted:true,peer_device:String::new()})
+    }
+    pub fn incoming(client:&Client,request:VerificationRequest,peer_device:String)->Self{Self{client:client.clone(),request,sas:None,accepted:false,peer_device}}
+    pub async fn accept_pending(&mut self)->Result<(),String>{
+        if self.accepted{return Err("This request has already been accepted.".into());}
+        if self.request.is_cancelled()||self.request.is_done(){return Err("This verification request has expired.".into());}
+        self.request.accept().await.map_err(|_|"The verification request could not be accepted.")?;self.accepted=true;Ok(())
     }
     pub fn request_handle(&self)->VerificationRequest{self.request.clone()}
     pub fn sas_handle(&self)->Option<SasVerification>{self.sas.clone()}
     pub fn flow_id(&self)->&str{self.request.flow_id()}
     pub async fn refresh(&mut self)->Result<State,String>{
-        if self.sas.is_none(){
+        if self.accepted&&self.sas.is_none(){
             if let Some(Verification::SasV1(sas))=self.client.encryption().get_verification(self.request.other_user_id(),self.request.flow_id()).await{
                 sas.accept().await.map_err(|_|"Verification negotiation failed. Cancel and try again.")?;
                 self.sas=Some(sas);
@@ -34,11 +42,13 @@ impl VerificationFlow {
     }
     pub fn state(&self)->State{
         if self.request.is_cancelled()||self.sas.as_ref().is_some_and(|s|s.is_cancelled()){return State::Cancelled;}
+        if !self.accepted{return State::Requested{user:self.request.other_user_id().to_string(),device:self.peer_device.clone()};}
         if self.request.is_done()||self.sas.as_ref().is_some_and(|s|s.is_done()){return State::Verified;}
         if let Some(numbers)=self.sas.as_ref().and_then(|s|s.decimals()){return State::Compare(numbers);}
         if self.request.is_ready(){State::Ready}else{State::Waiting}
     }
     pub async fn start_numbers(&mut self)->Result<(),String>{
+        if !self.accepted{return Err("Accept the verification request before starting comparison.".into());}
         self.sas=self.request.start_sas().await.map_err(|_|"Number verification could not start.")?;
         if self.sas.is_none(){return Err("The other device must accept the request first.".into());}
         Ok(())

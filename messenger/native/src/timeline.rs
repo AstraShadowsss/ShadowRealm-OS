@@ -19,7 +19,7 @@ fn rows(items:impl Iterator<Item=Arc<TimelineItem>>)->Vec<Message>{
         let Some(event)=item.as_event() else{continue};
         let body=event.content().as_message()
             .map(|message|message.body().chars().take(12_000).collect())
-            .unwrap_or_else(||if event.content().is_unable_to_decrypt(){"Encrypted message: keys unavailable. Verification and recovery controls are still in development.".into()}else if event.content().is_redacted(){"Message removed.".into()}else{"[Unsupported event]".into()});
+            .unwrap_or_else(||if event.content().is_unable_to_decrypt(){"Encrypted message: keys unavailable. Use Devices & security or Account recovery.".into()}else if event.content().is_redacted(){"Message removed.".into()}else{"[Unsupported event]".into()});
         if messages.len()==200{messages.pop_front();}
         let state=match event.send_state(){Some(EventSendState::NotSentYet{..})=>"Queued",Some(EventSendState::SendingFailed{..})=>"Not sent",Some(EventSendState::Sent{..})=>"Sent",None=>""};
         messages.push_back(Message{sender:event.sender().to_string(),body,state});

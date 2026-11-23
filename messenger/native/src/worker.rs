@@ -13,6 +13,11 @@ pub enum Command {
     Send{room_id:String,body:String,allow_unencrypted:bool},
     RetryPending,
     Devices,
+    RecoveryStatus,
+    EnableRecovery(Option<Zeroizing<String>>),
+    RestoreRecovery(Zeroizing<String>),
+    IncomingVerification{for_device:String,request:matrix_sdk::encryption::verification::VerificationRequest,peer_device:String},
+    AcceptVerification(String),
     VerifyDevice{user_id:String,device_id:String},
     VerificationTick(String),
     ConfirmVerification(String),
@@ -21,6 +26,9 @@ pub enum Command {
 }
 pub enum Event {
     Connected,
+    RecoveryStatus{message:String,can_create:bool},
+    RecoveryKey(Zeroizing<String>),
+    RecoveryRestored,
     Devices{user_id:String,devices:Vec<crate::verification::DeviceInfo>},
     Verification{flow_id:String,state:crate::verification::State},
     Queued{room_id:String,body:String},
@@ -94,10 +102,46 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::RetryPending=>{
                             timeline.as_ref().ok_or("Choose a conversation first.")?.retry_pending();
                         }
+                        Command::RecoveryStatus=>{
+                            let client=session.as_ref().ok_or("Sign in first.")?.client();
+                            use matrix_sdk::encryption::recovery::RecoveryState;
+                            let (message,can_create)=match crate::recovery::state(client){
+                                RecoveryState::Unknown=>("Recovery status is not ready. Wait for account sync, then refresh.",false),
+                                RecoveryState::Disabled=>("Recovery is not configured for this account. Set it up here, or restore an existing key if you already have one.",true),
+                                RecoveryState::Incomplete=>("This account has recovery. Restore the existing key to unlock encrypted history on this device.",false),
+                                RecoveryState::Enabled=>("Recovery is enabled on this device. Keep your existing key in a safe place.",false),
+                            };let _=events.send(Event::RecoveryStatus{message:message.into(),can_create}).await;
+                        }
+                        Command::EnableRecovery(password)=>{
+                            let client=session.as_ref().ok_or("Sign in first.")?.client();
+                            let key=crate::recovery::enable_with_password(client,password).await?;
+                            let _=events.send(Event::RecoveryKey(key)).await;
+                            tokio::time::timeout(std::time::Duration::from_secs(30),crate::recovery::wait_for_upload(client)).await
+                                .map_err(|_|"Keep your recovery key. Backup upload is still pending; keep this device available and check your connection.")??;
+                            let _=events.send(Event::RecoveryStatus{message:"Encrypted key backup uploaded. Save your recovery key somewhere safe before closing.".into(),can_create:false}).await;
+                        }
+                        Command::RestoreRecovery(key)=>{
+                            let client=session.as_ref().ok_or("Sign in first.")?.client();crate::recovery::restore_key(client,key).await?;
+                            let _=events.send(Event::RecoveryRestored).await;
+                        }
                         Command::Devices=>{
                             let account=session.as_ref().ok_or("Sign in first.")?;
                             let (user_id,devices)=crate::verification::own_devices(account.client()).await?;
                             let _=events.send(Event::Devices{user_id,devices}).await;
+                        }
+                        Command::IncomingVerification{for_device,request,peer_device}=>{
+                            let Some(account)=session.as_ref().filter(|account|account.client().device_id().is_some_and(|device|device.as_str()==for_device)) else{return Ok(())};
+                            if verification.as_ref().is_some_and(|flow|!matches!(flow.state(),crate::verification::State::Verified|crate::verification::State::Cancelled)){
+                                request.cancel().await.map_err(|_|"Another verification is active; the incoming request could not be declined.")?;return Ok(());
+                            }
+                            for task in verification_tasks.drain(..){task.abort();}sas_observed=false;
+                            let flow=crate::verification::VerificationFlow::incoming(account.client(),request,peer_device);
+                            verification_tasks.push(observe_request(&flow,internal_commands.clone()));
+                            let _=events.send(Event::Verification{flow_id:flow.flow_id().to_owned(),state:flow.state()}).await;verification=Some(flow);
+                        }
+                        Command::AcceptVerification(id)=>{
+                            let flow=verification.as_mut().filter(|flow|flow.flow_id()==id).ok_or("This verification is no longer active.")?;
+                            flow.accept_pending().await?;let _=internal_commands.try_send(Command::VerificationTick(id));
                         }
                         Command::VerifyDevice{user_id,device_id}=>{
                             if verification.as_ref().is_some_and(|flow|!matches!(flow.state(),crate::verification::State::Verified|crate::verification::State::Cancelled)){return Err("Finish or cancel the current verification first.".into());}
@@ -113,10 +157,12 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::VerificationTick(id)=>{
                             let Some(flow)=verification.as_mut().filter(|flow|flow.flow_id()==id) else{return Ok(())};
                             let mut state=flow.refresh().await?;
-                            if state==crate::verification::State::Ready&&flow.sas_handle().is_none(){flow.start_numbers().await?;state=flow.state();}
+                            if state==crate::verification::State::Ready&&flow.sas_handle().is_none()&&flow.request_handle().we_started(){flow.start_numbers().await?;state=flow.state();}
                             if !sas_observed{if let Some(sas)=flow.sas_handle(){let tx=internal_commands.clone();let id=id.clone();verification_tasks.push(tokio::spawn(async move{use futures_util::StreamExt;let mut changes=Box::pin(sas.changes());while changes.next().await.is_some(){if tx.send(Command::VerificationTick(id.clone())).await.is_err(){break;}}}));sas_observed=true;}}
                             if matches!(state,crate::verification::State::Verified|crate::verification::State::Cancelled){for task in verification_tasks.drain(..){task.abort();}}
+                            let verified=state==crate::verification::State::Verified;
                             let _=events.send(Event::Verification{flow_id:id,state}).await;
+                            if verified{if let Some(account)=session.as_ref(){if let Ok((user_id,devices))=crate::verification::own_devices(account.client()).await{let _=events.send(Event::Devices{user_id,devices}).await;}}}
                         }
                         Command::ConfirmVerification(id)=>{
                             let flow=verification.as_ref().filter(|flow|flow.flow_id()==id).ok_or("This verification is no longer active.")?;
@@ -134,7 +180,7 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                     }
                     Ok(())
                 }.await;
-                if sync_task.is_none(){if let Some(account)=session.as_ref(){sync_task=Some(start_sync(account.clone(),events.clone()));}}
+                if sync_task.is_none(){if let Some(account)=session.as_ref(){sync_task=Some(start_sync(account.clone(),events.clone(),internal_commands.clone()));}}
                 if let Err(message)=result{if events.send(Event::Error(message)).await.is_err(){break;}}
             }
         });
@@ -142,9 +188,17 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
     (commands,updates)
 }
 
-fn start_sync(account:Session,events:Sender<Event>)->tokio::task::JoinHandle<()>{
+fn start_sync(account:Session,events:Sender<Event>,commands:Sender<Command>)->tokio::task::JoinHandle<()>{
     tokio::spawn(async move{
         let client=account.client().clone();let updates=events.clone();
+        let handler_client=client.clone();let handle=client.add_event_handler(move|event:matrix_sdk::ruma::events::key::verification::request::ToDeviceKeyVerificationRequestEvent|{
+            let client=handler_client.clone();let commands=commands.clone();async move{
+                if let (Some(device),Some(request))=(client.device_id(),client.encryption().get_verification_request(&event.sender,event.content.transaction_id.as_str()).await){
+                    if request.we_started(){return;}
+                    let _=commands.send(Command::IncomingVerification{for_device:device.to_string(),request,peer_device:event.content.from_device.to_string()}).await;
+                }
+            }
+        });let _handler_guard=client.event_handler_drop_guard(handle);
         let result=client.sync_with_callback(matrix_sdk::config::SyncSettings::default().timeout(std::time::Duration::from_secs(30)),move |_|{
             let account=account.clone();let updates=updates.clone();
             async move{
@@ -157,4 +211,8 @@ fn start_sync(account:Session,events:Sender<Event>)->tokio::task::JoinHandle<()>
         }).await;
         if result.is_err(){let _=events.send(Event::Error("Conversation sync stopped. Restore the saved account to reconnect.".into())).await;}
     })
+}
+
+fn observe_request(flow:&crate::verification::VerificationFlow,commands:Sender<Command>)->tokio::task::JoinHandle<()>{
+    let request=flow.request_handle();let id=flow.flow_id().to_owned();tokio::spawn(async move{use futures_util::StreamExt;let mut changes=Box::pin(request.changes());while changes.next().await.is_some(){if commands.send(Command::VerificationTick(id.clone())).await.is_err(){break;}}})
 }

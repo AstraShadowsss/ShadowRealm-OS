@@ -9,7 +9,9 @@ Shadow Messenger is a required part of the next installer. The current r4 image 
 - [x] Validate same-device session persistence and restoration against the isolated Matrix fixture, with protected Secret Service storage.
 - [x] Outgoing device verification through the actual GTK controls, including explicit number comparison.
 - [x] Recovery backend: cross-signing restoration and older-history decryption from encrypted backup.
-- [ ] Incoming verification prompts, recovery controls and authentication challenges.
+- [x] Incoming verification prompts, cancellation and explicit number confirmation through GTK.
+- [x] Recovery setup/restoration controls, saved-key acknowledgement and password-authentication challenges against the private fixture.
+- [ ] Broader provider authentication and independent-client verification/recovery.
 - [ ] Conversation list, incoming history, send/retry and offline recovery.
 - [ ] Device verification, encryption status, recovery and account removal.
 - [ ] Contacts/groups, presence and away messages.

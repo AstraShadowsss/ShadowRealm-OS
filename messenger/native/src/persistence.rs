@@ -231,6 +231,7 @@ mod recovery_integration {
             eprintln!("recovery stage: encrypted event stored");
             let key=crate::recovery::enable(&first).await.unwrap();assert!(!key.is_empty());
             eprintln!("recovery stage: key created");
+            assert!(crate::recovery::enable(&first).await.is_err(),"Existing recovery must not be replaced by setup");
             tokio::time::timeout(std::time::Duration::from_secs(20),crate::recovery::wait_for_upload(&first)).await.expect("Encrypted backup upload timed out").unwrap();first_sync.abort();
             eprintln!("recovery stage: encrypted key backup uploaded");
 

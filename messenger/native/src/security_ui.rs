@@ -10,6 +10,7 @@ pub struct SecurityView {
     status:gtk::Label,
     numbers:gtk::Label,
     confirm:gtk::Button,
+    accept:gtk::Button,
     cancel:gtk::Button,
     flow:Rc<RefCell<Option<String>>>,
     confirmed:Rc<Cell<bool>>,
@@ -23,15 +24,18 @@ impl SecurityView {
         let list=gtk::Box::new(gtk::Orientation::Vertical,8);let scroll=gtk::ScrolledWindow::builder().vexpand(true).child(&list).build();outer.append(&scroll);
         let status=gtk::Label::new(Some("Choose another device. Compare all three numbers on both devices before confirming."));status.set_wrap(true);status.set_xalign(0.0);outer.append(&status);
         let numbers=gtk::Label::new(None);numbers.add_css_class("title-1");numbers.set_selectable(true);outer.append(&numbers);
-        let buttons=gtk::Box::new(gtk::Orientation::Horizontal,8);let confirm=gtk::Button::with_label("Numbers match");confirm.set_sensitive(false);let cancel=gtk::Button::with_label("Cancel verification");cancel.set_sensitive(false);let refresh=gtk::Button::with_label("Refresh devices");for button in [&confirm,&cancel,&refresh]{buttons.append(button);}outer.append(&buttons);
-        let note=gtk::Label::new(Some("Recovery controls and incoming-request prompts are still in development. Start verification here; do not confirm numbers that differ."));note.set_wrap(true);note.set_xalign(0.0);outer.append(&note);window.set_child(Some(&outer));
+        let accept=gtk::Button::with_label("Accept verification");accept.set_visible(false);
+        let buttons=gtk::Box::new(gtk::Orientation::Horizontal,8);let confirm=gtk::Button::with_label("Numbers match");confirm.set_sensitive(false);let cancel=gtk::Button::with_label("Cancel verification");cancel.set_sensitive(false);let refresh=gtk::Button::with_label("Refresh devices");for button in [&accept,&confirm,&cancel,&refresh]{buttons.append(button);}outer.append(&buttons);
+        let note=gtk::Label::new(Some("Accept only a request you expect. Compare the numbers on both devices; never confirm a mismatch. Recovery controls are still in development."));note.set_wrap(true);note.set_xalign(0.0);outer.append(&note);window.set_child(Some(&outer));
         let flow=Rc::new(RefCell::new(None::<String>));let confirmed=Rc::new(Cell::new(false));
+        let id=flow.clone();let tx=commands.clone();accept.connect_clicked(move|button|{if let Some(id)=id.borrow().clone(){if tx.try_send(Command::AcceptVerification(id)).is_ok(){button.set_sensitive(false);}}});
         let id=flow.clone();let tx=commands.clone();let done=confirmed.clone();let label=status.clone();confirm.connect_clicked(move|button|{if let Some(id)=id.borrow().clone(){if tx.try_send(Command::ConfirmVerification(id)).is_ok(){done.set(true);button.set_sensitive(false);label.set_text("Match confirmed here. Confirm on the other device to finish.");}}});
         let id=flow.clone();let tx=commands.clone();cancel.connect_clicked(move |_|{if let Some(id)=id.borrow().clone(){let _=tx.try_send(Command::CancelVerification(id));}});
         let tx=commands.clone();refresh.connect_clicked(move |_|{let _=tx.try_send(Command::Devices);});
         let id=flow.clone();let tx=commands.clone();window.connect_close_request(move|window|{if let Some(id)=id.borrow().clone(){let _=tx.try_send(Command::CancelVerification(id));}window.hide();gtk::glib::Propagation::Stop});
-        Self{window,list,account,status,numbers,confirm,cancel,flow,confirmed,commands}
+        Self{window,list,account,status,numbers,confirm,accept,cancel,flow,confirmed,commands}
     }
+    pub fn signed_out(&self){self.window.hide();self.numbers.set_text("");self.accept.set_visible(false);self.confirm.set_sensitive(false);self.cancel.set_sensitive(false);self.list.set_sensitive(true);*self.flow.borrow_mut()=None;self.confirmed.set(false);while let Some(child)=self.list.first_child(){self.list.remove(&child);}}
     pub fn present(&self){self.window.present();}
     pub fn error(&self,message:&str){if self.window.is_visible(){self.status.set_text(message);}}
     pub fn devices(&self,user:&str,devices:Vec<DeviceInfo>){
@@ -45,7 +49,9 @@ impl SecurityView {
     pub fn verification(&self,id:String,state:State){
         if self.flow.borrow().as_deref()!=Some(id.as_str()){self.confirmed.set(false);}*self.flow.borrow_mut()=Some(id);
         self.confirm.set_sensitive(false);self.cancel.set_sensitive(true);self.list.set_sensitive(false);
+        self.accept.set_visible(false);
         match state{
+            State::Requested{user,device}=>{self.numbers.set_text("");self.status.set_text(&format!("Verification requested by {user}, device {device}. Accept only if you started this on your other device."));self.accept.set_visible(true);self.accept.set_sensitive(true);self.window.present();}
             State::Waiting=>{self.numbers.set_text("");self.status.set_text("Waiting for the other device to accept...");}
             State::Ready=>{self.status.set_text("Preparing the comparison numbers...");}
             State::Compare((a,b,c))=>{self.numbers.set_text(&format!("{a}   {b}   {c}"));self.confirm.set_sensitive(!self.confirmed.get());self.status.set_text(if self.confirmed.get(){"Match confirmed here. Confirm on the other device to finish."}else{"Compare all three numbers on both devices. Cancel if any number differs."});}
