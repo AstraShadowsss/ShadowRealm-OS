@@ -1,5 +1,12 @@
 # Release notes
 
+## In development — dock shelf
+
+- Add an optional full-width dock shelf with centered launchers and a compact-layout switch.
+- Preserve launcher order, size and visibility settings; keep structural spacing out of the editable launcher list.
+- Restore the prior compact layout and background opacity when switching back.
+- Local preview only; not yet included in the signed APT feed or r4 installer. Direct dragging, edge drops, multi-monitor behavior and final visual polish still need coverage.
+
 ## Shadow Games for Android 1.0.1 (2026-11-23)
 
 - Equal Pinball flippers, centered Launch and working first-press/multitouch input.

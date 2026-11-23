@@ -7,6 +7,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk, Gio, GLib
 from shadow_effects import attach, heading
+import shadow_dock_layout as layout
 
 CHANNEL = ["xfconf-query", "-c", "xfce4-panel"]
 DOCK = "/panels/panel-2"
@@ -50,6 +51,12 @@ class DockSettings(Gtk.Application):
             control.set_hexpand(True)
             form.attach(label, 0, row, 1, 1)
             form.attach(control, 1, row, 1, 1)
+
+        shelf = Gtk.CheckButton(label="Full-width shelf with centered launchers")
+        shelf.set_active(layout.shelf_enabled())
+        self.shelf_control = shelf
+        body.pack_start(shelf, False, False, 0)
+        shelf.connect("toggled", self.change_layout)
 
         expand = Gtk.Button(label="Fit dock to launchers")
         expand.set_sensitive(size.returncode == 0)
@@ -97,7 +104,7 @@ class DockSettings(Gtk.Application):
         result = query("plugin-ids")
         if result.returncode:
             raise RuntimeError(result.stderr.strip() or "The dock is unavailable.")
-        return [int(line.strip()) for line in result.stdout.splitlines() if line.strip().isdigit()]
+        return layout.user_items()
 
     def load_items(self):
         self.loading = True
@@ -132,12 +139,7 @@ class DockSettings(Gtk.Application):
                 self.status.set_text("The dock changed elsewhere. Its current items have been reloaded.")
                 self.load_items()
                 return
-            args = ["--force-array"]
-            for item in ids:
-                args += ["--type", "int", "--set", str(item)]
-            result = query("plugin-ids", *args)
-            if result.returncode:
-                raise RuntimeError(result.stderr.strip() or "Could not save dock items.")
+            layout.set_items(ids)
             if self.current_ids() != ids:
                 raise RuntimeError("The dock did not accept the new order.")
             self.saved_ids = ids
@@ -205,6 +207,9 @@ class DockSettings(Gtk.Application):
 
     def fit_to_launchers(self, _button):
         try:
+            if layout.shelf_enabled():
+                layout.apply_shelf(False)
+                self.shelf_control.set_active(False)
             for key, kind, value in (("length-adjust", "bool", "true"), ("length", "double", "1")):
                 result = query(key, "--create", "--type", kind, "--set", value)
                 if result.returncode:
@@ -213,6 +218,13 @@ class DockSettings(Gtk.Application):
             self.status.set_text("The dock will expand as launchers are added.")
         except (OSError, subprocess.TimeoutExpired) as error:
             self.status.set_text(str(error))
+
+    def change_layout(self, control):
+        try:
+            layout.apply_shelf(control.get_active())
+            self.status.set_text("Full-width shelf enabled. Launchers stay centered." if control.get_active() else "Compact dock restored.")
+        except (OSError, RuntimeError, ValueError, subprocess.SubprocessError) as error:
+            self.status.set_text("Could not change dock layout: " + str(error))
 
     def preferences(self, _button):
         try:
