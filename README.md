@@ -6,7 +6,7 @@ A Debian 13 desktop with its own look, built around Xfce and a set of small, int
 
 **2026.11 beta 1 | AMD64 | live desktop and installer**
 
-![ShadowRealm-OS desktop](screenshots/desktop.png)
+![ShadowRealm-OS desktop](screenshots/desktop.png?v=20261123b)
 
 ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal and a package manager. Its custom panel, dock, widgets and Control Center bring the everyday controls together. Eight coordinated styles range from Neon and Hacker to White, Silver & Gold and a quieter Professional theme. Wallpapers can be changed separately.
 
@@ -45,13 +45,13 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 A familiar shell with live system information, adjustable text and desktop-matched colors.
 
-![Terminal on the current desktop](screenshots/terminal-current.png)
+![Terminal on the current desktop](screenshots/terminal-current.png?v=20261123b)
 
 ### Control Center
 
 Network, audio, Bluetooth, accounts, appearance and software tools in one place.
 
-![Searchable Control Center in Neon](screenshots/control-center-neon.png)
+![Searchable Control Center in Neon](screenshots/control-center-neon.png?v=20261123b)
 
 
 
@@ -74,19 +74,21 @@ Eight independent widgets, shown together in Professional styling. They follow y
 
 Choose which panels appear, adjust their text, graph and bar colors, and set background transparency. Theme follows the shared background setting in Appearance.
 
-![Current widget controls](screenshots/widget-customization.png)
+![Current widget controls](screenshots/widget-customization.png?v=20261123b)
 
 </details>
 
 [Desktop widgets guide](docs/widgets.md)
 
-![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png)
+[![Network, Shadow Shield and Software & Updates](screenshots/system-tools.png?v=20261123b)](screenshots/system-tools.png)
+
+View full-size panels: [Network](screenshots/system-tools/network.png), [Shadow Shield](screenshots/system-tools/shield.png), [Software & Updates](screenshots/system-tools/software-updates.png).
 
 ### Applications
 
 Search and browse installed applications by category. The dock keeps the shortcuts you choose.
 
-![Application menu](screenshots/application-menu.png)
+![Application menu](screenshots/application-menu.png?v=20261123b)
 
 ### Games
 
@@ -106,9 +108,9 @@ Nine lightweight arcade and card games, with local scores and settings. No accou
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
 
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261122d)
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261123b)
 
-![Professional Control Center](screenshots/control-center-professional.png?v=20261122d)
+![Professional Control Center](screenshots/control-center-professional.png?v=20261123b)
 
 
 ## Shadow Games for Android
