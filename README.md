@@ -10,8 +10,6 @@ A Debian 13 desktop with its own look, built around Xfce and a set of small, int
 
 ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal and a package manager. Its custom panel, dock, widgets and Control Center bring the everyday controls together. Twelve coordinated palettes, eight branded styles and four Professional accents, range from Neon and Hacker to White, Silver & Gold and a quieter Professional theme. Wallpapers can be changed separately.
 
-> **Website updates in progress:** We are reorganizing the project pages and refreshing screenshots. Screenshots show the current desktop updates. The current beta download is unchanged.
-
 ## Download and install
 
 [Download the beta ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) | [Checksums](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/SHA256SUMS/download) | [Licenses & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/)
