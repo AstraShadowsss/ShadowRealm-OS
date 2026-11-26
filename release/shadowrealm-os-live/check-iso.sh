@@ -39,7 +39,7 @@ test -L "$rootfs/etc/os-release"
 cmp "$rootfs/etc/os-release" "$rootfs/usr/lib/os-release"
 grep -Fq 'NAME="ShadowRealm-OS"' "$rootfs/etc/os-release"
 grep -Fq 'https://shadowrealm-os.sourceforge.io/apt' "$rootfs/etc/apt/sources.list.d/shadowrealm-os.sources"
-test "$(dpkg-query --admindir="$rootfs/var/lib/dpkg" -W -f='${Version}' shadowrealm-os-archive-keyring)" = 2026.11-1
+test "$(dpkg-query --admindir="$rootfs/var/lib/dpkg" -W -f='${Version}' shadowrealm-os-archive-keyring)" = 2026.11-2
 test "$(dpkg-query --admindir="$rootfs/var/lib/dpkg" -W -f='${Version}' shadowrealm-os-release)" = 2026.11-4
 test "$(dpkg-query --admindir="$rootfs/var/lib/dpkg" -W -f='${Status}' shadowrealm-os-release)" = 'install ok installed'
 grep -Fq restore_cpus "$rootfs/usr/local/libexec/shadowrealm-os-vbox-clock"

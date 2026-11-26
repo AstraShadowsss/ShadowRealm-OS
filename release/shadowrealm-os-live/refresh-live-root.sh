@@ -47,7 +47,7 @@ chroot "$root" /bin/sh -c 'apt-get install -y /tmp/shadowrealm-os-packages/*.deb
 test "$(find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' ! -name 'shadowrealm-os-*' | wc -l)" -eq 9
 find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' ! -name 'shadowrealm-os-*' -exec cp {} "$root/tmp/shadowrealm-os-packages/" \;
 test "$(find "$root/tmp/shadowrealm-os-packages" -name '*_all.deb' | wc -l)" -eq 11
-cp "$packages/shadowrealm-os-archive-keyring_2026.11-1_all.deb" "$root/tmp/shadowrealm-os-packages/"
+cp "$packages/shadowrealm-os-archive-keyring_2026.11-2_all.deb" "$root/tmp/shadowrealm-os-packages/"
 chroot "$root" /bin/sh -c 'apt-get install -y /tmp/shadowrealm-os-packages/*.deb' 
 rm -rf -- "$root/tmp/shadowrealm-os-packages"
 chroot "$root" flatpak remote-add --system --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo

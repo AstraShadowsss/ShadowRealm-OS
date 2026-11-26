@@ -11,12 +11,12 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-archive-keyring-') as td:
  def put(name,data,mode=0o644):
   f=root/name;f.parent.mkdir(parents=True,exist_ok=True)
   f.write_bytes(data.encode() if isinstance(data,str) else data);f.chmod(mode)
- put('DEBIAN/control','Package: shadowrealm-os-archive-keyring\nVersion: 2026.11-1\nArchitecture: all\nSection: admin\nPriority: optional\nMaintainer: ShadowRealm-OS Project <packages@shadowrealm-os.invalid>\nDepends: apt (>= 2.6), ca-certificates\nDescription: ShadowRealm-OS signed custom package repository and public key\n')
+ put('DEBIAN/control','Package: shadowrealm-os-archive-keyring\nVersion: 2026.11-2\nArchitecture: all\nSection: admin\nPriority: optional\nMaintainer: ShadowRealm-OS Project <packages@shadowrealm-os.invalid>\nDepends: apt (>= 2.6), ca-certificates\nDescription: ShadowRealm-OS signed custom package repository and public key\n')
  put('usr/share/keyrings/shadowrealm-os-archive-keyring.gpg',a.public_key.read_bytes())
  put('etc/apt/sources.list.d/shadowrealm-os.sources','Types: deb\nURIs: https://shadowrealm-os.sourceforge.io/apt\nSuites: trixie\nComponents: main\nArchitectures: amd64\nSigned-By: /usr/share/keyrings/shadowrealm-os-archive-keyring.gpg\n')
  games='shadow-pinball skull-invaders shadow-runner shadow-solitaire marble-reactor circuit-chase neon-ascent neon-breaker shadow-snake'
- put('etc/apt/preferences.d/shadowrealm-os','Package: shadowrealm-os-* '+games+'\nPin: release o=ShadowRealm-OS\nPin-Priority: 700\n\nPackage: *\nPin: release o=ShadowRealm-OS\nPin-Priority: -1\n')
+ put('etc/apt/preferences.d/shadowrealm-os','Package: shadowrealm-os-* '+games+'\nPin: release o=ShadowRealm-OS\nPin-Priority: 700\n\nPackage: gnome-keyring gnome-keyring-pkcs11 libpam-gnome-keyring\nPin: release o=ShadowRealm-OS\nPin-Priority: 500\n\nPackage: *\nPin: release o=ShadowRealm-OS\nPin-Priority: -1\n')
  put('DEBIAN/conffiles','/etc/apt/sources.list.d/shadowrealm-os.sources\n/etc/apt/preferences.d/shadowrealm-os\n')
  put('usr/share/doc/shadowrealm-os-archive-keyring/copyright',(source/'LICENSE').read_bytes())
  env=dict(os.environ);env.setdefault('SOURCE_DATE_EPOCH','1794096000')
- subprocess.run(['dpkg-deb','--root-owner-group','--build',str(root),str(a.output/'shadowrealm-os-archive-keyring_2026.11-1_all.deb')],check=True,env=env)
+ subprocess.run(['dpkg-deb','--root-owner-group','--build',str(root),str(a.output/'shadowrealm-os-archive-keyring_2026.11-2_all.deb')],check=True,env=env)

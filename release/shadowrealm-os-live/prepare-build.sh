@@ -19,7 +19,7 @@ for name in artwork desktop terminal panel security installer-settings experienc
  install -m644 "$deb" "$target/config/packages.chroot/"
 done
 install -m644 "$repo/outputs/shadowrealm-os-release_2026.11-4_all.deb" "$target/config/packages.chroot/"
-install -m644 "$repo/outputs/shadowrealm-os-archive-keyring_2026.11-1_all.deb" "$target/config/packages.chroot/"
+install -m644 "$repo/outputs/shadowrealm-os-archive-keyring_2026.11-2_all.deb" "$target/config/packages.chroot/"
 count=0
 for deb in "$repo"/outputs/*-1_all.deb; do
  case "$(basename "$deb")" in shadowrealm-os-*) continue;; esac
