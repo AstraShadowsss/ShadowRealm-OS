@@ -63,7 +63,7 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 
 ## Games
 
-The November 22 game updates add twelve Marble Reactor tracks, Circuit Chase direction controls and expanded Skull Invaders progression. Android 1.0.1 includes the updated touch controls, twelve Marble tracks and expanded Skull Invaders progression. Emulator input/rendering and rule tests passed; physical-phone coverage and longer playthroughs remain open.
+The November 22 game updates add twelve Marble Reactor tracks, Circuit Chase direction controls and expanded Skull Invaders progression. Android 1.0.1 includes the updated touch controls, twelve Marble tracks and expanded Skull Invaders progression. Emulator input/rendering and rule tests passed. Android game work is closed as of November 26, 2026 (user-confirmed); longer desktop playthroughs remain open.
 
 ## Next desktop refinements
 

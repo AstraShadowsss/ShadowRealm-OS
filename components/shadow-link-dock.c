@@ -12,12 +12,30 @@
 #include <dirent.h>
 #include <unistd.h>
 #include <signal.h>
+#include <fcntl.h>
+#include <sys/file.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 static double cpu,ram,swp,diskpct,history[40];
+
+/* One widget host per desktop session: autostart and a manual launch must not
+   stack two sets of widgets on screen. The lock lives in the runtime dir and
+   is released automatically when the host exits. */
+static int widgets_lock(void){
+ static int held=-1;
+ if(held>=0)return 0;
+ const char*runtime=g_getenv("XDG_RUNTIME_DIR");
+ gchar*path=g_strdup_printf("%s/shadow-link-widgets-%u.lock",runtime&&*runtime?runtime:"/tmp",(unsigned)getuid());
+ int fd=open(path,O_CREAT|O_RDWR|O_CLOEXEC,0600);
+ g_free(path);
+ if(fd<0)return 0;
+ if(flock(fd,LOCK_EX|LOCK_NB)!=0){close(fd);return -1;}
+ held=fd;
+ return 0;
+}
 static double ram_used_mib,ram_total_mib;
 static int professional_mode;
 static char plain_accent[7]="929ba5";
@@ -661,7 +679,7 @@ static void application_data_dirs(void){
  g_setenv("XDG_DATA_DIRS",value->str,TRUE);g_string_free(value,TRUE);g_hash_table_destroy(seen);g_strfreev(parts);g_free(all);
 }
 static void process_role(int argc,char**argv){const char *name=(argc==1||!strcmp(argv[1],"--widgets"))?"Shadow Widgets":"Shadow Link";const char*pairs[][2]={{"--menu","Shadow Menu"},{"--control-center","Control Center"},{"--calendar","ShadowCalendar"},{"--clock","Shadow Clock"},{"--calculator","ShadowCalc"},{"--image-viewer","Shadow Viewer"},{"--media","Shadow Media"},{"--widget-settings","WidgetSettings"}};if(argc>1)for(guint i=0;i<G_N_ELEMENTS(pairs);i++)if(!strcmp(argv[1],pairs[i][0])){name=pairs[i][1];break;}prctl(PR_SET_NAME,name,0,0,0);}
-int main(int argc,char**argv){process_role(argc,argv);application_data_dirs();self=argv[0];if(argc>1&&(!strcmp(argv[1],"--appearance")||!strcmp(argv[1],"--desktop-settings"))){char*p=g_build_filename(g_get_home_dir(),".local","share","shadow-link","bin","shadow-appearance",NULL);execl(p,p,!strcmp(argv[1],"--desktop-settings")?"--wallpapers":"--themes",NULL);perror("Appearance");return 1;}if(argc>1&&(!strcmp(argv[1],"--shield")||!strcmp(argv[1],"--network")||!strcmp(argv[1],"--bluetooth"))){char*p=g_build_filename(g_get_home_dir(),".local","share","shadow-link","bin","shadow-system-panels",NULL);execl("/usr/bin/python3","python3",p,argv[1],NULL);perror("Shadow settings");return 1;}if(argc>1&&!strcmp(argv[1],"--audio")){char*p=g_build_filename(g_get_home_dir(),".local","share","shadow-link","bin","shadow-audio-panel",NULL);execl("/usr/bin/python3","python3",p,NULL);perror("Shadow Audio");return 1;}if(argc>2&&!strcmp(argv[1],"--calculate")){double v;if(!calculate(argv[2],&v))return 2;printf("%.12g\n",v);return 0;}if(argc>1&&!strcmp(argv[1],"--fetch"))return fetch();if(argc>1&&!strcmp(argv[1],"--prepare-icons"))return prepare_icons();char*path=g_strdup_printf("%s/.local/share/shadow-link/bin:%s/.local/bin:%s",g_get_home_dir(),g_get_home_dir(),g_getenv("PATH")?g_getenv("PATH"):"/usr/bin:/bin");g_setenv("PATH",path,TRUE);g_free(path);appearance_read();gtk_init(&argc,&argv);brand=gdk_pixbuf_new_from_file_at_scale(basefile("logo.png"),24,24,TRUE,NULL);GtkCssProvider*css=gtk_css_provider_new();const char*home=g_get_home_dir();gchar *theme=NULL;g_object_get(gtk_settings_get_default(),"gtk-theme-name",&theme,NULL);char *p=g_build_filename(home,".themes",theme,"gtk-3.0","gtk.css",NULL);g_free(theme);if(g_file_test(p,G_FILE_TEST_IS_REGULAR))gtk_css_provider_load_from_path(css,p,NULL);g_free(p);gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),GTK_STYLE_PROVIDER(css),GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
+int main(int argc,char**argv){process_role(argc,argv);if((argc==1||!strcmp(argv[1],"--widgets"))&&widgets_lock()<0)return 0;application_data_dirs();self=argv[0];if(argc>1&&(!strcmp(argv[1],"--appearance")||!strcmp(argv[1],"--desktop-settings"))){char*p=g_build_filename(g_get_home_dir(),".local","share","shadow-link","bin","shadow-appearance",NULL);execl(p,p,!strcmp(argv[1],"--desktop-settings")?"--wallpapers":"--themes",NULL);perror("Appearance");return 1;}if(argc>1&&(!strcmp(argv[1],"--shield")||!strcmp(argv[1],"--network")||!strcmp(argv[1],"--bluetooth"))){char*p=g_build_filename(g_get_home_dir(),".local","share","shadow-link","bin","shadow-system-panels",NULL);execl("/usr/bin/python3","python3",p,argv[1],NULL);perror("Shadow settings");return 1;}if(argc>1&&!strcmp(argv[1],"--audio")){char*p=g_build_filename(g_get_home_dir(),".local","share","shadow-link","bin","shadow-audio-panel",NULL);execl("/usr/bin/python3","python3",p,NULL);perror("Shadow Audio");return 1;}if(argc>2&&!strcmp(argv[1],"--calculate")){double v;if(!calculate(argv[2],&v))return 2;printf("%.12g\n",v);return 0;}if(argc>1&&!strcmp(argv[1],"--fetch"))return fetch();if(argc>1&&!strcmp(argv[1],"--prepare-icons"))return prepare_icons();char*path=g_strdup_printf("%s/.local/share/shadow-link/bin:%s/.local/bin:%s",g_get_home_dir(),g_get_home_dir(),g_getenv("PATH")?g_getenv("PATH"):"/usr/bin:/bin");g_setenv("PATH",path,TRUE);g_free(path);appearance_read();gtk_init(&argc,&argv);brand=gdk_pixbuf_new_from_file_at_scale(basefile("logo.png"),24,24,TRUE,NULL);GtkCssProvider*css=gtk_css_provider_new();const char*home=g_get_home_dir();gchar *theme=NULL;g_object_get(gtk_settings_get_default(),"gtk-theme-name",&theme,NULL);char *p=g_build_filename(home,".themes",theme,"gtk-3.0","gtk.css",NULL);g_free(theme);if(g_file_test(p,G_FILE_TEST_IS_REGULAR))gtk_css_provider_load_from_path(css,p,NULL);g_free(p);gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),GTK_STYLE_PROVIDER(css),GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
  GtkCssProvider *accent_css=gtk_css_provider_new();
  gtk_css_provider_load_from_data(accent_css,
   ".shadow-app-heading, .shadow-clock-time { color: @theme_selected_bg_color; }"

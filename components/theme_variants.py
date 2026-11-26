@@ -311,6 +311,12 @@ def build_variants(root, source, include_icons=True):
     menuitem:hover, selection, *:selected {{ background: mix({palette['background']}, {palette['accent']}, 0.25); color: {palette['foreground']}; border-color: {palette['secondary']}; box-shadow: inset 0 -2px {palette['accent']}; }}
     check, radio {{ background: {palette['background']}; border: 1px solid {palette['accent']}; color: {palette['foreground']}; }}
     check:checked, radio:checked {{ background: {palette['accent']}; color: {palette['background']}; }}
+    window label, dialog label, headerbar label, button label,
+    menuitem label, .dim-label, textview text, treeview.view {{ color: {palette['foreground']}; }}
+    @define-color theme_unfocused_fg_color {palette['foreground']};
+    @define-color theme_unfocused_text_color {palette['foreground']};
+    @define-color wm_title {palette['foreground']};
+    @define-color wm_unfocused_title {palette['foreground']};
     '''
             for toolkit in ('gtk-3.0', 'gtk-4.0'):
                 css = theme / toolkit / 'gtk.css'

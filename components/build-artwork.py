@@ -1,14 +1,31 @@
 #!/usr/bin/python3
 """Build editable theme, logo, wallpaper and boot/login assets."""
 from pathlib import Path
-import argparse, subprocess, tempfile, os
+import argparse, shutil, subprocess, tempfile, os
 p=argparse.ArgumentParser();p.add_argument('source',type=Path);p.add_argument('output',type=Path);a=p.parse_args();a.output.mkdir(parents=True,exist_ok=True)
 version_file=a.source/'ARTWORK_VERSION'
 version=(version_file if version_file.is_file() else a.source/'ASSET_VERSION').read_text().strip()
 def write(root,name,text,mode=0o644):
  f=root/name;f.parent.mkdir(parents=True,exist_ok=True);f.write_text(text);f.chmod(mode)
 with tempfile.TemporaryDirectory(prefix='shadowrealm-os-artwork-',dir=os.environ.get('TMPDIR','/var/tmp')) as tmp:
- root=Path(tmp);subprocess.run(['tar','-xzf',str(a.source/'shadowrealm-os-artwork-source.tar.gz'),'-C',str(root)],check=True)
+ root=Path(tmp)
+ # The artwork source is split only to stay under the hosting file limit; the
+ # pieces are one gzip stream and must be read in order.
+ parts=sorted(a.source.glob('shadowrealm-os-artwork-source.tar.gz.part-*'))
+ if parts:
+  process=subprocess.Popen(['tar','-xzf','-','-C',str(root)],stdin=subprocess.PIPE)
+  for part in parts:
+   with part.open('rb') as handle:
+    shutil.copyfileobj(handle,process.stdin)
+  process.stdin.close()
+  if process.wait():
+   raise SystemExit('Artwork source parts could not be extracted.')
+ else:
+  subprocess.run(['tar','-xzf',str(a.source/'shadowrealm-os-artwork-source.tar.gz'),'-C',str(root)],check=True)
+ large_icon_sets=sorted(root.glob('usr/share/icons/*/256x256'))
+ if len(large_icon_sets)<12:
+  raise SystemExit('Artwork source is incomplete: only '+str(len(large_icon_sets))+
+   ' large icon sets found. Restore the split artwork source parts before building.')
  professional=root/'usr/share/themes/ShadowRealm-OS-Professional/gtk-3.0/gtk.css'
  professional.write_bytes((a.source/'professional-gtk.css').read_bytes())
  # Shared walking wallpapers contain the approved SR insert, never the retired S.
