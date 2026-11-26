@@ -51,7 +51,7 @@ It verifies existing package bytes before reusing a filename, uploads immutable 
 
 ## Expiry and key maintenance
 
-**Metadata currently expires on 9 December 2026.** Sign and publish refreshed metadata before expiry, even if no package versions changed. Check the `Valid-Until` field in `InRelease` for the current deadline. The builder defaults to 14 days and the production repository uses 90 days.
+**The published metadata expires on 9 December 2026.** It was signed on 25 November 2026 with the 14-day builder default rather than the 90-day production setting. Re-sign and publish before that date, even if no package versions changed, and confirm `Valid-Until` in `InRelease` after every publication. Installed systems reject expired metadata and stop receiving updates until the feed is refreshed.
 
 The signing key expires in November 2028 and needs renewal or a documented rotation before then. Maintain protected offline recovery material. Private signing storage must stay outside GitHub, SourceForge and all project/source/release bundles.
 

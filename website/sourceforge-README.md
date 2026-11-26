@@ -6,7 +6,8 @@ A Debian 13 and Xfce desktop with coordinated themes, integrated controls and a 
 
 [Download the ISO](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/ShadowRealm-OS-2026.11-beta1-r4-amd64.iso/download) · [Checksums & licenses](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/) · [Custom source & source-download guide](https://sourceforge.net/projects/shadowrealm-os/files/2026.11-beta1/Sources/) · [Third-party sources (GitHub)](https://github.com/AstraShadowsss/ShadowRealm-OS/releases/tag/2026.11-beta1-r2) · [Project website](https://shadowrealm-os.sourceforge.io/) · [Source and documentation](https://github.com/AstraShadowsss/ShadowRealm-OS)
 
-- Eight coordinated styles, independent wallpapers and an editable dock.
+- Twelve coordinated palettes, independent wallpapers and an editable dock.
+- Shadow Icon Studio for creating, previewing and exporting application icons in every palette.
 - Four local desktop panels for resources, interface traffic, processes and security-service status.
 - Appearance, accounts, network, audio, Bluetooth and software controls.
 - Signed custom component/game updates alongside Debian and configured vendor repositories.
