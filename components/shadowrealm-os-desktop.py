@@ -136,10 +136,19 @@ def _provision_unlocked(home, payload=PAYLOAD, system_share=Path("/usr/share")):
     # Existing custom regular files are deliberately left for explicit migration.
     programs = base / "bin"
     programs.mkdir(parents=True, exist_ok=True)
+    # An older runtime wrote a split "shadow-link" wrapper and menu binaries
+    # here as regular files.  They shadow the package launcher, so replace that
+    # known runtime file when upgrading; unrelated custom files stay untouched.
+    legacy_launchers = {"shadow-link"}
     for source in (payload / "runtime/bin").iterdir():
         target = programs / source.name
-        if source.is_file() and not os.path.lexists(target):
-            target.symlink_to(source)
+        if not source.is_file():
+            continue
+        if os.path.lexists(target):
+            if not (source.name in legacy_launchers and target.is_file() and not target.is_symlink()):
+                continue
+            target.unlink()
+        target.symlink_to(source)
     # Package-owned assets have a separate version from user settings. Refresh
     # only shipped filenames; never replace unrelated user wallpapers or icons.
     asset_marker = home / ".local/state/shadowrealm-os/icon-catalog-v5"
