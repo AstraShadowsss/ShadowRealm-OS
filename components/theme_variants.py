@@ -18,8 +18,39 @@ def render_svg(svg):
     data = svg.encode()
     key = hashlib.sha256(data).digest()
     if key not in _rendered:
-        _rendered[key] = subprocess.run(['rsvg-convert'], input=data, capture_output=True, check=True).stdout
+        result = subprocess.run(['rsvg-convert'], input=data, capture_output=True)
+        if result.returncode:
+            raise RuntimeError('rsvg-convert failed: ' + result.stderr.decode('utf-8', 'replace').strip())
+        _rendered[key] = result.stdout
     return _rendered[key]
+
+
+def embedded_image(source, limit=3_000_000):
+    """Return (mime, base64) for an SVG image href that librsvg can parse.
+
+    librsvg 2.60 aborts with "premature end of data" once a single inline
+    payload grows past a few megabytes, which a 1920x1080 PNG easily does.
+    Re-encode opaque artwork and fall back to JPEG for anything oversized.
+    """
+    import io
+    from PIL import Image
+    with Image.open(source) as image:
+        frame = image.convert('RGBA')
+        opaque = frame.getchannel('A').getextrema() == (255, 255)
+    if opaque:
+        frame = frame.convert('RGB')
+    buffer = io.BytesIO()
+    frame.save(buffer, 'PNG', optimize=True)
+    png = buffer.getvalue()
+    if len(png) * 4 // 3 <= limit:
+        return 'image/png', base64.b64encode(png).decode()
+    if not opaque:
+        backdrop = Image.new('RGB', frame.size, (0, 0, 0))
+        backdrop.paste(frame, mask=frame.getchannel('A'))
+        frame = backdrop
+    buffer = io.BytesIO()
+    frame.save(buffer, 'JPEG', quality=95, optimize=True)
+    return 'image/jpeg', base64.b64encode(buffer.getvalue()).decode()
 
 
 def professional_folder_svg(source, palette):
@@ -68,8 +99,8 @@ def render_png(source, target, palette):
     c = [int(palette['accent'][i:i + 2], 16) / 255 for i in (1, 3, 5)]
     m = [int(palette['secondary'][i:i + 2], 16) / 255 for i in (1, 3, 5)]
     matrix = ' '.join(' '.join(map(str, [1-c[i], 1-m[i], c[i]+m[i]-1, 0, 0])) for i in range(3)) + ' 0 0 0 1 0'
-    encoded = base64.b64encode(source.read_bytes()).decode()
-    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><defs><filter id="palette" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter></defs><image width="{width}" height="{height}" filter="url(#palette)" href="data:image/png;base64,{encoded}"/></svg>'
+    mime, encoded = embedded_image(source)
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><defs><filter id="palette" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter></defs><image width="{width}" height="{height}" filter="url(#palette)" href="data:{mime};base64,{encoded}"/></svg>'
     target.write_bytes(render_svg(svg))
 
 
@@ -84,15 +115,15 @@ def render_wallpaper(source, target, palette):
         from PIL import Image
         with Image.open(source) as image:
             width, height = image.size
-        data = base64.b64encode(source.read_bytes()).decode()
+        mime, data = embedded_image(source)
         svg = f'''<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">
 <defs><filter id="silver"><feColorMatrix type="saturate" values="0"/></filter>
 <filter id="gold" color-interpolation-filters="sRGB"><feColorMatrix type="saturate" values="0"/><feComponentTransfer>
 <feFuncR type="table" tableValues="0 .20 .65 .95 1"/><feFuncG type="table" tableValues="0 .16 .48 .82 1"/><feFuncB type="table" tableValues="0 .05 .12 .40 1"/>
 </feComponentTransfer></filter><linearGradient id="fade"><stop offset=".15" stop-color="black"/><stop offset=".85" stop-color="white"/></linearGradient>
 <mask id="blend"><rect width="100%" height="100%" fill="url(#fade)"/></mask></defs>
-<image width="{width}" height="{height}" href="data:image/png;base64,{data}" filter="url(#gold)"/>
-<g mask="url(#blend)"><image width="{width}" height="{height}" href="data:image/png;base64,{data}" filter="url(#silver)"/></g></svg>'''
+<image width="{width}" height="{height}" href="data:{mime};base64,{data}" filter="url(#gold)"/>
+<g mask="url(#blend)"><image width="{width}" height="{height}" href="data:{mime};base64,{data}" filter="url(#silver)"/></g></svg>'''
         target.write_bytes(render_svg(svg))
         return
     if not palette.get('wallpaper_light'):
@@ -108,8 +139,8 @@ def render_wallpaper(source, target, palette):
     matrix = ' '.join(' '.join(map(str, [ink[i]-primary[i], ink[i]-secondary[i],
                          primary[i]+secondary[i]-ink[i]-background[i], 0, background[i]]))
                       for i in range(3)) + ' 0 0 0 1 0'
-    encoded = base64.b64encode(source.read_bytes()).decode()
-    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><defs><filter id="light" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter></defs><image width="{width}" height="{height}" href="data:image/png;base64,{encoded}" filter="url(#light)"/></svg>'
+    mime, encoded = embedded_image(source)
+    svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><defs><filter id="light" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter></defs><image width="{width}" height="{height}" href="data:{mime};base64,{encoded}" filter="url(#light)"/></svg>'
     target.write_bytes(render_svg(svg))
 
 
@@ -325,7 +356,17 @@ def build_variants(root, source, include_icons=True):
             member = next(m for m in archive if m.name.endswith('/appearance-modes.json'))
             modes = json.loads(archive.extractfile(member).read())
         for mode, palette in palettes.items():
-            modes[mode] = dict(palette, wallpaper_palette=palette['family'])
+            # Merge into the shipped record instead of replacing it: the shipped
+            # entry carries theme, icon, window-manager, widget and wallpaper
+            # fields that the artwork build still needs.
+            template = modes.get(mode) or modes.get(palette.get('source_mode', 'neon')) or {}
+            entry = dict(template)
+            entry.update(palette, wallpaper_palette=palette['family'])
+            name = palette.get('theme_name', 'ShadowRealm-OS-' + palette['family'])
+            entry.setdefault('theme', name)
+            entry.setdefault('icons', name)
+            entry.setdefault('wm', name)
+            modes[mode] = entry
     modes['professional'].update(accent_label='Emerald', widget_background='#172521',
                                  widget_foreground='#edf3ef', widget_accent='#9ec6b7',
                                  widget_secondary='#b8d6c9', wallpaper='Professional-Satin-Bloom.png')
