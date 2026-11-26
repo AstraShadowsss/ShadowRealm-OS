@@ -2,6 +2,7 @@
 
 ## In development for r5 (2026-11-26)
 
+- Control Center and the settings windows take their header mark from the active icon theme instead of the fixed Neon logo; unbranded Professional keeps its neutral symbol.
 - Shadow Widgets settings: Weather is now an ordinary row with the same enable checkbox as the other widgets, and its location/units dialog is labelled. Each widget's background control is now a Theme checkbox plus a 0–100 percentage with working −/+ buttons; the previous single spin button could not step below its minimum and made the percentage look broken.
 - Terminal: add native tabs with a + button in the tab strip, `Ctrl+Shift+T` to open a tab, `Ctrl+Shift+W` or the tab's × to close one, `Ctrl+Tab`/`Ctrl+Shift+Tab` to switch, and per-tab child-process cleanup. Each tab has its own shell, history and scroll position.
 - Professional icon artwork uses light plates in the Icon Studio as well as the themes, so previews, applied icons and exports match the light Professional desktops. The base Professional accent remains `#326d59`; only the plate and per-family accents change.
