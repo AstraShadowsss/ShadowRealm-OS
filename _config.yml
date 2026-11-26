@@ -1,8 +1,3 @@
-# Published website configuration.
-#
-# The project folder named below is not ready for release. Keeping it out of
-# the build stops Jekyll turning its README into a public page and stops the
-# raw notes being copied into the published site. The source stays in the
-# repository and is unaffected.
+# Not published yet.
 exclude:
   - messenger
