@@ -320,7 +320,61 @@ static gboolean menu_focus_in(GtkWidget*w,GdkEventFocus*e,gpointer p){
  return FALSE;
 }
 
-static void launch(GtkButton*b,gpointer p){if(menu_interacting)return;App*a=p;GError*err=NULL;if(a->info)g_app_info_launch(a->info,NULL,NULL,&err);else g_spawn_command_line_async(a->command,&err);if(err){GtkWidget*m=gtk_message_dialog_new(NULL,0,GTK_MESSAGE_ERROR,GTK_BUTTONS_CLOSE,"%s",err->message);gtk_dialog_run(GTK_DIALOG(m));gtk_widget_destroy(m);g_error_free(err);}else menu_close(NULL,NULL);}
+static void launch_done(GObject *source, GAsyncResult *result, gpointer data)
+{
+    GApplication *app = data;
+    GError *err = NULL;
+    gboolean ok = g_app_info_launch_uris_finish(
+        G_APP_INFO(source), result, &err);
+
+    menu_interacting = FALSE;
+
+    if (ok) {
+        if (menu_window)
+            menu_close(NULL, NULL);
+    } else {
+        GtkWidget *m = gtk_message_dialog_new(
+            NULL, 0, GTK_MESSAGE_ERROR, GTK_BUTTONS_CLOSE,
+            "%s", err ? err->message : "Application launch failed");
+        gtk_dialog_run(GTK_DIALOG(m));
+        gtk_widget_destroy(m);
+    }
+
+    g_clear_error(&err);
+
+    if (app) {
+        g_application_release(app);
+        g_object_unref(app);
+    }
+}
+
+static void launch(GtkButton*b,gpointer p){if(menu_interacting)return;App*a=p;GError*err=NULL;
+if (a->info) {
+    GApplication *app = G_APPLICATION(
+        gtk_window_get_application(GTK_WINDOW(menu_window)));
+
+    if (app) {
+        g_object_ref(app);
+        g_application_hold(app);
+    }
+
+    GdkAppLaunchContext *ctx =
+        gdk_display_get_app_launch_context(
+            gtk_widget_get_display(GTK_WIDGET(b)));
+
+    gdk_app_launch_context_set_timestamp(
+        ctx, gtk_get_current_event_time());
+
+    menu_interacting = TRUE;
+
+    g_app_info_launch_uris_async(
+        a->info, NULL, G_APP_LAUNCH_CONTEXT(ctx),
+        NULL, launch_done, app);
+
+    g_object_unref(ctx);
+    return;
+}
+else g_spawn_command_line_async(a->command,&err);if(err){GtkWidget*m=gtk_message_dialog_new(NULL,0,GTK_MESSAGE_ERROR,GTK_BUTTONS_CLOSE,"%s",err->message);gtk_dialog_run(GTK_DIALOG(m));gtk_widget_destroy(m);g_error_free(err);}else menu_close(NULL,NULL);}
 /* Icon mapping for the built-in Shadow Link shortcuts. System .desktop
  * applications use their own GIcon rather than category guesses. */
 static GtkWidget*shadow_menu_icon(App*a){
