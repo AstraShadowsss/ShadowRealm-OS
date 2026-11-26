@@ -8,7 +8,7 @@ A Debian 13 desktop with its own look, built around Xfce and a set of small, int
 
 ![ShadowRealm-OS desktop](screenshots/desktop.png?v=20261123b)
 
-ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal and a package manager. Its custom panel, dock, widgets and Control Center bring the everyday controls together. Eight coordinated styles range from Neon and Hacker to White, Silver & Gold and a quieter Professional theme. Wallpapers can be changed separately.
+ShadowRealm-OS keeps the familiar Linux desktop: applications, files, a terminal and a package manager. Its custom panel, dock, widgets and Control Center bring the everyday controls together. Twelve coordinated palettes, eight branded styles and four Professional accents, range from Neon and Hacker to White, Silver & Gold and a quieter Professional theme. Wallpapers can be changed separately.
 
 > **Website updates in progress:** We are reorganizing the project pages and refreshing screenshots. Screenshots show the current desktop updates. The current beta download is unchanged.
 
@@ -29,6 +29,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 - Custom application menu with categories, favorites and adjustable sizing; editable dock and desktop shortcuts.
 - Coordinated GTK, window, icon, terminal, login and boot artwork using the SR identity.
+- Shadow Icon Studio for importing, previewing and exporting application icons in all twelve palettes, with batch export, custom logo packs and a built-in guide.
 - Control Center for appearance, accounts, network, audio, Bluetooth and system tools. Hardware controls depend on the available device and driver.
 - Debian APT packages, the signed LibreWolf repository, and Flatpak support.
 - LibreWolf, Thunderbird, LibreOffice, VLC, Thunar, Mousepad and other desktop applications. See the release package inventory for exact versions.
@@ -37,7 +38,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 - Customizable login backgrounds, optional original session chimes and three screensaver animations with standard XFCE locking.
 - Nine offline games, including Shadow Pinball, Skull Invaders, Shadow Runner, Circuit Chase, Snake, Shadow Spider Solitaire, Neon Ascent, Neon Breaker and Marble Reactor. Scores and settings stay local.
 
-**Desktop 0.2.17, artwork 0.2.5 and Terminal 0.2.3** add independent icon/dock selection in Appearance, consistent dock families, corrected panel symbols, and improved widget and Terminal controls. Weather, Local Search and the DNSCrypt transition fix are included in the signed update stream. Install updates through Software & Updates. [Release notes](CHANGELOG.md)
+**Desktop 0.2.19+window1.icon1.clean3+refresh1+launch1 and artwork 0.2.6+window1.icon1.clean3** add coordinated window borders, the redesigned application icon family and Shadow Icon Studio, and correct application launch from the menu. Weather, Local Search and the DNSCrypt transition fix remain in the signed update stream. Install updates through Software & Updates. [Release notes](CHANGELOG.md)
 
 ## Screenshots
 

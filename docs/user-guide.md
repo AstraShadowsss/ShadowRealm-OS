@@ -12,7 +12,9 @@ Open **Shadow Control Center** to browse settings by section. Press **Ctrl+F** t
 
 ## Appearance
 
-Use Control Center → Appearance → Themes and wallpapers to choose a coordinated style: Neon, Hacker, Red & Black, Woodland, White, Silver & Gold, Black & Blue, Black & White or Professional. Wallpaper selection is separate, so changing a picture does not silently change the whole style. Terminal, widget and menu background transparency controls affect supported backgrounds; application text and controls remain readable. Some third-party applications draw their own interface and may not follow every GTK setting.
+Use Control Center → Appearance → Themes and wallpapers to choose one of twelve coordinated palettes: Neon, Black & Blue, Red & Black, Purple & Black, Hacker, Woodland, White, Silver & Gold, Black & White, or Professional with Emerald, Ocean, Graphite or Plum accents. Wallpaper selection is separate, so changing a picture does not silently change the whole style. Terminal, widget and menu background transparency controls affect supported backgrounds; application text and controls remain readable. Some third-party applications draw their own interface and may not follow every GTK setting.
+
+Appearance → Icons & Dock also opens Shadow Icon Studio, which imports, previews and exports application icons in all twelve palettes. See [Shadow Icon Studio](icon-studio.md).
 
 ## Applications and updates
 

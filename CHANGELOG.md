@@ -1,5 +1,29 @@
 # Release notes
 
+## Desktop 0.2.19+window1.icon1.clean3+refresh1+launch1 (2026-11-25)
+
+- Activate applications asynchronously from the menu with a native launch context, so an application that starts through D-Bus presents its main window instead of a hidden one.
+- Keep the menu alive until the launch finishes, and report a launch failure inside the menu rather than closing it.
+- Apply coordinated window borders and GTK interaction styling across all twelve palettes. Vendor application icons stay native.
+- Replace superseded factory icon artwork through a versioned migration. Unchanged factory files are updated; modified files, custom logos, launchers and wallpapers are preserved.
+- Refresh the panel after a theme change so updated glyphs and styles appear without restarting the session.
+
+## Shadow Icon Studio (2026-11-25)
+
+- Add Shadow Icon Studio under Appearance → Icons & Dock.
+- Import PNG, JPEG, SVG or WebP artwork, or load the artwork already installed for an application.
+- Preview all twelve palettes, then apply the result to the menu, desktop and dock.
+- Export SVG and the eight standard PNG sizes, batch export up to 100 source files, and export or import custom logo packs.
+- Keep named personal icons separate from installed application overrides, and restore overrides individually or all at once.
+- Include a built-in user guide. Local creation needs no network connection and no root access.
+- Ship a 3,483-entry application catalog as identifiers and aliases only. Icon artwork is read from the applications already installed on the machine; no third-party logos are redistributed with the package.
+
+## GNOME Keyring and repository policy (2026-11-25)
+
+- Backport Debian's login-collection D-Bus registration correction as gnome-keyring, gnome-keyring-pkcs11 and libpam-gnome-keyring 48.0-1+shadowrealm1.
+- Publish shadowrealm-os-archive-keyring 2026.11-2, which authorises the three keyring packages at priority 500 while keeping the restriction that stops the custom repository replacing unrelated Debian packages.
+- Existing installations may need two update cycles: the policy package first, then the keyring packages. Sign out and back in, or restart, after the keyring update.
+
 ## In development — dock shelf
 
 - Add an optional full-width dock shelf with centered launchers and a compact-layout switch.

@@ -8,12 +8,14 @@ It supplies ShadowRealm-OS desktop components and games. Debian/vendor repositor
 
 ## Earlier Beta 1 installations
 
-The original image can be connected without reinstalling. Download `shadowrealm-os-archive-keyring_2026.11-1_all.deb` from the Beta 1 release folder, verify it against that folder's SHA256SUMS, then install it:
+The original image can be connected without reinstalling. Download `shadowrealm-os-archive-keyring_2026.11-2_all.deb` from the Beta 1 release folder, verify it against that folder's SHA256SUMS, then install it:
 
 ```sh
-sudo apt install ./shadowrealm-os-archive-keyring_2026.11-1_all.deb
+sudo apt install ./shadowrealm-os-archive-keyring_2026.11-2_all.deb
 sudo apt update
 ```
+
+An installation that already has the repository enabled receives this setup package through a normal refresh and upgrade. The `2026.11-2` policy authorises `gnome-keyring`, `gnome-keyring-pkcs11` and `libpam-gnome-keyring` at priority 500 alongside the ShadowRealm-OS packages at 700. Two update cycles may be needed: the policy package first, then the keyring packages. Sign out and back in, or restart, after the keyring update.
 
 This installs the public key, a repository-specific Signed-By entry and package pinning that excludes unrelated packages. Review offered updates through Software & Updates or APT.
 
@@ -49,7 +51,7 @@ It verifies existing package bytes before reusing a filename, uploads immutable 
 
 ## Expiry and key maintenance
 
-**Current metadata expires on 14 February 2027.** Sign and publish refreshed metadata before expiry, even if no package versions changed. Check the `Valid-Until` field in `InRelease` for the current deadline. The builder defaults to 14 days and the production repository uses 90 days.
+**Metadata currently expires on 9 December 2026.** Sign and publish refreshed metadata before expiry, even if no package versions changed. Check the `Valid-Until` field in `InRelease` for the current deadline. The builder defaults to 14 days and the production repository uses 90 days.
 
 The signing key expires in November 2028 and needs renewal or a documented rotation before then. Maintain protected offline recovery material. Private signing storage must stay outside GitHub, SourceForge and all project/source/release bundles.
 
@@ -58,6 +60,7 @@ The signing key expires in November 2028 and needs renewal or a documented rotat
 - Disposable-key local repository: signature verification and isolated APT update succeeded.
 - SourceForge HTTPS: APT fetched signed metadata and downloaded a package successfully.
 - A real setup-package upgrade from 2026.11-0 to 2026.11-1 succeeded over signed HTTPS while preserving the existing transparency settings.
+- A setup-package upgrade from 2026.11-1 to 2026.11-2 installed from the public repository and selected the authorised GNOME Keyring candidates.
 - APT rejected unsigned, signature-altered and expired metadata, and a modified package download.
 - Repository-specific package pinning exposed the custom package candidates without replacing Debian's bash package.
 
