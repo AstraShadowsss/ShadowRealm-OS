@@ -1,5 +1,9 @@
 # Release notes
 
+## Desktop runtime fix (2026-11-26)
+
+- Replace the legacy split `shadow-link` wrapper left in the user runtime directory by older installs. Provisioning skipped existing files, so upgrades could keep launching the stale menu binary instead of the packaged one. Only that known runtime filename is replaced; unrelated custom files are preserved.
+
 ## Desktop 0.2.19+window1.icon1.clean3+refresh1+launch1 (2026-11-25)
 
 - Activate applications asynchronously from the menu with a native launch context, so an application that starts through D-Bus presents its main window instead of a hidden one.
