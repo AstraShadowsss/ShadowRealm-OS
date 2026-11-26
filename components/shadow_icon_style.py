@@ -107,6 +107,8 @@ def repair_dock_family(mode, base):
                          p.stem in (name,'shadowrealm-os-release-'+name,'shadowrealm-os-app-'+name)
                          and p.suffix in ('.png','.svg'))
         for path in paths:
+            # Packaged per-palette artwork wins; only restore genuinely missing files.
+            if path.exists():continue
             path.parent.mkdir(parents=True,exist_ok=True)
             match=re.search(r'/(\d+)x\d+/',path.as_posix());size=int(match[1]) if match else 64
             data=re.sub(r'width="64" height="64"',f'width="{size}" height="{size}"',text,count=1).encode()

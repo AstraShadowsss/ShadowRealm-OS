@@ -404,19 +404,22 @@ else g_spawn_command_line_async(a->command,&err);if(err){GtkWidget*m=gtk_message
  * applications use their own GIcon rather than category guesses. */
 static GtkWidget*shadow_menu_icon(App*a){
  int pixels=24*menu_scale_percent()/100;
- const char *id=a->info?g_app_info_get_id(a->info):NULL;
- gboolean owned=id&&(g_str_has_prefix(id,"org.shadowrealm_os.")||!strcmp(id,"shadowrealm-os-experience.desktop"));
- /* Project apps use the same palette role artwork as the dock. Vendor apps
-  * resolve their native icons without legacy generic aliases from our packs. */
- if(a->info&&(!owned||professional_mode==1)){
+ /* Resolve installed applications through the active icon theme so the menu
+  * uses the same light artwork as the dock. Looking these up in Adwaita left
+  * Shadow apps with blank rows and vendor apps with black fallback glyphs. */
+ if(a->info){
   GIcon *gicon=g_app_info_get_icon(a->info);
   if(gicon){
-   GtkIconTheme *native=gtk_icon_theme_new();
-   gtk_icon_theme_set_custom_theme(native,"Adwaita");
-   GtkIconInfo *info=gtk_icon_theme_lookup_by_gicon(native,gicon,MAX(48,pixels),GTK_ICON_LOOKUP_FORCE_SIZE);
+   const gchar * const *names=G_IS_THEMED_ICON(gicon)?g_themed_icon_get_names(G_THEMED_ICON(gicon)):NULL;
+   for(int i=0;names&&names[i];i++){
+    char *art=g_strdup_printf("%s/.local/share/shadow-link/icons/current/%s.png",g_get_home_dir(),names[i]);
+    GdkPixbuf *artpix=gdk_pixbuf_new_from_file_at_scale(art,pixels,pixels,TRUE,NULL);
+    g_free(art);
+    if(artpix){GtkWidget*img=gtk_image_new_from_pixbuf(artpix);g_object_unref(artpix);return img;}
+   }
+   GtkIconInfo *info=gtk_icon_theme_lookup_by_gicon(gtk_icon_theme_get_default(),gicon,MAX(48,pixels),GTK_ICON_LOOKUP_FORCE_SIZE);
    GdkPixbuf *source=info?gtk_icon_info_load_icon(info,NULL):NULL;
    if(info)g_object_unref(info);
-   g_object_unref(native);
    if(source){
     GdkPixbuf *scaled=gdk_pixbuf_scale_simple(source,pixels,pixels,GDK_INTERP_BILINEAR);
     GtkWidget *img=gtk_image_new_from_pixbuf(scaled);
