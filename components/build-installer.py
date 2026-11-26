@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Package the ShadowRealm-OS live installer using Debian's maintained Calamares modules."""
-import argparse, shutil, subprocess, tarfile, tempfile
+import argparse, re, shutil, subprocess, tarfile, tempfile
 from pathlib import Path
 
 p = argparse.ArgumentParser()
@@ -38,7 +38,15 @@ with tempfile.TemporaryDirectory() as tmp:
     text += '\nhide-back-and-next-during-exec: true\n'
     settings.write_text(text)
     welcome = cfg/'modules/welcome.conf'
-    welcome.write_text(welcome.read_text().replace('true', 'false').replace('requiredStorage:    15', 'requiredStorage:    20').replace('requiredRam:        1.0', 'requiredRam:        2.0'))
+    # Only the three upstream link toggles are ours to turn off. A blanket
+    # true-to-false rewrite would also disable requirement checks if a future
+    # Calamares release adds one, so name each setting explicitly.
+    welcome_text = welcome.read_text()
+    for flag in ('showSupportUrl', 'showKnownIssuesUrl', 'showReleaseNotesUrl'):
+        welcome_text = re.sub(rf'(?m)^({flag}:\s*)true\s*$', r'\1false', welcome_text)
+    welcome_text = welcome_text.replace('requiredStorage:    15', 'requiredStorage:    20')
+    welcome_text = welcome_text.replace('requiredRam:        1.0', 'requiredRam:        2.0')
+    welcome.write_text(welcome_text)
     with welcome.open('a') as file:
         file.write('\ninternetCheckUrl: "https://deb.debian.org/debian/"\n')
     put(root, 'etc/shadowrealm-os/calamares/modules/locale.conf', '''---
@@ -140,6 +148,18 @@ QPushButton:disabled { color: #77717e; border-color: #37313d; }
 QCheckBox, QRadioButton { spacing: 8px; }
 QCheckBox::indicator { width: 18px; height: 18px; border: 1px solid #00dce9; background: #15151e; }
 QCheckBox::indicator:checked { background: #bd00cd; border: 2px solid #00dce9; }
+QRadioButton::indicator { width: 18px; height: 18px; border: 1px solid #00dce9; border-radius: 9px; background: #15151e; }
+QRadioButton::indicator:checked { background: #bd00cd; border: 2px solid #00dce9; }
+QCheckBox::indicator:disabled, QRadioButton::indicator:disabled { border-color: #37313d; background: #101017; }
+QCheckBox:disabled, QRadioButton:disabled, QLabel:disabled { color: #77717e; }
+QLineEdit:focus, QComboBox:focus, QAbstractItemView:focus { border: 1px solid #00dce9; }
+QLineEdit:disabled, QComboBox:disabled { color: #77717e; background: #101017; border-color: #37313d; }
+QGroupBox { border: 1px solid #595064; border-radius: 4px; margin-top: 10px; padding-top: 8px; }
+QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 4px; color: #00dce9; }
+QScrollBar:vertical { background: #101017; width: 12px; }
+QScrollBar::handle:vertical { background: #595064; min-height: 24px; border-radius: 6px; }
+QScrollBar::handle:vertical:hover { background: #00aab5; }
+QScrollBar::add-line, QScrollBar::sub-line { height: 0; width: 0; }
 QProgressBar { border: 1px solid #595064; background: #15151e; color: #f2eff8; text-align: center; }
 QProgressBar::chunk { background: #00aab5; }
 PartitionLabelsView, PartitionLabelsView QWidget { background-color: #eeeeee; color: #111111; }
@@ -227,7 +247,8 @@ if [ ! -f /run/live/medium/live/filesystem.squashfs ]; then
  echo 'Start the ShadowRealm-OS installer from the live USB or ISO.' >&2
  exit 1
 fi
-exec 9>"${XDG_RUNTIME_DIR:?}/shadowrealm-os-installer.lock"
+runtime_dir=${XDG_RUNTIME_DIR:-/tmp}
+exec 9>"$runtime_dir/shadowrealm-os-installer.lock"
 flock -n 9 || exit 0
 restore() {
  xhost -si:localuser:root >/dev/null 2>&1 || true

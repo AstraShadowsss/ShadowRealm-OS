@@ -1,5 +1,13 @@
 # Release notes
 
+## In development for r5 (2026-11-26)
+
+- Raise the desktop package to 0.2.20 so a rebuilt image supersedes the published `0.2.19+…+launch1` package instead of being ignored as older. Artwork stays at 0.2.6: the committed artwork source cannot yet reproduce the published package (see the artwork note below).
+- Artwork source gap: the committed `shadowrealm-os-artwork-source.tar.gz` has 18,202 entries and no 128x128 or 256x256 icon sizes, while the published package has 62,909 files including both sizes and the circuit-corridor backgrounds. A rebuild from the repository therefore produces a reduced package, so the published artwork package must be reused until the missing icon source is recovered or generated.
+- Encode the artwork that is embedded in generated wallpapers before rendering it. Full-size wallpapers were embedded twice at their original size, which produced ten-megabyte SVGs that current librsvg releases refuse to parse; oversized artwork now falls back to JPEG at quality 95. Rendered wallpapers were inspected and show no visible change.
+- Replace the legacy split `shadow-link` wrapper that could keep a stale menu binary after an upgrade; unrelated custom files are preserved.
+- Installer: set the welcome-link toggles by name instead of rewriting every `true` in the file, style radio buttons and disabled/focused controls consistently, and let the installer lock fall back to `/tmp` when `XDG_RUNTIME_DIR` is unset.
+
 ## Desktop runtime fix (2026-11-26)
 
 - Replace the legacy split `shadow-link` wrapper left in the user runtime directory by older installs. Provisioning skipped existing files, so upgrades could keep launching the stale menu binary instead of the packaged one. Only that known runtime filename is replaced; unrelated custom files are preserved.

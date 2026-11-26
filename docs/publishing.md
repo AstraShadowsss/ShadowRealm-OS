@@ -16,6 +16,18 @@ Increment the affected package version, build and test it, sign the repository m
 
 Installer changes require a rebuilt ISO and new checksums, matching source and notices, plus the documented boot/installer checks. Publish it to the single intended SourceForge version folder and verify the default Download button selects the ISO.
 
+## Building the r5 image
+
+The image must carry packages newer than the published feed, or every fresh install immediately needs updates. Desktop 0.2.20 and artwork 0.2.7 are the current source versions and both sort above what is published; keep incrementing them whenever shipped content changes.
+
+1. Build every custom package on a disposable Debian 13 builder, following the commands in `docs/build-guide.md`. Run them from the repository root, not from inside `components/`, so relative artwork paths such as `branding/professional-masters` resolve.
+2. Check each DEB version with `dpkg-deb -f <deb> Version` before continuing.
+3. Build the live image, then run `release/shadowrealm-os-live/check-iso.sh` and the installer checks in `docs/installation.md`.
+4. Install the image in a clean VM, run `sudo apt update` and confirm no custom package is offered as an upgrade. If one is, the image is older than the feed and must not be published.
+5. Publish the ISO with new checksums, matching source and notices to the single SourceForge version folder.
+
+Shadow Messenger is not part of this image: its source and packaging stay out of the live build scripts until it is finished and tested.
+
 ## Hosting boundaries
 
 The large third-party source bundle is supplied as six GitHub Release attachments, each below 2 GiB. Download all six and follow the verification/reassembly instructions in the SourceForge Sources folder. Do not commit these large parts into Git history or duplicate them on SourceForge. SourceForge's ISO and small release materials are kept below its 5 GB storage target.
