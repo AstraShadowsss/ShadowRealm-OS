@@ -61,9 +61,9 @@ Disposable sessions and stronger isolation are longer-term research. They need t
 | Emergency data protection | Explore recovery and realistic storage guarantees before designing any destructive action | Review clear consent, backups and failure consequences before implementation |
 
 
-## Games and Messenger
+## Games
 
-The November 22 game updates add twelve Marble Reactor tracks, Circuit Chase direction controls and expanded Skull Invaders progression. Android 1.0.1 includes the updated touch controls, twelve Marble tracks and expanded Skull Invaders progression. Emulator input/rendering and rule tests passed; physical-phone coverage and longer playthroughs remain open. Shadow Messenger has a separate development project under messenger/; it is not installed by default and must pass secure account storage, live-account, encryption and recovery gates before inclusion.
+The November 22 game updates add twelve Marble Reactor tracks, Circuit Chase direction controls and expanded Skull Invaders progression. Android 1.0.1 includes the updated touch controls, twelve Marble tracks and expanded Skull Invaders progression. Emulator input/rendering and rule tests passed; physical-phone coverage and longer playthroughs remain open.
 
 ## Next desktop refinements
 
