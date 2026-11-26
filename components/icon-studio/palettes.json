@@ -1,0 +1,114 @@
+{
+  "neon": {
+    "accent": "#00eafb",
+    "secondary": "#ff27d5",
+    "foreground": "#f4eaff",
+    "background": "#080710",
+    "icons": "ShadowRealm-OS-Neon",
+    "theme": "ShadowRealm-OS-Neon",
+    "wm": "ShadowRealm-OS-Neon"
+  },
+  "white-silver-gold": {
+    "accent": "#8c6500",
+    "secondary": "#647287",
+    "foreground": "#242932",
+    "background": "#f6f7f9",
+    "icons": "ShadowRealm-OS-White-Silver-Gold",
+    "theme": "ShadowRealm-OS-White-Silver-Gold",
+    "wm": "ShadowRealm-OS-White-Silver-Gold"
+  },
+  "red-black": {
+    "accent": "#ff3344",
+    "secondary": "#d60838",
+    "foreground": "#fff1ed",
+    "background": "#130707",
+    "icons": "ShadowRealm-OS-RedBlack",
+    "theme": "ShadowRealm-OS-RedBlack",
+    "wm": "ShadowRealm-OS-RedBlack"
+  },
+  "woodland": {
+    "accent": "#76bd3e",
+    "secondary": "#c47832",
+    "foreground": "#f2e7d0",
+    "background": "#211b14",
+    "icons": "ShadowRealm-OS-Woodland",
+    "theme": "ShadowRealm-OS-Woodland",
+    "wm": "ShadowRealm-OS-Woodland"
+  },
+  "hacker": {
+    "accent": "#40f879",
+    "secondary": "#a5ffc0",
+    "foreground": "#def8e6",
+    "background": "#050a07",
+    "icons": "ShadowRealm-OS-Hacker",
+    "theme": "ShadowRealm-OS-Hacker",
+    "wm": "ShadowRealm-OS-Hacker"
+  },
+  "black-blue": {
+    "accent": "#52b4ff",
+    "secondary": "#7092ff",
+    "foreground": "#edf5ff",
+    "background": "#090e19",
+    "icons": "ShadowRealm-OS-BlackBlue",
+    "theme": "ShadowRealm-OS-BlackBlue",
+    "wm": "ShadowRealm-OS-BlackBlue"
+  },
+  "black-white": {
+    "accent": "#eeeeee",
+    "secondary": "#a8a8a8",
+    "foreground": "#f5f5f5",
+    "background": "#101010",
+    "icons": "ShadowRealm-OS-BlackWhite",
+    "theme": "ShadowRealm-OS-BlackWhite",
+    "wm": "ShadowRealm-OS-BlackWhite"
+  },
+  "professional": {
+    "accent": "#326d59",
+    "secondary": "#60877a",
+    "foreground": "#24332c",
+    "background": "#f3f5f3",
+    "icons": "ShadowRealm-OS-Professional",
+    "theme": "ShadowRealm-OS-Professional",
+    "wm": "ShadowRealm-OS-Professional",
+    "unbranded": true
+  },
+  "purple-black": {
+    "accent": "#b34dff",
+    "secondary": "#dfb0ff",
+    "foreground": "#f5edff",
+    "background": "#100b18",
+    "icons": "ShadowRealm-OS-PurpleBlack",
+    "theme": "ShadowRealm-OS-PurpleBlack",
+    "wm": "ShadowRealm-OS-PurpleBlack"
+  },
+  "professional-ocean": {
+    "accent": "#2668b4",
+    "secondary": "#5e9cb8",
+    "foreground": "#223347",
+    "background": "#f3f6fa",
+    "icons": "ShadowRealm-OS-ProfessionalOcean",
+    "theme": "ShadowRealm-OS-ProfessionalOcean",
+    "wm": "ShadowRealm-OS-ProfessionalOcean",
+    "unbranded": true
+  },
+  "professional-graphite": {
+    "accent": "#4e5c70",
+    "secondary": "#8996a8",
+    "foreground": "#242b36",
+    "background": "#f3f4f6",
+    "icons": "ShadowRealm-OS-ProfessionalGraphite",
+    "theme": "ShadowRealm-OS-ProfessionalGraphite",
+    "wm": "ShadowRealm-OS-ProfessionalGraphite",
+    "unbranded": true
+  },
+  "professional-plum": {
+    "accent": "#81449d",
+    "secondary": "#b18cc8",
+    "foreground": "#34263b",
+    "background": "#f7f3f9",
+    "icons": "ShadowRealm-OS-ProfessionalPlum",
+    "theme": "ShadowRealm-OS-ProfessionalPlum",
+    "wm": "ShadowRealm-OS-ProfessionalPlum",
+    "unbranded": true
+  }
+}

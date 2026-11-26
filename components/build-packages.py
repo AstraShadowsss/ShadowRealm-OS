@@ -58,6 +58,15 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-',dir=os.enviro
  for name in names:
   target=runtime/name
   shutil.copyfile(src/name,target);target.chmod(0o644 if target.suffix in ('.py','.json') else 0o755)
+ # Shadow Icon Studio: the Create/Icons studio, its render engine and the launcher.
+ studio=src/'icon-studio'
+ if studio.is_dir():
+  import shutil as _shutil
+  dest=root/'usr/lib/shadowrealm-os/icon-studio'
+  _shutil.copytree(studio,dest,ignore=_shutil.ignore_patterns('__pycache__','*.pyc'))
+  for f in dest.rglob('*'):f.chmod(0o755 if f.is_dir() else 0o644)
+  write(root,'usr/bin/shadowrealm-icon-studio',(studio/'launcher').read_text(),0o755)
+  write(root,'usr/share/applications/shadowrealm-icon-studio.desktop',(studio/'shadowrealm-icon-studio.desktop').read_text())
  native=src
  flags=subprocess.check_output(['pkg-config','--cflags','--libs','gtk+-3.0','gio-unix-2.0'],text=True).split()
  run('cc','-O2',str(native/'shadow-link-dock.c'),'-o',str(runtime/'shadow-link'),*flags,'-lm')

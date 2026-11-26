@@ -78,6 +78,12 @@ def repair_panel_glyphs(mode, base):
                 loader.close()
                 loader.get_pixbuf().savev(str(temp), 'png', [], [])
             temp.replace(path)
+    # Older panel launchers ask for the short glyph name; keep both names present.
+    if theme.is_dir():
+        for source in list(theme.rglob('shadowrealm-os-release-shadow-panel-bluetooth*')):
+            short = source.with_name(source.name.replace('shadowrealm-os-release-', '', 1))
+            if not short.exists():
+                short.write_bytes(source.read_bytes())
 
 
 def repair_dock_family(mode, base):

@@ -1,0 +1,5 @@
+#!/bin/sh
+[ -n "$DISPLAY" ] || exit 0
+systemctl --user import-environment DISPLAY XDG_CURRENT_DESKTOP XDG_DATA_DIRS XAUTHORITY 2>/dev/null || true
+systemctl --user daemon-reload || exit 1
+systemctl --user start shadowrealm-icon-rebuild.timer

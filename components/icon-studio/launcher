@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+export XDG_DATA_DIRS="$HOME/.local/share/shadow-link/share:$HOME/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:${XDG_DATA_DIRS:-/usr/local/share:/usr/share}"
+if [ ! -f "$HOME/.local/share/shadow-link/appearance-modes.json" ]; then
+    echo 'ShadowRealm desktop provisioning must finish first.' >&2; exit 1
+fi
+if [ ! -f "$HOME/.local/state/shadowrealm-os/icon-rebuild-v3/installed.json" ]; then
+    /usr/bin/python3 /usr/lib/shadowrealm-os/icon-studio/engine/rebuild.py --refresh
+fi
+exec /usr/bin/python3 /usr/lib/shadowrealm-os/icon-studio/studio/studio.py

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Shadow Icon Studio
+Comment=Create, customize and save matching application icons
+Exec=/usr/bin/shadowrealm-icon-studio
+Icon=orbital-dock-image-viewer
+Categories=Graphics;Utility;
+Terminal=false
+StartupNotify=true

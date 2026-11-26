@@ -2,6 +2,8 @@
 
 ## In development for r5 (2026-11-26)
 
+- Ship Shadow Icon Studio inside the desktop package: the studio, its render engine and glyphs, the launcher, the menu entry and the session hook now install from the same source tree as the desktop, so a fresh image no longer needs the private builder tree.
+- Fix the blank Bluetooth glyph on every palette. Panel launchers ask for `shadow-panel-bluetooth`, but the themes only shipped `shadowrealm-os-release-shadow-panel-bluetooth`, so the icon lookup failed. The theme repair now writes the short names beside the prefixed artwork at every installed size.
 - Control Center and the settings windows take their header mark from the active icon theme instead of the fixed Neon logo; unbranded Professional keeps its neutral symbol.
 - Shadow Widgets settings: Weather is now an ordinary row with the same enable checkbox as the other widgets, and its location/units dialog is labelled. Each widget's background control is now a Theme checkbox plus a 0–100 percentage with working −/+ buttons; the previous single spin button could not step below its minimum and made the percentage look broken.
 - Terminal: add native tabs with a + button in the tab strip, `Ctrl+Shift+T` to open a tab, `Ctrl+Shift+W` or the tab's × to close one, `Ctrl+Tab`/`Ctrl+Shift+Tab` to switch, and per-tab child-process cleanup. Each tab has its own shell, history and scroll position.
