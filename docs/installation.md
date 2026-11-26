@@ -6,15 +6,15 @@ Download the AMD64 ISO and its `SHA256SUMS` from the same release directory. On 
 
 Checksums detect a changed or incomplete download. They do not independently authenticate its publisher. This beta does not include a release signature.
 
-Back up the destination computer. If using a USB drive, write the ISO as a disk image with an image-writing application; copying the ISO file onto an ordinary filesystem is not enough. An 8 GB or larger USB drive is recommended. Writing an image erases the USB drive.
+Back up the destination computer. If using a USB drive, write the ISO as a disk image with an image-writing application; copying the ISO file onto an ordinary filesystem is not enough. An 8 GB or larger USB drive is recommended. Writing an image erases the USB drive. The installer needs at least 20 GB of disk space and 2 GB of RAM; 40 GB and 4 GB leave more room for applications and updates.
 
 ## On a PC
 
 1. Boot the USB using the computer's boot menu. Choose the live desktop entry.
 2. Test display, keyboard, mouse, audio and network before installing. This beta has not been certified for Secure Boot; disable it if the image will not start.
 3. Open **Install ShadowRealm-OS**. Choose your language, time zone and keyboard layout.
-4. Review the destination disk carefully. Automatic erase-disk installation is the simplest path for a dedicated disk. Optional encryption protects the installed disk while powered off; keep the encryption passphrase safe.
-5. Create your own account and password. Read the installer's final summary before confirming disk changes.
+4. Choose the destination disk. **Erase disk** is the simplest path for a dedicated disk and removes everything on it; back up first. Optional encryption protects the installed disk while powered off; keep the encryption passphrase safe. Manual partitioning and installing alongside another system need extra care and are not certified by this beta.
+5. Create your own account and password. Use a username you are comfortable typing at the login screen, and keep the password somewhere safe. Read the installer's final summary before confirming disk changes. Installation uses the packages already on the image and does not need a network connection; updates after first boot do.
 6. Finish, restart and remove the USB when prompted. With encryption enabled, enter the disk passphrase during boot, then sign in with your account password.
 
 The first sign-in may take longer while your desktop is prepared. Let the wallpaper and widgets finish loading; later sign-ins reuse your saved profile.
