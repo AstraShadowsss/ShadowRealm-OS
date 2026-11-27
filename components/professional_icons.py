@@ -110,6 +110,14 @@ def build_professional_icons(root, modes, source=None):
             'gnome-fs-trash-full': 'trash', 'gnome-fs-trash-empty': 'trash',
             'drive-harddisk': 'disk',
         }
+        ui_roles = {'preferences-desktop-theme': 'settings', 'applications-system': 'settings'}
+        for p in theme.rglob('*'):
+            if p.suffix not in ('.svg', '.png') or not p.is_file() or p.stem not in ui_roles:
+                continue
+            match = re.search(r'/(\d+)x\d+/', p.as_posix())
+            size = int(match[1]) if match else 64
+            svg = icon(ui_roles[p.stem], True, size)
+            p.write_text(svg) if p.suffix == '.svg' else p.write_bytes(render_svg(svg))
         for p in theme.rglob('*'):
             if p.suffix not in ('.svg', '.png') or not p.is_file() or p.stem not in places:
                 continue

@@ -73,7 +73,7 @@ Eight independent widgets, shown together in Professional styling. They follow y
 
 Choose which panels appear, adjust their text, graph and bar colors, and set background transparency. Theme follows the shared background setting in Appearance.
 
-![Current widget controls](screenshots/widget-customization-plate.png)
+![Current widget controls](screenshots/widget-customization-final.png)
 
 </details>
 
@@ -93,7 +93,7 @@ Search and browse installed applications by category. The dock keeps the shortcu
 
 Load your own artwork or the built-in Prism sample, then see the icon in all twelve palettes before applying it to an application, saving it to a personal library or exporting SVG and PNG files.
 
-![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio-plate.png)
+![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio-final.png)
 
 [Icon Studio guide](docs/icon-studio.md)
 
@@ -115,9 +115,9 @@ Nine lightweight arcade and card games, with local scores and settings. No accou
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
 
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional-desktop-plate.png)
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional-desktop-final.png)
 
-![Professional Control Center](screenshots/control-center-professional-plate.png)
+![Professional Control Center](screenshots/control-center-professional-final.png)
 
 
 ## Shadow Games for Android
