@@ -32,7 +32,7 @@ python3 games/build-debs.py outputs
 bash messenger/build-deb.sh outputs
 ```
 
-The games builder produces nine independently removable DEBs in `outputs/`. Keep earlier package revisions in a separate directory. For the r5 development set, `DESKTOP_VERSION` is 0.2.21, `ARTWORK_VERSION` is 0.2.6, `ASSET_VERSION` gives Terminal 0.2.3, security is 0.2.1, installer settings are 0.2.2, Messenger is 0.1.0, and the distro identity package is 2026.11-4. Use each component's version file as the build authority and increment its version before publishing an updated package. The artwork 0.2.6 package must be reused rather than rebuilt until the committed artwork source gap is resolved.
+The games builder produces nine independently removable DEBs in `outputs/`. Keep earlier package revisions in a separate directory. For the r5 development set, `DESKTOP_VERSION` is 0.2.21, `ARTWORK_VERSION` is 0.2.6, `ASSET_VERSION` gives Terminal 0.2.4 (tabs and Ctrl+V paste), security is 0.2.1, installer settings are 0.2.2, Messenger is 0.1.0, and the distro identity package is 2026.11-4. Use each component's version file as the build authority and increment its version before publishing an updated package. The artwork 0.2.6 package must be reused rather than rebuilt until the committed artwork source gap is resolved.
 
 Shadow Messenger is the native GTK4 Matrix client shipped with the desktop. Its package depends on `gnome-keyring` and installs `shadow-messenger-app` icons for all twelve palettes. Regenerate those icons after a palette change with `python3 messenger/packaging/build-icons.py branding/palettes.json messenger/packaging/icons`, then inspect `contact-sheet.png` before rebuilding the DEB.
 

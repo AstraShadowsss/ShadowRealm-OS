@@ -10,7 +10,7 @@ ShadowRealm-OS 2026.11 beta 1 uses revision r4 of the installer image. Beta 1 is
 | Project website | Screenshots, installation/documentation links and Updates & Packages |
 | Signed APT feed | Versioned custom DEBs and signed indexes for installed-system updates |
 
-A release folder is not a package mirror. Keep only the ISO, checksums, release notes, license notices, source inventories and source-download instructions there. Custom DEBs belong in the signed APT pool. Two current builds (desktop 0.2.20 and Terminal 0.2.3) were manually placed in the 2026.11-beta1 folder; they are not signed update metadata and should be moved to the pool through the normal repository publisher or removed. Do not point users at a bare DEB in a release folder as an update mechanism.
+A release folder is not a package mirror. Keep only the ISO, checksums, release notes, license notices, source inventories and source-download instructions there. Custom DEBs belong in the signed APT pool. Two builds (desktop 0.2.20 and Terminal 0.2.3) had been placed in the 2026.11-beta1 folder by hand; they were removed once the signed pool carried their successors. Do not point users at a bare DEB in a release folder as an update mechanism.
 
 ## Publishing a fix
 
@@ -20,11 +20,11 @@ Installer changes require a rebuilt ISO and new checksums, matching source and n
 
 ## Building the r5 image
 
-The image must carry packages newer than the published feed, or every fresh install immediately needs updates. Desktop 0.2.21, security 0.2.1, installer settings 0.2.2, artwork 0.2.6 and Messenger 0.1.0 are the r5 source versions. The signed trixie feed currently publishes desktop 0.2.19+window1.icon1.clean3+refresh1+launch1, security 0.2.0, Terminal 0.2.3 and artwork 0.2.6+window1.icon1.clean3. Desktop 0.2.21 and security 0.2.1 sort above it; artwork 0.2.6 is the published package that must be reused because the committed artwork source cannot yet reproduce it. Keep incrementing versions whenever shipped content changes.
+The image must carry packages newer than the published feed, or every fresh install immediately needs updates. Desktop 0.2.21, security 0.2.1, installer settings 0.2.2, artwork 0.2.6 and Messenger 0.1.0 are the r5 source versions. The signed trixie feed now publishes desktop 0.2.21, security 0.2.1, installer settings 0.2.2, Terminal 0.2.4, Messenger 0.1.0 and artwork 0.2.6. Artwork 0.2.6 remains the published package that must be reused because the committed artwork source cannot yet reproduce it. Keep incrementing versions whenever shipped content changes.
 
 1. Build every custom package on a disposable Debian 13 builder, following the commands in `docs/build-guide.md`. Run them from the repository root, not from inside `components/`, so relative artwork paths such as `branding/professional-masters` resolve.
 2. Check each DEB version with `dpkg-deb -f <deb> Version` before continuing.
-3. Publish desktop 0.2.21 (dock shelf and reopenable Welcome Summary) and security 0.2.1 (scoped Docker forwarding) to the signed feed before advertising those changes. The signed feed still has desktop 0.2.19+window1.icon1.clean3+refresh1+launch1 and security 0.2.0; the desktop 0.2.20 and Terminal 0.2.3 DEBs in the SourceForge release folder are not a signed update.
+3. Confirm the feed carries desktop 0.2.21, security 0.2.1, installer settings 0.2.2, Terminal 0.2.4 and Messenger 0.1.0 before advertising those changes. It does; re-check after any rebuild.
 4. Build the live image, then run `release/shadowrealm-os-live/check-iso.sh` and the installer checks in `docs/installation.md`.
 5. Install the image in a clean VM, run `sudo apt update` and confirm no custom package is offered as an upgrade. If one is, the image is older than the feed and must not be published.
 6. Publish the ISO with new checksums, matching source and notices to the single SourceForge version folder.

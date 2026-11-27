@@ -38,7 +38,7 @@ publication.
 ## Package set staged for the builder
 
 - desktop 0.2.21 (includes the dock shelf and Welcome Summary entry)
-- terminal 0.2.3
+- terminal 0.2.4 (tabs and Ctrl+V paste)
 - artwork 0.2.6 (reuse the built package; do not rebuild from the incomplete source archive)
 - panel 0.2.1
 - security 0.2.1 (scoped Docker forwarding)
@@ -51,7 +51,7 @@ publication.
 
 ## Publication blockers
 
-- The two loose DEBs that were in the release folder (desktop 0.2.20 and terminal 0.2.3) were removed. Their contents are superseded by the signed feed, which now carries desktop 0.2.21, terminal 0.2.3, installer settings 0.2.2, security 0.2.1 and Messenger 0.1.0.
+- The two loose DEBs that were in the release folder (desktop 0.2.20 and terminal 0.2.3) were removed. Their contents are superseded by the signed feed, which now carries desktop 0.2.21, terminal 0.2.4, installer settings 0.2.2, security 0.2.1 and Messenger 0.1.0.
 - The signed feed is published and verified: `apt-get update` accepts `InRelease`, `apt-get download` returns Messenger 0.1.0 with the expected SHA256, and `apt-cache policy` candidates resolve to desktop 0.2.21, installer settings 0.2.2 and security 0.2.1. The index is valid until 25 February 2027; `release/build-apt-repository.py` now defaults to a 90-day window so a rebuild cannot silently return to the old 14 days.
 - No root-capable ISO builder: r5 cannot be built or installed here.
 

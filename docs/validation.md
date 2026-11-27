@@ -22,15 +22,15 @@ A pre-installer guidance window now covers disk erasure, encryption recovery and
 
 ### Package and disk state
 
-Current r5 packages staged in `/var/tmp/r5-out`: desktop 0.2.21, Terminal 0.2.3, artwork 0.2.6, panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, archive keyring 2026.11-2, all nine games and `shadowrealm-os-messenger` 0.1.0. Regenerable `/var/tmp` build and test directories were removed, reclaiming about 6 GB; the Synapse fixture and account data were kept. The VM still has no root access, live-build, xorriso, mksquashfs, debootstrap or the expected build volume.
+Current r5 packages staged in `/var/tmp/r5-out`: desktop 0.2.21, Terminal 0.2.4, artwork 0.2.6, panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, archive keyring 2026.11-2, all nine games and `shadowrealm-os-messenger` 0.1.0. Regenerable `/var/tmp` build and test directories were removed, reclaiming about 6 GB; the Synapse fixture and account data were kept. The VM still has no root access, live-build, xorriso, mksquashfs, debootstrap or the expected build volume.
 
 ### Release-folder audit
 
-The SourceForge 2026.11-beta1 folder contains desktop 0.2.20 and Terminal 0.2.3 DEBs uploaded on 26 November, plus an older archive-keyring 2026.11-1. These are current builds but are not signed APT updates. The release folder should contain only the ISO, checksums, notices and source material; the DEBs should move to the signed pool through the repository publisher or be removed. The signed feed already supplies archive-keyring 2026.11-2.
+The desktop 0.2.20 and Terminal 0.2.3 DEBs that had been uploaded to the SourceForge 2026.11-beta1 folder were removed; the folder now holds the ISO, checksums, notices, source material and the archive-keyring package the ISO ships. The signed feed supplies the current versions of every custom package.
 
 ### Dock shelf
 
-The dock shelf code is present in desktop 0.2.21 and in the r5 package set, but it was never published as a signed APT update: the signed trixie feed still publishes desktop 0.2.19+window1.icon1.clean3+refresh1+launch1. Publish desktop 0.2.21 before advertising it. Direct dragging, edge drops, multi-monitor behavior and final polish were not rechecked for r5.
+The dock shelf code is present in desktop 0.2.21, which the signed feed now publishes, so installed systems receive it through Software & Updates. Direct dragging, edge drops, multi-monitor behavior and final polish were not rechecked for r5.
 
 ## 2026.11 beta 1 r4 validation
 
