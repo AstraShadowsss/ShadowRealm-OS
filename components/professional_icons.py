@@ -37,15 +37,31 @@ def build_professional_icons(root, modes, source=None):
         if not palette.get('unbranded'):
             continue
         accent, ink = palette['accent'], palette['foreground']
+        secondary = palette.get('secondary', accent)
         folder = runtime / mode
         if runtime.parent.is_dir():
             folder.mkdir(parents=True, exist_ok=True)
 
         def icon(role, tiled=True, size=64):
             drawing = glyphs.get(role, glyphs.get('settings', glyphs.get('menu', '')))
-            drawing = re.sub(r'#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b', accent if tiled else ink, drawing)
-            tile = '''<defs><linearGradient id="surface" x2="0" y2="1"><stop stop-color="#ffffff"/><stop offset="1" stop-color="#e3e9e7"/></linearGradient></defs><rect x="5" y="6" width="54" height="54" rx="14" fill="#172622" opacity=".10"/><rect x="5" y="4" width="54" height="54" rx="14" fill="url(#surface)" stroke="#bfccc7" stroke-width="1"/>''' if tiled else ''
-            return f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 64 64">{tile}<g transform="translate(6 5) scale(.8125)">{drawing}</g></svg>'
+            drawing = re.sub(r'#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b', 'url(#ink)' if tiled else ink, drawing)
+            plate = f'''<defs>
+      <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="{accent}"/><stop offset=".32" stop-color="{accent}"/><stop offset=".62" stop-color="{secondary}"/><stop offset="1" stop-color="{secondary}"/></linearGradient>
+      <linearGradient id="ink" x1="0" y1="0" x2=".85" y2="1"><stop stop-color="{accent}"/><stop offset=".38" stop-color="{accent}"/><stop offset="1" stop-color="{secondary}"/></linearGradient>
+      <linearGradient id="plate" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#f2f5f3"/><stop offset=".33" stop-color="#ffffff"/><stop offset=".70" stop-color="#ffffff"/><stop offset="1" stop-color="#e9eeec"/></linearGradient>
+      <radialGradient id="top" cx=".05" cy=".03" r=".83"><stop stop-color="{accent}" stop-opacity=".95"/><stop offset=".3" stop-color="{accent}" stop-opacity=".32"/><stop offset=".7" stop-color="{accent}" stop-opacity="0"/></radialGradient>
+      <radialGradient id="bottom" cx=".98" cy=".99" r=".78"><stop stop-color="{secondary}" stop-opacity=".85"/><stop offset=".34" stop-color="{secondary}" stop-opacity=".25"/><stop offset=".72" stop-color="{secondary}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="shine" x1="0" y1="0" x2=".75" y2="1"><stop stop-color="#fff" stop-opacity=".9"/><stop offset=".23" stop-color="#fff" stop-opacity=".24"/><stop offset=".58" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <clipPath id="shape"><rect x="3.5" y="3.5" width="57" height="57" rx="13.5"/></clipPath>
+    </defs>
+    <rect x="2" y="2" width="60" height="60" rx="15" fill="none" stroke="url(#rim)" stroke-width="2" opacity=".22"/>
+    <rect x="3.5" y="3.5" width="57" height="57" rx="13.5" fill="url(#plate)" stroke="url(#rim)" stroke-width="1.8"/>
+    <g clip-path="url(#shape)"><rect x="3.5" y="3.5" width="57" height="57" rx="13.5" fill="url(#top)"/><rect x="3.5" y="3.5" width="57" height="57" rx="13.5" fill="url(#bottom)"/>
+    <rect x="5.5" y="5.5" width="53" height="53" rx="12" fill="none" stroke="url(#rim)" stroke-width=".7" opacity=".7"/>
+    <path d="M6.5 18.5Q6 6.5 19.5 6H35.5Q21 8.5 13 15.5L6.5 23Z" fill="url(#shine)" opacity=".55"/>
+    <path d="M8 15.5Q10 6.5 19.5 6H34.5" fill="none" stroke="url(#shine)" stroke-width="1.1" stroke-linecap="round"/>
+    <path d="M29 60.5H46Q60.5 60 61 45" fill="none" stroke="url(#rim)" stroke-width="1" opacity=".9"/></g>''' if tiled else ''
+            return f'<svg xmlns="http://www.w3.org/2000/svg" width="{size}" height="{size}" viewBox="0 0 64 64">{plate}<g transform="translate(6 5) scale(.8125)">{drawing}</g></svg>'
 
         for role in (glyphs if runtime.parent.is_dir() else {}):
             for prefix in ('orbital-dock-', 'shadow-', 'shadow-panel-'):
@@ -69,7 +85,7 @@ def build_professional_icons(root, modes, source=None):
                     continue
                 match = re.search(r'/(\d+)x\d+/', p.as_posix())
                 size = int(match[1]) if match else 64
-                svg = f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{size}" height="{size}" viewBox="0 0 64 64"><defs><filter id="tint" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter></defs><rect x="5" y="4" width="54" height="54" rx="14" fill="#f4f7f6" stroke="#bfccc7"/><image x="10" y="9" width="44" height="44" filter="url(#tint)" xlink:href="data:image/png;base64,{encoded}"/></svg>'
+                svg = f'<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="{size}" height="{size}" viewBox="0 0 64 64"><defs><filter id="tint" color-interpolation-filters="sRGB"><feColorMatrix values="{matrix}"/></filter><linearGradient id="brim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="{accent}"/><stop offset=".32" stop-color="{accent}"/><stop offset=".62" stop-color="{secondary}"/><stop offset="1" stop-color="{secondary}"/></linearGradient><linearGradient id="bplate" x1="0" y1="0" x2=".8" y2="1"><stop stop-color="#f2f5f3"/><stop offset=".33" stop-color="#ffffff"/><stop offset=".70" stop-color="#ffffff"/><stop offset="1" stop-color="#e9eeec"/></linearGradient></defs><rect x="3.5" y="3.5" width="57" height="57" rx="13.5" fill="url(#bplate)" stroke="url(#brim)" stroke-width="1.8"/><path d="M6.5 18.5Q6 6.5 19.5 6H35.5Q21 8.5 13 15.5L6.5 23Z" fill="#ffffff" opacity=".5"/><image x="10" y="9" width="44" height="44" filter="url(#tint)" xlink:href="data:image/png;base64,{encoded}"/></svg>'
                 p.write_text(svg) if p.suffix == '.svg' else p.write_bytes(render_svg(svg))
         for p in theme.rglob('*'):
             if p.suffix not in ('.svg', '.png') or not p.is_file() or 'apps' not in p.parts:
