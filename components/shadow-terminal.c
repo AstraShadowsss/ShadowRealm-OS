@@ -223,6 +223,8 @@ static gboolean keypress(GtkWidget *widget, GdkEventKey *event, gpointer user_da
     App *a = user_data;
     guint mods = event->state & (GDK_CONTROL_MASK|GDK_SHIFT_MASK|GDK_MOD1_MASK);
     guint key = gdk_keyval_to_lower(event->keyval);
+    /* Paste with plain Ctrl+V too; terminal users expect the usual shortcut. */
+    if (mods == GDK_CONTROL_MASK && key == GDK_KEY_v) { paste_clipboard(NULL,a); return TRUE; }
     if (mods == (GDK_CONTROL_MASK|GDK_SHIFT_MASK)) {
         if (key == GDK_KEY_t) { spawn_tab(a, NULL, NULL); return TRUE; }
         if (key == GDK_KEY_w) { close_current_tab(a); return TRUE; }

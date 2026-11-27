@@ -44,7 +44,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 
 A familiar shell with live system information, adjustable text and desktop-matched colors.
 
-![Terminal on the current desktop](screenshots/terminal-current.png?v=20261123b)
+![Terminal on the current desktop](screenshots/terminal-current.png?v=20261127tabs)
 
 ### Control Center
 
