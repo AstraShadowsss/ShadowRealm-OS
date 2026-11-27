@@ -1,6 +1,6 @@
 # Building ShadowRealm-OS
 
-ShadowRealm-OS is a customized Debian 13 desktop. Its original desktop, artwork, Terminal, Shadow Messenger development preview and nine offline games are maintained here. Debian packages remain managed by APT; sandboxed applications use Flatpak.
+ShadowRealm-OS is a customized Debian 13 desktop. Its original desktop, artwork, Terminal, Shadow Messenger and nine offline games are maintained here. Debian packages remain managed by APT; sandboxed applications use Flatpak.
 
 ## Contents
 
@@ -34,7 +34,7 @@ bash messenger/build-deb.sh outputs
 
 The games builder produces nine independently removable DEBs in `outputs/`. Keep earlier package revisions in a separate directory. For the r5 development set, `DESKTOP_VERSION` is 0.2.21, `ARTWORK_VERSION` is 0.2.6, `ASSET_VERSION` gives Terminal 0.2.3, security is 0.2.1, installer settings are 0.2.2, Messenger is 0.1.0, and the distro identity package is 2026.11-4. Use each component's version file as the build authority and increment its version before publishing an updated package. The artwork 0.2.6 package must be reused rather than rebuilt until the committed artwork source gap is resolved.
 
-Shadow Messenger is a test-account development preview in the private r5 image, not a finished messaging application. Its package depends on `gnome-keyring` and installs `shadow-messenger-app` icons for all twelve palettes. Regenerate those icons after a palette change with `python3 messenger/packaging/build-icons.py branding/palettes.json messenger/packaging/icons`, then inspect `contact-sheet.png` before rebuilding the DEB.
+Shadow Messenger is the native GTK4 Matrix client shipped with the desktop. Its package depends on `gnome-keyring` and installs `shadow-messenger-app` icons for all twelve palettes. Regenerate those icons after a palette change with `python3 messenger/packaging/build-icons.py branding/palettes.json messenger/packaging/icons`, then inspect `contact-sheet.png` before rebuilding the DEB.
 
 The installer configuration package adds the maintained Calamares framework, a ShadowRealm-OS interface, offline GRUB files, optional LUKS encryption and LVM controls. Ten custom packages plus nine game packages are installed in the r5 development set.
 

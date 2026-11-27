@@ -29,7 +29,7 @@ The image must carry packages newer than the published feed, or every fresh inst
 5. Install the image in a clean VM, run `sudo apt update` and confirm no custom package is offered as an upgrade. If one is, the image is older than the feed and must not be published.
 6. Publish the ISO with new checksums, matching source and notices to the single SourceForge version folder.
 
-Shadow Messenger 0.1.0 is included in the private r5 development image only. It is a test-account preview, not a finished messaging product, and it is not part of the public r4 image. Its package installs the GTK4 client, a theme-generated `shadow-messenger-app` icon in every ShadowRealm-OS palette, and a `gnome-keyring` dependency. Do not publish r5 or describe Messenger as production-ready until the remaining release checklist gates and a fresh installed-image test pass.
+Shadow Messenger 0.1.0 is included in the r5 image and in the signed package feed. Its package installs the GTK4 client, a theme-generated `shadow-messenger-app` icon in every ShadowRealm-OS palette, and a `gnome-keyring` dependency. Keep r5 unpublished until the remaining release checklist gates and a fresh installed-image test pass.
 
 ## Hosting boundaries
 

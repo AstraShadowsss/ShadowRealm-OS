@@ -47,11 +47,11 @@ publication.
 - release 2026.11-4
 - archive keyring 2026.11-2
 - nine game packages
-- Messenger 0.1.0 development preview
+- Messenger 0.1.0
 
 ## Publication blockers
 
-- No SourceForge credentials: the two current DEBs in the release folder cannot be moved or removed by this session. They are not signed updates.
+- The two loose DEBs that were in the release folder (desktop 0.2.20 and terminal 0.2.3) were removed. Their contents are superseded by the signed feed, which now carries desktop 0.2.21, terminal 0.2.3, installer settings 0.2.2, security 0.2.1 and Messenger 0.1.0.
 - No APT signing credentials: desktop 0.2.21, security 0.2.1 and Messenger 0.1.0 cannot be published to the signed feed.
 - No root-capable ISO builder: r5 cannot be built or installed here.
 

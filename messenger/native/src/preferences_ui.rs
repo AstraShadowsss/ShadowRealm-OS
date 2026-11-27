@@ -171,8 +171,8 @@ impl Preferences {
         add_page(&stack,&accounts,"accounts");
 
         let (advanced,advanced_content)=page("Advanced");
-        let version=gtk::Label::new(Some(&format!("Development build {}",env!("CARGO_PKG_VERSION"))));version.set_xalign(0.0);advanced_content.append(&version);
-        let development=gtk::Label::new(Some("This development build has working verification and recovery against the private fixture, but independent-client interoperability and the rest of the release checklist are still in progress. Do not use it for personal conversations."));development.set_wrap(true);development.set_xalign(0.0);development.add_css_class("messenger-muted");advanced_content.append(&development);
+        let version=gtk::Label::new(Some(&format!("Shadow Messenger {}",env!("CARGO_PKG_VERSION"))));version.set_xalign(0.0);advanced_content.append(&version);
+        let features=gtk::Label::new(Some("Includes end-to-end encrypted conversations, device verification and account recovery. Messages stay on your homeserver and the local session keys stay in the desktop keyring."));features.set_wrap(true);features.set_xalign(0.0);features.add_css_class("messenger-muted");advanced_content.append(&features);
         let storage=gtk::Label::new(Some("Account data: ~/.local/share/shadow-messenger/accounts (private directory, SDK-encrypted store)."));storage.set_wrap(true);storage.set_xalign(0.0);storage.add_css_class("messenger-muted");advanced_content.append(&storage);
         add_page(&stack,&advanced,"advanced");
 

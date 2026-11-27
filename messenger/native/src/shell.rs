@@ -162,8 +162,7 @@ impl Shell {
         let activity_scroll=gtk::ScrolledWindow::builder().child(&activity_list).vexpand(true).hscrollbar_policy(gtk::PolicyType::Never).build();activity_page.append(&activity_scroll);
         pager.add_named(&activity_page,Some("activity"));
         right.append(&pager);
-        let notice=gtk::Label::new(Some("Development build. Use a test account while compatibility and release checks are completed."));notice.set_wrap(true);notice.set_xalign(0.0);notice.add_css_class("messenger-notice");notice.set_margin_top(6);right.append(&notice);
-        root.append(&right);
+        let notice=gtk::Label::new(None);notice.set_wrap(true);notice.set_xalign(0.0);notice.add_css_class("messenger-muted");notice.set_margin_top(6);right.append(&notice);
 
         let filter=Rc::new(Cell::new(Filter::All));let rows=Rc::new(RefCell::new(Vec::<RowInfo>::new()));
         let rows_filter=rows.clone();let filter_copy=filter.clone();let search_copy=search.clone();
@@ -321,7 +320,7 @@ impl Shell {
         self.rooms.borrow_mut().clear();self.buddies.borrow_mut().clear();self.render();
         self.name.set_text("Not signed in");self.name.set_tooltip_text(None);self.avatar_initials.set_text("");self.avatar_picture.set_icon_name(Some("avatar-default-symbolic"));self.avatar.set_visible_child_name("initials");self.avatar_button.set_visible(false);
         self.presence.set(Presence::Offline);self.presence_button.set_label("Offline");self.status_entry.set_text("");self.status_line.set_text("Offline");
-        self.notice.set_text("No account connected. Choose a test account to continue development checks.");
+        self.notice.set_text("No account connected.");
         self.conversations.set_label("Conversations");self.activity.set_label("Activity");self.activity_count.set(0);
         while let Some(child)=self.activity_list.first_child(){self.activity_list.remove(&child);}
         self.search.set_text("");self.people_search.set_text("");

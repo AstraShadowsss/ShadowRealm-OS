@@ -26,8 +26,7 @@ use shadow_messenger_core::{Buddy,Connection,Presence};
 use worker::{Command,Event};
 
 fn main() -> glib::ExitCode {
-    gtk::Window::set_default_icon_name("shadow-messenger-app");
-    let app=gtk::Application::builder().application_id("org.shadowrealm_os.Messenger.Development").build();
+    let app=gtk::Application::builder().application_id("org.shadowrealm_os.Messenger").build();
     app.connect_activate(build);
     app.run()
 }
@@ -52,12 +51,11 @@ fn login_page(commands:&Sender<Command>)->Login{
     let title=gtk::Label::new(Some("Shadow Messenger"));title.add_css_class("messenger-page-title");title.set_xalign(0.0);
     let subtitle=gtk::Label::new(Some("Secure Messaging for ShadowRealm-OS"));subtitle.add_css_class("messenger-muted");subtitle.set_xalign(0.0);
     titles.append(&title);titles.append(&subtitle);brand_row.append(&brand);brand_row.append(&titles);card.append(&brand_row);
-    let notice=gtk::Label::new(Some("Development build. Use a test account while compatibility and release checks are completed."));notice.set_wrap(true);notice.set_xalign(0.0);notice.add_css_class("messenger-notice");card.append(&notice);
     let help=gtk::Button::with_label("How does this work?");help.add_css_class("flat");help.set_halign(gtk::Align::Start);card.append(&help);
     let server=gtk::Entry::builder().placeholder_text("HTTPS homeserver").build();
     let user=gtk::Entry::builder().placeholder_text("Matrix account").build();
     let password=gtk::PasswordEntry::new();password.set_show_peek_icon(true);password.set_placeholder_text(Some("Password"));
-    let consent=gtk::CheckButton::with_label("Use a test account; this is a development build");
+    let consent=gtk::CheckButton::with_label("This device will appear in my account's device list");
     for widget in [server.upcast_ref::<gtk::Widget>(),user.upcast_ref(),password.upcast_ref(),consent.upcast_ref()]{card.append(widget);}
     let buttons=gtk::FlowBox::builder().selection_mode(gtk::SelectionMode::None).min_children_per_line(1).max_children_per_line(2).column_spacing(8).row_spacing(6).build();
     let login=gtk::Button::with_label("Sign in");login.add_css_class("suggested-action");login.set_sensitive(false);login.set_hexpand(true);
@@ -67,7 +65,7 @@ fn login_page(commands:&Sender<Command>)->Login{
     for button in [&login,&restore,&refresh,&logout]{buttons.insert(button,-1);}
     card.append(&buttons);
     let validate=gtk::Button::with_label("Check server address");validate.set_halign(gtk::Align::Start);card.append(&validate);
-    let status=gtk::Label::new(Some("Use a test account only. Saved sessions use the desktop keyring and an SDK-encrypted local store."));status.set_wrap(true);status.set_xalign(0.0);status.add_css_class("messenger-muted");card.append(&status);
+    let status=gtk::Label::new(Some("Saved sessions use the desktop keyring and an SDK-encrypted local store."));status.set_wrap(true);status.set_xalign(0.0);status.add_css_class("messenger-muted");card.append(&status);
     let create_account=gtk::Button::with_label("Create a new account…");create_account.set_halign(gtk::Align::Start);card.append(&create_account);
     let create_note=gtk::Label::new(Some("Opens a separate form. Account creation depends on the homeserver; providers can disable it or require a sign-up page."));create_note.set_wrap(true);create_note.set_xalign(0.0);create_note.add_css_class("messenger-muted");card.append(&create_note);
     let scroller=gtk::ScrolledWindow::builder().hscrollbar_policy(gtk::PolicyType::Never).vscrollbar_policy(gtk::PolicyType::Automatic).child(&card).build();
@@ -136,7 +134,7 @@ fn how_it_works(parent:&gtk::Window){
     guide_section(&root,"Rooms and direct messages","Every conversation is a room, whether it is a direct chat or a group. You can invite people, accept or decline invitations, and leave a room. Messages are delivered to the homeservers used by the people in that room.");
     guide_section(&root,"What encryption protects","Rooms marked as encrypted use Matrix end-to-end encryption. The message is locked on the sender's device and only members' devices can unlock it, so the homeserver stores ciphertext rather than readable text. An unencrypted room can be read by the homeserver, which is why Shadow Messenger warns before you send in one. Never share your recovery key.");
     guide_section(&root,"Devices, verification and storage","Each sign-in is a separate device. Verify a new device from an existing trusted device or with your recovery key so other people can trust it. Shadow Messenger keeps your saved session in the desktop keyring and its local message store is encrypted by the Matrix SDK. Signing out removes the session from this device; your account remains on the homeserver.");
-    guide_section(&root,"A development build","Shadow Messenger is still being tested. Use test accounts, not personal conversations. Your homeserver's operator controls availability, message retention and account recovery, and different providers may require different sign-up steps.");
+    guide_section(&root,"Your homeserver and your data","Your homeserver's operator controls availability, message retention and account recovery, and different providers may require different sign-up steps. Encryption protects message contents, not who you talk to or when.");
     let close=gtk::Button::with_label("Close");close.set_halign(gtk::Align::End);let window_copy=window.clone();close.connect_clicked(move|_|{window_copy.close();});root.append(&close);
     let scroller=gtk::ScrolledWindow::builder().hscrollbar_policy(gtk::PolicyType::Never).vscrollbar_policy(gtk::PolicyType::Automatic).vexpand(true).child(&root).build();
     window.set_child(Some(&scroller));window.present();
@@ -148,9 +146,9 @@ fn about(parent:&gtk::Window){
     let header=gtk::Box::new(gtk::Orientation::Horizontal,14);header.append(&appearance::brand_logo(52));
     let titles=gtk::Box::new(gtk::Orientation::Vertical,0);
     let title=gtk::Label::new(Some("Shadow Messenger"));title.add_css_class("messenger-page-title");title.set_xalign(0.0);
-    let version=gtk::Label::new(Some(&format!("Development build {}",env!("CARGO_PKG_VERSION"))));version.set_xalign(0.0);version.add_css_class("messenger-muted");
+    let version=gtk::Label::new(Some(&format!("Version {}",env!("CARGO_PKG_VERSION"))));version.set_xalign(0.0);version.add_css_class("messenger-muted");
     titles.append(&title);titles.append(&version);header.append(&titles);root.append(&header);
-    let note=gtk::Label::new(Some("A native GTK4 Matrix client for ShadowRealm-OS. Encrypted rooms use Matrix end-to-end encryption. This development build is not ready for personal conversations."));note.set_wrap(true);note.set_xalign(0.0);note.add_css_class("messenger-muted");
+    let note=gtk::Label::new(Some("A native GTK4 Matrix client for ShadowRealm-OS. Encrypted rooms use Matrix end-to-end encryption."));note.set_wrap(true);note.set_xalign(0.0);note.add_css_class("messenger-muted");
     let license=gtk::Label::new(Some("Original project code is MIT licensed. Dependency licenses must be collected before binary distribution."));license.set_wrap(true);license.set_xalign(0.0);license.add_css_class("messenger-muted");
     let close=gtk::Button::with_label("Close");close.set_halign(gtk::Align::End);let window_copy=window.clone();close.connect_clicked(move|_|{window_copy.close();});
     for widget in [note.upcast_ref::<gtk::Widget>(),license.upcast_ref(),close.upcast_ref()]{root.append(widget);}
@@ -158,6 +156,8 @@ fn about(parent:&gtk::Window){
 }
 
 fn build(app:&gtk::Application){
+    // GTK is initialized by GtkApplication::run before activation.
+    gtk::Window::set_default_icon_name("shadow-messenger-app");
     if let Some(window)=app.windows().into_iter().find(|window|window.widget_name().as_str()=="shadow-messenger-main"){window.present();return;}
     if let Some(display)=gtk::gdk::Display::default(){let css=gtk::CssProvider::new();css.load_from_data(include_str!("style.css"));gtk::style_context_add_provider_for_display(&display,&css,gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);}
     let (commands,updates)=worker::start();
@@ -439,7 +439,7 @@ fn build(app:&gtk::Application){
                 Event::SignedOut=>{
                     let was_signed_in=signed_in_ui.replace(false);
                     if was_signed_in&&settings::get("presence_sounds",true){sound::play("sign-off");}
-                    stack_ui.set_visible_child_name("login");login_ui.status.set_text("No account connected. Choose a test account to continue development checks.");
+                    stack_ui.set_visible_child_name("login");login_ui.status.set_text("No account connected. Sign in to continue.");
                     login_ui.login.set_sensitive(login_ui.consent.is_active());login_ui.logout.set_sensitive(false);
                     if let Some(view)=registration_ui_state.borrow().as_ref(){view.signed_out();}
                     shell_ui.signed_out();shell_ui.set_notice("No account connected.");

@@ -19,7 +19,10 @@ allowed=re.compile(r'(?:shadowrealm-os-archive-keyring\.gpg|pool/main/[^/]+/[^/]
 for f in files:
  if f.is_symlink() or not allowed.fullmatch(f.relative_to(a.archive).as_posix()):
   p.error('Unexpected repository artifact: '+str(f.relative_to(a.archive)))
-c=paramiko.SSHClient();c.load_system_host_keys();c.connect(a.host,username=a.user,key_filename=a.identity)
+c=paramiko.SSHClient();c.load_system_host_keys()
+known=pathlib.Path.home()/'.ssh'/'known_hosts'
+if known.is_file():c.load_host_keys(str(known))
+c.connect(a.host,username=a.user,key_filename=a.identity)
 s=c.open_sftp()
 def mkdir(path):
  try:s.stat(path)
