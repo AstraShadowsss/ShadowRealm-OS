@@ -22,7 +22,7 @@ A pre-installer guidance window now covers disk erasure, encryption recovery and
 
 ### Package and disk state
 
-Current r5 packages staged in `/var/tmp/r5-out`: desktop 0.2.21, Terminal 0.2.4, artwork 0.2.6, panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, archive keyring 2026.11-2, all nine games and `shadowrealm-os-messenger` 0.1.0. Regenerable `/var/tmp` build and test directories were removed, reclaiming about 6 GB; the Synapse fixture and account data were kept. The VM still has no root access, live-build, xorriso, mksquashfs, debootstrap or the expected build volume.
+Current r5 packages staged in `/var/tmp/r5-out`: desktop 0.2.21, Terminal 0.2.4, artwork 0.2.6, panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, archive keyring 2026.11-2, all nine games and `shadowrealm-os-messenger` 0.1.0. Every staged DEB was compared with the version the signed feed publishes: all match except the terminal, which carried unreleased tab support under 0.2.3 and was rebuilt as 0.2.4 and published. Terminal 0.2.4 from the feed opened a tab strip, and `Ctrl+Shift+T` opened a second shell on the test VM. Regenerable `/var/tmp` build and test directories were removed, reclaiming about 6 GB; the Synapse fixture and account data were kept. The VM still has no root access, live-build, xorriso, mksquashfs, debootstrap or the expected build volume.
 
 ### Release-folder audit
 
