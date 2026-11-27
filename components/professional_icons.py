@@ -89,7 +89,10 @@ def build_professional_icons(root, modes, source=None):
             'folder': '', 'folder-documents': 'notes', 'folder-download': 'download',
             'folder-downloads': 'download', 'folder-music': 'music', 'folder-pictures': 'image',
             'folder-videos': 'video', 'folder-templates': 'document', 'folder-publicshare': 'users',
-            'user-home': 'home', 'user-trash': 'trash', 'drive-harddisk': 'disk',
+            'user-home': 'home', 'user-trash': 'trash', 'user-trash-full': 'trash',
+            'user-trash-empty': 'trash', 'trashcan_full': 'trash', 'trashcan_empty': 'trash',
+            'gnome-fs-trash-full': 'trash', 'gnome-fs-trash-empty': 'trash',
+            'drive-harddisk': 'disk',
         }
         for p in theme.rglob('*'):
             if p.suffix not in ('.svg', '.png') or not p.is_file() or p.stem not in places:
