@@ -3,10 +3,11 @@ use gtk::prelude::*;
 use crate::{worker::Command,conversations::Invitation};
 
 pub struct ConversationsView {
-    window:gtk::Window,list:gtk::Box,status:gtk::Label,name:gtk::Entry,people:gtk::Entry,create:gtk::Button,commands:Sender<Command>,
+    window:gtk::Window,main:gtk::Window,list:gtk::Box,status:gtk::Label,name:gtk::Entry,people:gtk::Entry,create:gtk::Button,commands:Sender<Command>,
 }
 impl ConversationsView {
     pub fn new(parent:&gtk::ApplicationWindow,commands:Sender<Command>)->Self{
+        let main:gtk::Window=parent.clone().upcast();
         let window=gtk::Window::builder().title("Conversations & invitations").transient_for(parent).destroy_with_parent(true).default_width(650).default_height(560).build();
         window.add_css_class("messenger-window");
         let outer=gtk::Box::new(gtk::Orientation::Vertical,12);outer.set_margin_top(20);outer.set_margin_bottom(20);outer.set_margin_start(20);outer.set_margin_end(20);
@@ -25,7 +26,14 @@ impl ConversationsView {
         });
         let tx=commands.clone();refresh.connect_clicked(move |_|{let _=tx.try_send(Command::Invitations);});
         window.connect_close_request(|window|{window.hide();gtk::glib::Propagation::Stop});
-        Self{window,list,status,name,people,create,commands}
+        Self{window,main,list,status,name,people,create,commands}
+    }
+    pub fn present_above(&self,parent:Option<&gtk::Window>){
+        if parent.is_some_and(|parent|parent==&self.window){self.window.present();}
+        else{self.window.set_transient_for(Some(parent.unwrap_or(&self.main)));self.window.present();}
+    }
+    pub fn release_to_main(&self){
+        if self.window.transient_for().as_ref()!=Some(&self.main){self.window.set_transient_for(Some(&self.main));if self.window.is_visible(){self.window.present();}}
     }
     pub fn present(&self){self.window.present();}
     pub fn invitations(&self,invites:Vec<Invitation>){

@@ -5,6 +5,7 @@ use crate::{worker::Command,verification::{DeviceInfo,State}};
 
 pub struct SecurityView {
     window:gtk::Window,
+    main:gtk::Window,
     list:gtk::Box,
     account:gtk::Label,
     status:gtk::Label,
@@ -18,6 +19,7 @@ pub struct SecurityView {
 }
 impl SecurityView {
     pub fn new(parent:&gtk::ApplicationWindow,commands:Sender<Command>)->Self{
+        let main:gtk::Window=parent.clone().upcast();
         let window=gtk::Window::builder().title("Devices & security").transient_for(parent).destroy_with_parent(true).default_width(620).default_height(520).build();
         window.add_css_class("messenger-window");
         let outer=gtk::Box::new(gtk::Orientation::Vertical,12);for setter in [gtk::Widget::set_margin_top,gtk::Widget::set_margin_bottom,gtk::Widget::set_margin_start,gtk::Widget::set_margin_end]{setter(outer.upcast_ref(),20);}
@@ -34,7 +36,14 @@ impl SecurityView {
         let id=flow.clone();let tx=commands.clone();cancel.connect_clicked(move |_|{if let Some(id)=id.borrow().clone(){let _=tx.try_send(Command::CancelVerification(id));}});
         let tx=commands.clone();refresh.connect_clicked(move |_|{let _=tx.try_send(Command::Devices);});
         let id=flow.clone();let tx=commands.clone();window.connect_close_request(move|window|{if let Some(id)=id.borrow().clone(){let _=tx.try_send(Command::CancelVerification(id));}window.hide();gtk::glib::Propagation::Stop});
-        Self{window,list,account,status,numbers,confirm,accept,cancel,flow,confirmed,commands}
+        Self{window,main,list,account,status,numbers,confirm,accept,cancel,flow,confirmed,commands}
+    }
+    pub fn present_above(&self,parent:Option<&gtk::Window>){
+        if parent.is_some_and(|parent|parent==&self.window){self.window.present();}
+        else{self.window.set_transient_for(Some(parent.unwrap_or(&self.main)));self.window.present();}
+    }
+    pub fn release_to_main(&self){
+        if self.window.transient_for().as_ref()!=Some(&self.main){self.window.set_transient_for(Some(&self.main));if self.window.is_visible(){self.window.present();}}
     }
     pub fn signed_out(&self){self.window.hide();self.numbers.set_text("");self.accept.set_visible(false);self.confirm.set_sensitive(false);self.cancel.set_sensitive(false);self.list.set_sensitive(true);*self.flow.borrow_mut()=None;self.confirmed.set(false);while let Some(child)=self.list.first_child(){self.list.remove(&child);}}
     pub fn present(&self){self.window.present();}

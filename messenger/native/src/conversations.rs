@@ -30,6 +30,16 @@ fn participants(input:&str,own:&str)->Result<Vec<OwnedUserId>,String>{
     if users.is_empty(){return Err("Enter at least one Matrix address.".into());}Ok(users.into_iter().collect())
 }
 
+pub async fn invite(client:&Client,room_id:&str,input:&str)->Result<String,String>{
+    let users=participants(input,client.user_id().ok_or("Sign in first.")?.as_str())?;
+    let id:OwnedRoomId=room_id.parse().map_err(|_|"This conversation is invalid.")?;
+    let room=client.get_room(&id).ok_or("Open the conversation again before inviting someone.")?;
+    let mut sent=0;let mut failed=Vec::new();
+    for user in users{match room.invite_user_by_id(&user).await{Ok(_)=>sent+=1,Err(_)=>failed.push(user.to_string())}}
+    Ok(if failed.is_empty(){format!("Invited {sent} {}. They can accept from their invitations.",if sent==1{"person"}else{"people"})}
+        else{format!("Invited {sent}. These invitations did not complete: {}. Check the addresses and connection.",failed.join(", "))})
+}
+
 pub async fn create(client:&Client,name:&str,input:&str)->Result<(String,String),String>{
     let users=participants(input,client.user_id().ok_or("Sign in first.")?.as_str())?;
     let name=name.trim();if name.chars().count()>80||name.chars().any(char::is_control){return Err("Use a conversation name of up to 80 characters without control characters.".into());}

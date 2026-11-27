@@ -6,6 +6,7 @@ use crate::worker::Command;
 
 pub struct RecoveryView {
     window:gtk::Window,
+    main:gtk::Window,
     status:gtk::Label,
     key:gtk::PasswordEntry,
     generated:gtk::PasswordEntry,
@@ -19,6 +20,7 @@ pub struct RecoveryView {
 }
 impl RecoveryView {
     pub fn new(parent:&gtk::ApplicationWindow,commands:Sender<Command>)->Self{
+        let main:gtk::Window=parent.clone().upcast();
         let window=gtk::Window::builder().title("Account recovery").transient_for(parent).destroy_with_parent(true).default_width(630).default_height(560).build();
         window.add_css_class("messenger-window");
         let outer=gtk::Box::new(gtk::Orientation::Vertical,12);outer.set_margin_top(20);outer.set_margin_bottom(20);outer.set_margin_start(20);outer.set_margin_end(20);
@@ -56,7 +58,14 @@ impl RecoveryView {
             entry.set_text("");entry.set_visible(false);saved_copy.set_visible(false);window.hide();gtk::glib::Propagation::Stop
         });
         let entries=[key.clone(),generated.clone(),password.clone()];window.connect_destroy(move |_|{for entry in &entries{entry.set_text("");}});
-        Self{window,status,key,generated,saved,consent,create,restore,finish,password,can_create}
+        Self{window,main,status,key,generated,saved,consent,create,restore,finish,password,can_create}
+    }
+    pub fn present_above(&self,parent:Option<&gtk::Window>){
+        if parent.is_some_and(|parent|parent==&self.window){self.window.present();}
+        else{self.window.set_transient_for(Some(parent.unwrap_or(&self.main)));self.window.present();}
+    }
+    pub fn release_to_main(&self){
+        if self.window.transient_for().as_ref()!=Some(&self.main){self.window.set_transient_for(Some(&self.main));if self.window.is_visible(){self.window.present();}}
     }
     pub fn has_unsaved_key(&self)->bool{!self.generated.text().is_empty()&&!self.saved.is_active()}
     pub fn present(&self){self.window.present();}

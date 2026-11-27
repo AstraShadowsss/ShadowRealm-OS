@@ -50,6 +50,31 @@ pub(crate) fn client_builder(server:&str)->Result<matrix_sdk::ClientBuilder,Stri
     Ok(builder)
 }
 
+fn friendly_login(error:&matrix_sdk::Error)->String{
+    use matrix_sdk::ruma::api::error::ErrorKind;
+    match error.client_api_error_kind(){
+        Some(ErrorKind::Forbidden)=>"Sign-in failed. Check the account name and password.".into(),
+        Some(ErrorKind::UserDeactivated)=>"This account has been deactivated. Contact your homeserver administrator.".into(),
+        Some(ErrorKind::UserLocked)=>"This account is locked. Contact your homeserver administrator.".into(),
+        Some(ErrorKind::LimitExceeded(_))=>"Too many sign-in attempts. Wait a minute and try again.".into(),
+        Some(ErrorKind::UnknownToken(_))=>"The homeserver rejected this session. Sign in again.".into(),
+        _=>"Sign-in failed. Check the account, homeserver and supported login method.".into(),
+    }
+}
+fn friendly_registration(error:&matrix_sdk::Error)->String{
+    use matrix_sdk::ruma::api::error::ErrorKind;
+    match error.client_api_error_kind(){
+        Some(ErrorKind::UserInUse)=>"That account name is already taken on this homeserver.".into(),
+        Some(ErrorKind::InvalidUsername)=>"That account name is not valid here. Use lowercase letters, numbers and . _ = -".into(),
+        Some(ErrorKind::WeakPassword)=>"The homeserver rejected that password as too weak. Choose a longer one.".into(),
+        Some(ErrorKind::Forbidden)=>"This homeserver does not allow new accounts. Use a provider that offers registration or ask its administrator.".into(),
+        Some(ErrorKind::LimitExceeded(_))=>"Too many attempts. Wait a minute and try again.".into(),
+        Some(ErrorKind::UserLimitExceeded(_))=>"This homeserver has reached its account limit.".into(),
+        Some(ErrorKind::CaptchaNeeded)|Some(ErrorKind::CaptchaInvalid)=>"This homeserver requires a web captcha. Create the account on its website, then sign in here.".into(),
+        _=>"Account creation failed. This homeserver may not allow registration; check its sign-up page or contact its administrator.".into(),
+    }
+}
+
 pub async fn login(server:String,username:String,password:Zeroizing<String>)->Result<Client,String>{
     let server=shadow_messenger_core::validate_homeserver(&server).map_err(str::to_owned)?;
     if saved().await?.is_some(){return Err("Restore or remove the saved account before adding another.".into());}
@@ -57,14 +82,85 @@ pub async fn login(server:String,username:String,password:Zeroizing<String>)->Re
     fs::DirBuilder::new().mode(0o700).create(&path).map_err(|_|"Could not create private account storage.")?;
     let client=client_builder(&server)?.sqlite_store(path,Some(key.as_str())).build().await
         .map_err(|_|"Could not open the encrypted account store or connect to the homeserver.")?;
-    client.matrix_auth().login_username(username,password.as_str()).initial_device_display_name("Shadow Messenger").send().await
-        .map_err(|_|"Sign-in failed. Check the account, homeserver and supported login method.")?;
+    if let Err(error)=client.matrix_auth().login_username(username,password.as_str()).initial_device_display_name("Shadow Messenger").send().await{
+        return Err(friendly_login(&error));
+    }
     let session=client.matrix_auth().session().ok_or("The server did not return an account session.")?;
     let account=SavedAccount{version:1,server,database_id:id,store_key:key.to_string(),session};
     let json=Zeroizing::new(serde_json::to_string(&account).map_err(|_|"The account session could not be saved.")?);
     let result=tokio::task::spawn_blocking(move||Vault::primary_account()?.save(json.as_str())).await
         .map_err(|_|"The keyring request could not finish.".to_owned())?;
     if result.is_err(){let _=client.logout().await;return Err("Sign-in was cancelled because the desktop keyring could not save the session.".into());}
+    Ok(client)
+}
+
+/// Creates a Matrix account when the homeserver allows registration. Many
+/// providers disable it or require a token, terms or a captcha; the error
+/// messages explain those cases instead of guessing at success.
+pub async fn register(server:String,username:String,password:Zeroizing<String>,token:Option<Zeroizing<String>>)->Result<Client,String>{
+    use matrix_sdk::ruma::api::client::account::register::v3::Request;
+    use matrix_sdk::ruma::api::client::uiaa::{AuthData,AuthType,Dummy,MatrixUserIdentifier,Password,RegistrationToken};
+    let server=shadow_messenger_core::validate_homeserver(&server).map_err(str::to_owned)?;
+    let username=username.trim();
+    if username.is_empty(){return Err("Choose an account name for this homeserver.".into());}
+    if username.starts_with('@')||username.contains(':'){return Err("Enter the account name only, without @ or the server part.".into());}
+    if password.chars().count()<8{return Err("Choose a password with at least 8 characters.".into());}
+    if saved().await?.is_some(){return Err("Restore or remove the saved account before adding another.".into());}
+    let id=random_hex(16)?.to_string();let key=random_hex(32)?;let path=database_path(&id)?;
+    fs::DirBuilder::new().mode(0o700).create(&path).map_err(|_|"Could not create private account storage.")?;
+    let client=client_builder(&server)?.sqlite_store(path,Some(key.as_str())).build().await
+        .map_err(|_|"Could not open the encrypted account store or connect to the homeserver.")?;
+    let mut auth:Option<AuthData>=None;
+    let mut created=false;
+    for _ in 0..4{
+        let mut request=Request::new();
+        request.username=Some(username.to_owned());
+        request.password=Some(password.as_str().to_owned());
+        request.initial_device_display_name=Some("Shadow Messenger".into());
+        request.auth=auth.take();
+        match client.matrix_auth().register(request).await{
+            Ok(_)=>{created=true;break;}
+            Err(error)=>{
+                let Some(info)=error.as_uiaa_response() else{
+                    let _=client.logout().await;return Err(friendly_registration(&error));
+                };
+                let supported=|stage:&AuthType|matches!(stage,AuthType::Dummy|AuthType::Password)
+                    ||(matches!(stage,AuthType::RegistrationToken)&&token.is_some());
+                let stage=info.flows.iter()
+                    .filter(|flow|!flow.stages.is_empty()&&flow.stages.iter().all(supported))
+                    .find_map(|flow|flow.stages.iter().find(|stage|!info.completed.contains(*stage)).or_else(||flow.stages.first()))
+                    .cloned();
+                let Some(stage)=stage else{
+                    let requires_token=info.flows.iter().any(|flow|flow.stages.iter().any(|stage|matches!(stage,AuthType::RegistrationToken)));
+                    let requires_terms=info.flows.iter().any(|flow|flow.stages.iter().any(|stage|matches!(stage,AuthType::Terms)));
+                    let _=client.logout().await;
+                    return Err(if requires_token&&token.is_none(){"This homeserver requires a registration token. Enter the token, or ask its administrator for one.".into()}
+                        else if requires_terms{"This homeserver requires accepting its terms in a web browser. Create the account on its website, then sign in here.".into()}
+                        else{"This homeserver requires verification steps this build does not support. Create the account on its website, then sign in here.".into()});
+                };
+                let mut next=match stage{
+                    AuthType::Dummy=>AuthData::Dummy(Dummy::new()),
+                    AuthType::RegistrationToken=>AuthData::RegistrationToken(RegistrationToken::new(token.as_ref().map(|value|value.to_string()).unwrap_or_default())),
+                    AuthType::Password=>AuthData::Password(Password::new(MatrixUserIdentifier::new(username.to_owned()).into(),password.as_str().to_owned())),
+                    _=>{let _=client.logout().await;return Err("This homeserver requires verification steps this build does not support. Create the account on its website, then sign in here.".into());}
+                };
+                match &mut next{
+                    AuthData::Dummy(data)=>data.session=info.session.clone(),
+                    AuthData::RegistrationToken(data)=>data.session=info.session.clone(),
+                    AuthData::Password(data)=>data.session=info.session.clone(),
+                    _=>{}
+                }
+                auth=Some(next);
+            }
+        }
+    }
+    if !created{let _=client.logout().await;return Err("The homeserver asked for more verification steps than this build supports. Create the account on its website, then sign in here.".into());}
+    let session=client.matrix_auth().session().ok_or("The server created the account but did not return a session. Sign in with the new account.")?;
+    let account=SavedAccount{version:1,server,database_id:id,store_key:key.to_string(),session};
+    let json=Zeroizing::new(serde_json::to_string(&account).map_err(|_|"The new account session could not be saved.")?);
+    let result=tokio::task::spawn_blocking(move||Vault::primary_account()?.save(json.as_str())).await
+        .map_err(|_|"The keyring request could not finish.".to_owned())?;
+    if result.is_err(){let _=client.logout().await;return Err("The account was created, but the desktop keyring could not save its session. Sign in with the new account.".into());}
     Ok(client)
 }
 
@@ -121,6 +217,24 @@ mod matrix_integration {
         forget(&restored).await.unwrap();drop(restored);
         assert!(restore().await.unwrap().is_none());
     }
+    #[tokio::test(flavor="multi_thread",worker_threads=2)]
+    #[ignore = "requires the disposable local Matrix fixture and isolated Secret Service"]
+    async fn registration_creates_and_restores_a_fresh_account(){
+        assert_eq!(std::env::var("SHADOW_MESSENGER_ISOLATED_KEYRING_TEST").as_deref(),Ok("1"));
+        let fixture=std::env::var("SHADOW_MESSENGER_MATRIX_FIXTURE").unwrap();
+        let account:serde_json::Value=serde_json::from_str(&fs::read_to_string(fixture).unwrap()).unwrap();
+        let server=account["server"].as_str().unwrap();
+        let stamp=std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+        let username=format!("smtest{stamp}");
+        assert!(restore().await.unwrap().is_none());
+        let client=register(server.into(),username.clone(),Zeroizing::new("Disposable-test-4271".into()),None).await.unwrap();
+        assert!(client.user_id().unwrap().as_str().starts_with(&format!("@{username}:")));
+        drop(client);
+        let restored=restore().await.unwrap().unwrap();
+        assert_eq!(restored.user_id().unwrap().localpart(),username);
+        forget(&restored).await.unwrap();drop(restored);
+        assert!(restore().await.unwrap().is_none());
+    }
 }
 
 #[cfg(test)]
@@ -141,7 +255,7 @@ mod encrypted_message_integration {
             let b=bob.clone();let b_sync=tokio::spawn(async move{b.sync(matrix_sdk::config::SyncSettings::default().timeout(Duration::from_secs(1))).await});
             let room=alice.create_room(matrix_sdk::ruma::api::client::room::create_room::v3::Request::new()).await.unwrap();
             let unencrypted=crate::timeline::RoomTimeline::open(&alice,room.room_id().as_str()).await.unwrap();
-            assert!(unencrypted.queue_message("Must not be sent without consent",false).await.is_err());drop(unencrypted);
+            assert!(unencrypted.queue_message("Must not be sent without consent",false,false).await.is_err());drop(unencrypted);
             room.enable_encryption().await.unwrap();
             room.invite_user_by_id(bob.user_id().unwrap()).await.unwrap();
             let bob_room=bob.join_room_by_id(room.room_id()).await.unwrap();

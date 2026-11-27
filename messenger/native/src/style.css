@@ -31,3 +31,167 @@
     border: 1px solid alpha(@theme_fg_color, 0.18);
     background-color: alpha(@theme_selected_bg_color, 0.08);
 }
+.messenger-window switch:checked {
+    background-color: @theme_selected_bg_color;
+}
+.messenger-window .messenger-nav {
+    background-color: alpha(@theme_fg_color, 0.045);
+    border: 1px solid alpha(@theme_fg_color, 0.08);
+    border-radius: 14px;
+    padding: 10px;
+}
+.messenger-window .messenger-nav button.messenger-nav-item {
+    background-color: transparent;
+    border: none;
+    border-radius: 9px;
+    padding: 9px 12px;
+}
+.messenger-window .messenger-nav button.messenger-nav-item.active {
+    background-color: alpha(@theme_selected_bg_color, 0.28);
+    border: 1px solid alpha(@theme_selected_bg_color, 0.6);
+}
+.messenger-window .messenger-nav button.messenger-nav-item.active label {
+    color: @theme_fg_color;
+}
+.messenger-window .messenger-profile {
+    background-color: alpha(@theme_fg_color, 0.045);
+    border: 1px solid alpha(@theme_fg_color, 0.08);
+    border-radius: 14px;
+    padding: 16px;
+}
+.messenger-window .messenger-card {
+    background-color: alpha(@theme_fg_color, 0.04);
+    border: 1px solid alpha(@theme_selected_bg_color, 0.4);
+    border-radius: 16px;
+    padding: 26px;
+}
+.messenger-window .messenger-avatar {
+    background-color: @theme_selected_bg_color;
+    border-radius: 40px;
+    min-width: 80px;
+    min-height: 80px;
+    font-size: 26pt;
+    font-weight: 700;
+}
+.messenger-window .messenger-avatar-small {
+    background-color: alpha(@theme_selected_bg_color, 0.65);
+    border-radius: 16px;
+    min-width: 32px;
+    min-height: 32px;
+    font-weight: 700;
+}
+.messenger-window .messenger-avatar-chat {
+    background-color: @theme_selected_bg_color;
+    border-radius: 18px;
+    min-width: 36px;
+    min-height: 36px;
+    font-weight: 700;
+}
+.messenger-window .messenger-bubble {
+    border-radius: 14px;
+    padding: 8px 12px;
+}
+.messenger-window .messenger-bubble-in {
+    background-color: alpha(@theme_fg_color, 0.075);
+    border: 1px solid alpha(@theme_fg_color, 0.10);
+}
+.messenger-window .messenger-bubble-out {
+    background-color: alpha(@theme_selected_bg_color, 0.24);
+    border: 1px solid alpha(@theme_selected_bg_color, 0.45);
+}
+.messenger-window .messenger-sender {
+    font-weight: 700;
+    font-size: 10pt;
+}
+.messenger-window .messenger-body {
+    font-size: 11pt;
+}
+.messenger-window .messenger-action {
+    font-style: italic;
+}
+.messenger-window .messenger-time {
+    font-size: 8pt;
+    color: alpha(@theme_fg_color, 0.55);
+}
+.messenger-window .messenger-error {
+    font-size: 8pt;
+    color: @error_color;
+}
+.messenger-window .messenger-day {
+    font-size: 9pt;
+    color: alpha(@theme_fg_color, 0.62);
+    padding: 10px 0 6px;
+}
+.messenger-window .messenger-message-row {
+    background-color: transparent;
+    padding: 2px 12px;
+}
+.messenger-window .messenger-day-row,
+.messenger-window .messenger-transcript,
+.messenger-window .messenger-transcript row {
+    background-color: transparent;
+}
+.messenger-window .messenger-typing,
+.messenger-window .messenger-empty,
+.messenger-window .messenger-security,
+.messenger-window .messenger-status-line,
+.messenger-window .messenger-muted,
+.messenger-window .messenger-connection-subtitle,
+.messenger-window .messenger-chat-subtitle {
+    font-size: 9pt;
+    color: alpha(@theme_fg_color, 0.64);
+}
+.messenger-window .messenger-composer-frame {
+    border: 1px solid alpha(@theme_selected_bg_color, 0.5);
+    border-radius: 12px;
+    background-color: alpha(@theme_fg_color, 0.025);
+}
+.messenger-window .messenger-composer-frame textview,
+.messenger-window .messenger-composer-frame textview text {
+    background-color: transparent;
+}
+.messenger-window .messenger-page-title {
+    font-weight: 700;
+    font-size: 15pt;
+}
+.messenger-window .messenger-chat-heading {
+    font-weight: 700;
+    font-size: 12pt;
+}
+.messenger-window .messenger-small-button {
+    padding: 4px 8px;
+    font-size: 9pt;
+}
+.messenger-window .messenger-connection-row,
+.messenger-window .messenger-activity-row {
+    background-color: transparent;
+    padding: 6px 4px;
+    border-radius: 10px;
+}
+.messenger-window .messenger-connection-name,
+.messenger-window .messenger-activity-title {
+    font-weight: 600;
+}
+.messenger-window .messenger-activity-body {
+    font-size: 9pt;
+    color: alpha(@theme_fg_color, 0.72);
+}
+.messenger-window .messenger-activity-time {
+    font-size: 8pt;
+    color: alpha(@theme_fg_color, 0.52);
+}
+.messenger-window .messenger-badge {
+    background-color: @theme_selected_bg_color;
+    color: @theme_selected_fg_color;
+    border-radius: 9px;
+    min-width: 18px;
+    min-height: 18px;
+    font-size: 8pt;
+    font-weight: 700;
+}
+.messenger-window .messenger-dot-online { color: @success_color; }
+.messenger-window .messenger-dot-away { color: @warning_color; }
+.messenger-window .messenger-dot-dnd { color: @error_color; }
+.messenger-window .messenger-dot-invisible,
+.messenger-window .messenger-dot-offline,
+.messenger-window .messenger-dot-unknown { color: alpha(@theme_fg_color, 0.55); }

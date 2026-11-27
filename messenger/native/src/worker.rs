@@ -1,20 +1,26 @@
 //! One account worker owns the session; GTK never blocks on network or keyring work.
 use async_channel::{Sender,Receiver};
-use shadow_messenger_core::Connection;
+use shadow_messenger_core::{Connection,Presence};
 use zeroize::Zeroizing;
 use crate::matrix::Session;
 
 pub enum Command {
     Login {server:String,username:String,password:Zeroizing<String>},
+    Register {server:String,username:String,password:Zeroizing<String>,token:Option<Zeroizing<String>>},
     Restore,
     Refresh,
     OpenRoom(String),
     LoadOlder,
-    Send{room_id:String,body:String,allow_unencrypted:bool},
+    Send{room_id:String,body:String,allow_unencrypted:bool,action:bool},
     RetryPending,
+    SetStatus{presence:Presence,message:String},
+    Buddies,
+    Typing{room_id:String,typing:bool},
     Invitations,
     RespondInvitation{room_id:String,accept:bool},
     CreateConversation{name:String,people:String},
+    Invite{room_id:String,people:String},
+    SetAvatar{path:String},
     Devices,
     RecoveryStatus,
     EnableRecovery(Option<Zeroizing<String>>),
@@ -28,15 +34,19 @@ pub enum Command {
     Logout,
 }
 pub enum Event {
-    Connected,
+    Connected{user_id:String,display_name:String},
     Invitations(Vec<crate::conversations::Invitation>),
     ConversationAction(String),
     ConversationCreated{room_id:String,message:String},
+    Avatar{bytes:Vec<u8>},
     RecoveryStatus{message:String,can_create:bool},
     RecoveryKey(Zeroizing<String>),
     RecoveryRestored,
     Devices{user_id:String,devices:Vec<crate::verification::DeviceInfo>},
     Verification{flow_id:String,state:crate::verification::State},
+    Status{presence:Presence,message:String},
+    Buddies{own_user:String,own_presence:Presence,own_message:String,buddies:Vec<shadow_messenger_core::Buddy>},
+    Typing{room_id:String,users:Vec<String>},
     Queued{room_id:String,body:String},
     RoomSecurity{room_id:String,encrypted:bool},
     Rooms(Vec<Connection>),
@@ -45,8 +55,8 @@ pub enum Event {
     Error(String),
 }
 pub fn start()->(Sender<Command>,Receiver<Event>){
-    let (commands,requests)=async_channel::bounded(4);
-    let (events,updates)=async_channel::bounded(8);
+    let (commands,requests)=async_channel::bounded(8);
+    let (events,updates)=async_channel::bounded(16);
     let internal_commands=commands.clone();
     std::thread::Builder::new().name("Messenger account".into()).spawn(move||{
         let runtime=match tokio::runtime::Builder::new_multi_thread().worker_threads(2).thread_name("Messenger IO").enable_all().build(){
@@ -55,6 +65,7 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
         };
         runtime.block_on(async move {
             let mut session:Option<Session>=None;
+            let mut status=(Presence::Online,String::new());
             let mut verification:Option<crate::verification::VerificationFlow>=None;
             let mut verification_tasks:Vec<tokio::task::JoinHandle<()>>=Vec::new();
             let mut sas_observed=false;
@@ -62,6 +73,7 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
             let mut sync_task:Option<tokio::task::JoinHandle<()>>=None;
             let mut timeline:Option<crate::timeline::RoomTimeline>=None;
             let mut forward:Option<tokio::task::JoinHandle<()>>=None;
+            let mut typing_forward:Option<tokio::task::JoinHandle<()>>=None;
             while let Ok(command)=requests.recv().await {
                 if sync_task.as_ref().is_some_and(|task|task.is_finished()){sync_task=None;}
                 let result:Result<(),String>=async {
@@ -69,14 +81,44 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::Login{server,username,password}=>{
                             if session.is_some(){return Err("Sign out before adding another account.".into());}
                             session=Some(Session::login(server,username,password).await?);
-                            let _=events.send(Event::Connected).await;
-                            let rooms=session.as_ref().unwrap().connections().await?;
+                            let account=session.as_ref().unwrap();
+                            let display_name=account.client().account().get_display_name().await.ok().flatten()
+                                .unwrap_or_else(||shadow_messenger_core::display_name(account.client().user_id().map(|user|user.as_str()).unwrap_or("")));
+                            if status.0!=Presence::Online||!status.1.is_empty(){
+                                let _=account.client().set_presence(crate::contacts::matrix_presence(status.0),(!status.1.is_empty()).then(||status.1.clone()),true).await;
+                            }
+                            let _=events.send(Event::Connected{user_id:account.client().user_id().map(ToString::to_string).unwrap_or_default(),display_name}).await;
+                            let _=events.send(Event::Status{presence:status.0,message:status.1.clone()}).await;
+                            send_avatar(account, &events).await;
+                            let rooms=account.connections().await?;
+                            let _=events.send(Event::Rooms(rooms)).await;
+                        }
+                        Command::Register{server,username,password,token}=>{
+                            if session.is_some(){return Err("Sign out before adding another account.".into());}
+                            session=Some(Session::register(server,username,password,token).await?);
+                            let account=session.as_ref().unwrap();
+                            let display_name=account.client().account().get_display_name().await.ok().flatten()
+                                .unwrap_or_else(||shadow_messenger_core::display_name(account.client().user_id().map(|user|user.as_str()).unwrap_or("")));
+                            if status.0!=Presence::Online||!status.1.is_empty(){
+                                let _=account.client().set_presence(crate::contacts::matrix_presence(status.0),(!status.1.is_empty()).then(||status.1.clone()),true).await;
+                            }
+                            let _=events.send(Event::Connected{user_id:account.client().user_id().map(ToString::to_string).unwrap_or_default(),display_name}).await;
+                            let _=events.send(Event::Status{presence:status.0,message:status.1.clone()}).await;
+                            send_avatar(account, &events).await;
+                            let rooms=account.connections().await?;
                             let _=events.send(Event::Rooms(rooms)).await;
                         }
                         Command::Restore=>{
                             if session.is_none(){session=Session::restore().await?;}
                             if let Some(account)=session.as_ref(){
-                                let _=events.send(Event::Connected).await;
+                                let display_name=account.client().account().get_display_name().await.ok().flatten()
+                                    .unwrap_or_else(||shadow_messenger_core::display_name(account.client().user_id().map(|user|user.as_str()).unwrap_or("")));
+                                if status.0!=Presence::Online||!status.1.is_empty(){
+                                    let _=account.client().set_presence(crate::contacts::matrix_presence(status.0),(!status.1.is_empty()).then(||status.1.clone()),true).await;
+                                }
+                                let _=events.send(Event::Connected{user_id:account.client().user_id().map(ToString::to_string).unwrap_or_default(),display_name}).await;
+                                let _=events.send(Event::Status{presence:status.0,message:status.1.clone()}).await;
+                                send_avatar(account, &events).await;
                                 let _=events.send(Event::Rooms(account.connections().await?)).await;
                             }else{let _=events.send(Event::SignedOut).await;}
                         }
@@ -86,9 +128,20 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         }
                         Command::OpenRoom(room_id)=>{
                             let account=session.as_ref().ok_or("Sign in first.")?;
-                            let opened=crate::timeline::RoomTimeline::open(account.client(),&room_id).await?;
+                            let mut opened=crate::timeline::RoomTimeline::open(account.client(),&room_id).await?;
                             let _=events.send(Event::RoomSecurity{room_id:room_id.clone(),encrypted:opened.encrypted().await?}).await;
                             if let Some(task)=forward.take(){task.abort();}
+                            if let Some(task)=typing_forward.take(){task.abort();}
+                            if let Some(mut typing)=opened.typing.take(){
+                                let events=events.clone();let room_id=room_id.clone();
+                                typing_forward=Some(tokio::spawn(async move{
+                                    loop{match typing.recv().await{
+                                        Ok(users)=>{let users=users.iter().map(ToString::to_string).collect();if events.send(Event::Typing{room_id:room_id.clone(),users}).await.is_err(){break;}},
+                                        Err(tokio::sync::broadcast::error::RecvError::Lagged(_))=>continue,
+                                        Err(_)=>break,
+                                    }}
+                                }));
+                            }
                             let messages=opened.updates.clone();let events=events.clone();
                             forward=Some(tokio::spawn(async move{
                                 while let Ok(messages)=messages.recv().await{
@@ -100,13 +153,32 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::LoadOlder=>{
                             timeline.as_ref().ok_or("Choose a conversation first.")?.older_messages().await?;
                         }
-                        Command::Send{room_id,body,allow_unencrypted}=>{
+                        Command::Send{room_id,body,allow_unencrypted,action}=>{
                             let opened=timeline.as_ref().ok_or("Choose a conversation first.")?;
                             if opened.room_id()!=room_id{return Err("The selected conversation changed. Your draft was kept.".into());}
-                            opened.queue_message(&body,allow_unencrypted).await?;let _=events.send(Event::Queued{room_id,body}).await;
+                            opened.queue_message(&body,allow_unencrypted,action).await?;let _=events.send(Event::Queued{room_id,body}).await;
                         }
                         Command::RetryPending=>{
                             timeline.as_ref().ok_or("Choose a conversation first.")?.retry_pending();
+                        }
+                        Command::SetStatus{presence,message}=>{
+                            let message=shadow_messenger_core::validate_status(&message).map_err(str::to_owned)?.to_owned();
+                            let account=session.as_ref().ok_or("Sign in first.")?;
+                            account.client().set_presence(crate::contacts::matrix_presence(presence),(!message.is_empty()).then(||message.clone()),true).await
+                                .map_err(|_|"Your status could not be published. Check the connection and try again.")?;
+                            status=(presence,message.clone());
+                            let _=events.send(Event::Status{presence,message}).await;
+                        }
+                        Command::Buddies=>{
+                            let account=session.as_ref().ok_or("Sign in first.")?;
+                            let list=crate::contacts::buddies(account.client(),status.0,&status.1).await?;
+                            let _=events.send(Event::Buddies{own_user:list.own_user,own_presence:list.own_presence,own_message:list.own_message,buddies:list.buddies}).await;
+                        }
+                        Command::Typing{room_id,typing}=>{
+                            let account=session.as_ref().ok_or("Sign in first.")?;
+                            if let Ok(id)=room_id.parse::<matrix_sdk::ruma::OwnedRoomId>(){
+                                if let Some(room)=account.client().get_room(&id){let _=room.typing_notice(typing).await;}
+                            }
                         }
                         Command::Invitations=>{
                             let client=session.as_ref().ok_or("Sign in first.")?.client();let _=events.send(Event::Invitations(crate::conversations::invitations(client).await)).await;
@@ -120,6 +192,21 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         Command::CreateConversation{name,people}=>{
                             let account=session.as_ref().ok_or("Sign in first.")?;let (room_id,message)=crate::conversations::create(account.client(),&name,&people).await?;
                             let _=events.send(Event::Rooms(account.connections().await?)).await;let _=events.send(Event::ConversationCreated{room_id,message}).await;
+                        }
+                        Command::Invite{room_id,people}=>{
+                            let account=session.as_ref().ok_or("Sign in first.")?;let message=crate::conversations::invite(account.client(),&room_id,&people).await?;
+                            let _=events.send(Event::ConversationAction(message)).await;
+                        }
+                        Command::SetAvatar{path}=>{
+                            let account=session.as_ref().ok_or("Sign in first.")?;
+                            let data=tokio::fs::read(&path).await.map_err(|_|"That picture could not be read.")?;
+                            if data.len()>2*1024*1024{return Err("Choose a display picture smaller than 2 MB.".into());}
+                            let extension=std::path::Path::new(&path).extension().and_then(|value|value.to_str()).unwrap_or_default().to_ascii_lowercase();
+                            let mime=match extension.as_str(){"png"=>"image/png","jpg"|"jpeg"=>"image/jpeg","webp"=>"image/webp","gif"=>"image/gif",_=>return Err("Use a PNG, JPEG, WebP or GIF picture.".into())};
+                            let mime=mime.parse::<mime::Mime>().map_err(|_|"That picture type is not supported.")?;
+                            account.client().account().upload_avatar(&mime,data.clone()).await.map_err(|_|"The picture could not be uploaded. Check the connection and try again.")?;
+                            let _=events.send(Event::Avatar{bytes:data}).await;
+                            let _=events.send(Event::ConversationAction("Display picture updated.".into())).await;
                         }
                         Command::RecoveryStatus=>{
                             let client=session.as_ref().ok_or("Sign in first.")?.client();
@@ -195,7 +282,7 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
                         }
                         Command::Logout=>{
                             if let Some(account)=session.as_ref(){account.logout().await?;}
-                            if let Some(task)=forward.take(){task.abort();}if let Some(task)=sync_task.take(){task.abort();}for task in verification_tasks.drain(..){task.abort();}verification=None;timeline=None;session=None;let _=events.send(Event::SignedOut).await;
+                            if let Some(task)=forward.take(){task.abort();}if let Some(task)=typing_forward.take(){task.abort();}if let Some(task)=sync_task.take(){task.abort();}for task in verification_tasks.drain(..){task.abort();}verification=None;timeline=None;session=None;status=(Presence::Online,String::new());let _=events.send(Event::SignedOut).await;
                         }
                     }
                     Ok(())
@@ -206,6 +293,12 @@ pub fn start()->(Sender<Command>,Receiver<Event>){
         });
     }).expect("Messenger account worker");
     (commands,updates)
+}
+
+async fn send_avatar(account:&Session,events:&Sender<Event>){
+    if let Ok(Some(bytes))=account.client().account().get_avatar(matrix_sdk::media::MediaFormat::File).await{
+        if !bytes.is_empty(){let _=events.send(Event::Avatar{bytes}).await;}
+    }
 }
 
 fn start_sync(account:Session,events:Sender<Event>,commands:Sender<Command>)->tokio::task::JoinHandle<()>{

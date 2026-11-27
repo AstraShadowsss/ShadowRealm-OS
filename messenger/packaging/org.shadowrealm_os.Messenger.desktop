@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Shadow Messenger
+Comment=Secure Matrix messaging for ShadowRealm-OS
+Exec=shadow-messenger
+Icon=shadow-messenger
+Terminal=false
+Categories=Network;InstantMessaging;
+Keywords=matrix;chat;messaging;
+StartupNotify=true
