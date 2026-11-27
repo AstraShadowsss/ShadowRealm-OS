@@ -93,7 +93,7 @@ Search and browse installed applications by category. The dock keeps the shortcu
 
 Load your own artwork or the built-in Prism sample, then see the icon in all twelve palettes before applying it to an application, saving it to a personal library or exporting SVG and PNG files.
 
-![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio.png?v=20261127studio)
+![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio.png?v=20261127neutralstudio)
 
 [Icon Studio guide](docs/icon-studio.md)
 
