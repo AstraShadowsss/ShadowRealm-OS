@@ -73,7 +73,7 @@ Eight independent widgets, shown together in Professional styling. They follow y
 
 Choose which panels appear, adjust their text, graph and bar colors, and set background transparency. Theme follows the shared background setting in Appearance.
 
-![Current widget controls](screenshots/widget-customization.png?v=20261123b)
+![Current widget controls](screenshots/widget-customization.png?v=20261127weather)
 
 </details>
 
