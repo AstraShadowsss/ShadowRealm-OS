@@ -38,6 +38,18 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-artwork-',dir=os.environ
     (target/('ShadowRealm-OS-'+theme+'.png')).write_bytes(walkers.extractfile(member).read())
  from theme_variants import build_variants
  build_variants(root, a.source)
+ # Professional icon plates ship light on the light wallpapers. Raster app
+ # icons have no SVG master, so whiten their plate pixels directly.
+ from restyle_professional_icons import whiten_theme_pngs
+ for theme in sorted((root/'usr/share/icons').glob('ShadowRealm-OS-Professional*')):
+  print('Whitening',theme.name,whiten_theme_pngs(theme),'app icons')
+ # Shadow Messenger uses the theme's mail glyph; replace the retired chat-bubble
+ # aliases so every palette and menu shows the same envelope plate.
+ mail=('orbital-dock-email','shadow-email','shadowrealm-os-release-orbital-dock-email','shadowrealm-os-app-email')
+ for theme in (root/'usr/share/icons').glob('ShadowRealm-OS-*'):
+  for source in list(theme.rglob('*.png'))+list(theme.rglob('*.svg')):
+   if source.stem in mail:
+    source.with_name(source.stem.replace('email','messenger')+source.suffix).write_bytes(source.read_bytes())
  # Keep vendor application icons supplied by their own packages.
  vendors=('proton-*','protonvpn*','thunar','Thunar','org.xfce.Thunar','org.xfce.thunar','org.xfce.filemanager','xfce4-terminal','org.xfce.terminal','xfce4-taskmanager','org.xfce.taskmanager','librewolf','io.gitlab.librewolf-community','thunderbird','org.mozilla.Thunderbird','vlc','net.jami.Jami','jami','libreoffice-*','io.github.Hexchat','hexchat','org.keepassxc.KeePassXC','keepassxc','org.gnome.Snapshot','com.belmoussaoui.Authenticator','guvcview','org.xfce.mousepad','mousepad','org.xfce.ristretto','ristretto','org.xfce.notes','atril','shutter','timeshift','sirikali','gparted','seahorse','org.gnome.clocks','org.gnome.Clocks','xarchiver','galculator','torbrowser-launcher','tor-browser','onboard')
  for theme in (root/'usr/share/icons').glob('ShadowRealm-OS-*'):

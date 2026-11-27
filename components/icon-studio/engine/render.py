@@ -37,8 +37,10 @@ PLATE={'dark':('#15232a','#070a10','#07060b','#1b0c21'),
 def icon(mode,role=None,logo=None,game=False):
     a=valid_color(mode['accent']); b=valid_color(mode['secondary']);
     # Professional variants sit on light wallpapers and use a light plate,
-    # matching the restyled Professional icon themes.
-    p=PLATE['light' if mode.get('unbranded') else 'dark']
+    # matching the restyled Professional icon themes. Older installed mode
+    # manifests may not carry the flag, so the theme name is authoritative.
+    unbranded=mode.get('unbranded') or str(mode.get('icons','')).startswith('ShadowRealm-OS-Professional')
+    p=PLATE['light' if unbranded else 'dark']
     header='<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="128" height="128" viewBox="0 0 128 128">'
     if game:return (header+image_element(logo,False)+'</svg>').encode()
     defs=f'''<defs>

@@ -69,7 +69,8 @@
     "background": "#f3f5f3",
     "icons": "ShadowRealm-OS-Professional",
     "theme": "ShadowRealm-OS-Professional",
-    "wm": "ShadowRealm-OS-Professional"
+    "wm": "ShadowRealm-OS-Professional",
+    "unbranded": true
   },
   "purple-black": {
     "accent": "#b34dff",
@@ -87,7 +88,8 @@
     "background": "#f3f6fa",
     "icons": "ShadowRealm-OS-ProfessionalOcean",
     "theme": "ShadowRealm-OS-ProfessionalOcean",
-    "wm": "ShadowRealm-OS-ProfessionalOcean"
+    "wm": "ShadowRealm-OS-ProfessionalOcean",
+    "unbranded": true
   },
   "professional-graphite": {
     "accent": "#4e5c70",
@@ -96,7 +98,8 @@
     "background": "#f3f4f6",
     "icons": "ShadowRealm-OS-ProfessionalGraphite",
     "theme": "ShadowRealm-OS-ProfessionalGraphite",
-    "wm": "ShadowRealm-OS-ProfessionalGraphite"
+    "wm": "ShadowRealm-OS-ProfessionalGraphite",
+    "unbranded": true
   },
   "professional-plum": {
     "accent": "#81449d",
@@ -105,6 +108,7 @@
     "background": "#f7f3f9",
     "icons": "ShadowRealm-OS-ProfessionalPlum",
     "theme": "ShadowRealm-OS-ProfessionalPlum",
-    "wm": "ShadowRealm-OS-ProfessionalPlum"
+    "wm": "ShadowRealm-OS-ProfessionalPlum",
+    "unbranded": true
   }
 }

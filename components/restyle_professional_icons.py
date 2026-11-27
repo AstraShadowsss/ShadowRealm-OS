@@ -42,6 +42,43 @@ def restyle_svg(text, accent, accent_light):
     return HEX.sub(swap, text)
 
 
+def whiten_plate(image):
+    """Replace the dark Professional plate with the light theme surface."""
+    from PIL import ImageChops
+    image = image.convert('RGBA')
+    red, green, blue, alpha = image.split()
+    peak = ImageChops.lighter(ImageChops.lighter(red, green), blue)
+    plate = peak.point(lambda value: 255 if value < 102 else 0)
+    visible = alpha.point(lambda value: 255 if value >= 8 else 0)
+    mask = ImageChops.multiply(plate, visible)
+    tone = peak.point(lambda value: 229 + int(value / 102 * 26))
+    light = Image.merge('RGBA', (tone, tone, tone, alpha))
+    return Image.composite(light, image, mask)
+
+
+def whiten_theme_pngs(theme: Path):
+    """Whiten raster app plates, skipping artwork whose plate is not dark."""
+    from PIL import ImageChops
+    changed = 0
+    for png in sorted(theme.rglob('*.png')):
+        if 'apps' not in png.parts:
+            continue
+        with Image.open(png) as source:
+            image = source.convert('RGBA')
+        red, green, blue, alpha = image.split()
+        peak = ImageChops.lighter(ImageChops.lighter(red, green), blue)
+        plate = peak.point(lambda value: 255 if value < 102 else 0)
+        opaque = alpha.point(lambda value: 255 if value >= 200 else 0)
+        coverage = ImageChops.multiply(plate, opaque)
+        dark = coverage.histogram()[255]
+        visible = opaque.histogram()[255]
+        if not visible or dark / visible < 0.45:
+            continue
+        whiten_plate(image).save(png)
+        changed += 1
+    return changed
+
+
 def render(svg, size, output):
     subprocess.run(['rsvg-convert', '-w', str(size), '-h', str(size), '-o', str(output), str(svg)],
                    check=True, capture_output=True)
@@ -73,8 +110,10 @@ def main(argv):
     if len(argv) < 4:
         print('usage: restyle_professional_icons.py <theme-dir> <accent> <accent-light>')
         return 2
-    changed, rendered = restyle_theme(Path(argv[1]), argv[2], argv[3])
-    print(f'{argv[1]}: {changed} SVGs recoloured, {rendered} PNGs rendered')
+    theme = Path(argv[1])
+    changed, rendered = restyle_theme(theme, argv[2], argv[3])
+    whitened = whiten_theme_pngs(theme)
+    print(f'{argv[1]}: {changed} SVGs recoloured, {rendered} PNGs rendered, {whitened} plates whitened')
     return 0
 
 

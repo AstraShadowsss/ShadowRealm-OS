@@ -12,12 +12,12 @@ H=Path.home(); B=H/'.local/share/shadow-link'; U=H/'.local/share/icons'; S=Path(
 BACK=H/'shadowrealm-checkpoints'/('unified-icon-source-'+time.strftime('%Y%m%d-%H%M%S'))
 SIZE=(16,24,32,48,64); RES=192; changes=0
 NAMES={
-'Terminal':'terminal','Shadow Calendar':'calendar','Shadow Calculator':'calculator','Shadow Clock':'clock','Shadow Widgets':'widgets','Shadow Network':'network','Shadow Audio':'audio','Shadow Bluetooth':'bluetooth','Shadow Media':'media','Files':'files','Shadow Control Center':'control-center','Shadow Shield':'shield','Text Editor':'editor','Screenshot':'screenshot','Trash':'trash','Appearance':'theme','Software & Updates':'updates','Choose Default Browser':'browser-alt','Task manager':'task-manager','Web browser':'browser','Browser':'browser','Local Search':'search','Shadow Messenger':'messenger','Shadow Link':'menu'}
+'Terminal':'terminal','Shadow Calendar':'calendar','Shadow Calculator':'calculator','Shadow Clock':'clock','Shadow Widgets':'widgets','Shadow Network':'network','Shadow Audio':'audio','Shadow Bluetooth':'bluetooth','Shadow Media':'media','Files':'files','Shadow Control Center':'control-center','Shadow Shield':'shield','Text Editor':'editor','Screenshot':'screenshot','Trash':'trash','Appearance':'theme','Software & Updates':'updates','Choose Default Browser':'browser-alt','Task manager':'task-manager','Web browser':'browser','Browser':'browser','Local Search':'search','Shadow Messenger':'email','Shadow Link':'menu'}
 ROLE_BY_NAME={k.casefold():v for k,v in NAMES.items()}
 CORE=('browser','terminal','files','control-center','shield','task-manager')
 ROLES=sorted(set(NAMES.values())|set(CORE))
 BUILTINS={'folder-home':('folder-home','user-home','go-home','gnome-fs-home'),'user-trash':('user-trash','gnome-fs-trash-empty','trashcan_empty'),'user-trash-full':('user-trash-full','gnome-fs-trash-full','trashcan_full'),'drive-harddisk-system':('drive-harddisk-system','drive-harddisk','filesystem-root','computer','system','my-computer'),'computer':()}
-ROLE_ALIASES={'terminal':('shadow-terminal','shadowrealm-os-terminal','shadowos-terminal','utilities-terminal'),'files':('shadow-files','system-file-manager'),'browser':('shadow-browser','web-browser'),'control-center':('shadow-control-center',),'shield':('shadow-shield',),'task-manager':('shadow-task-manager',),'theme':('shadow-appearance','shadowrealm-os-app-appearance','shadowrealm-os-dock-appearance'),'updates':('shadow-software','shadowrealm-os-app-software','shadowrealm-os-dock-software','orbital-dock-software'),'search':('shadow-search','system-search')}
+ROLE_ALIASES={'terminal':('shadow-terminal','shadowrealm-os-terminal','shadowos-terminal','utilities-terminal'),'files':('shadow-files','system-file-manager'),'browser':('shadow-browser','web-browser'),'control-center':('shadow-control-center',),'shield':('shadow-shield',),'task-manager':('shadow-task-manager',),'theme':('shadow-appearance','shadowrealm-os-app-appearance','shadowrealm-os-dock-appearance'),'updates':('shadow-software','shadowrealm-os-app-software','shadowrealm-os-dock-software','orbital-dock-software'),'search':('shadow-search','system-search'),'email':('orbital-dock-email','shadow-email','shadowrealm-os-release-orbital-dock-email','shadowrealm-os-app-email','shadow-messenger','shadow-messenger-app')}
 
 def run(args,**kw):return subprocess.run(args,check=True,**kw)
 def load(path):
@@ -121,7 +121,7 @@ def role_of(f,owned=False):
   for flag,r in {'--control-center':'control-center','--shield':'shield','--network':'network','--audio':'audio','--bluetooth':'bluetooth','--widget-settings':'widgets','--calendar':'calendar','--clock':'clock','--calculator':'calculator'}.items():
    if flag in cmd.split():return r
  if first in ('shadow-appearance','shadow-software','shadow-browser','shadow-files','shadow-messenger','shadow-screenshot'):
-  return {'shadow-appearance':'theme','shadow-software':'updates','shadow-browser':'browser-alt' if '--settings' in cmd else 'browser','shadow-files':'files','shadow-messenger':'messenger','shadow-screenshot':'screenshot'}[first]
+  return {'shadow-appearance':'theme','shadow-software':'updates','shadow-browser':'browser-alt' if '--settings' in cmd else 'browser','shadow-files':'files','shadow-messenger':'email','shadow-screenshot':'screenshot'}[first]
  if owned:return ROLE_BY_NAME.get(name)
  return None
 
