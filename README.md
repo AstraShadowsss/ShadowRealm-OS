@@ -89,6 +89,14 @@ Search and browse installed applications by category. The dock keeps the shortcu
 
 ![Application menu](screenshots/application-menu.png?v=20261123b)
 
+### Shadow Icon Studio
+
+Load your own artwork or the built-in Prism sample, then see the icon in all twelve palettes before applying it to an application, saving it to a personal library or exporting SVG and PNG files.
+
+![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio.png?v=20261127studio)
+
+[Icon Studio guide](docs/icon-studio.md)
+
 ### Games
 
 Nine lightweight arcade and card games, with local scores and settings. No accounts or advertisements.
