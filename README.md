@@ -93,7 +93,7 @@ Search and browse installed applications by category. The dock keeps the shortcu
 
 Load your own artwork or the built-in Prism sample, then see the icon in all twelve palettes before applying it to an application, saving it to a personal library or exporting SVG and PNG files.
 
-![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio.png?v=20261127neutralstudio)
+![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio-current.png)
 
 [Icon Studio guide](docs/icon-studio.md)
 
@@ -115,9 +115,9 @@ Nine lightweight arcade and card games, with local scores and settings. No accou
 
 Professional pairs these three unbranded designs with Emerald, Ocean, Graphite or Plum accents.
 
-![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional.png?v=20261127neutral)
+![Professional desktop with Satin Bloom and rounded widgets](screenshots/professional-desktop-current.png)
 
-![Professional Control Center](screenshots/control-center-professional.png?v=20261127neutral)
+![Professional Control Center](screenshots/control-center-professional-current.png)
 
 
 ## Shadow Games for Android
