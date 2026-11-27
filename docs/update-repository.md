@@ -51,7 +51,7 @@ It verifies existing package bytes before reusing a filename, uploads immutable 
 
 ## Expiry and key maintenance
 
-**The published metadata expires on 9 December 2026.** It was signed on 25 November 2026 with the 14-day builder default rather than the 90-day production setting. Re-sign and publish before that date, even if no package versions changed, and confirm `Valid-Until` in `InRelease` after every publication. Installed systems reject expired metadata and stop receiving updates until the feed is refreshed.
+The published metadata was re-signed on 27 November 2026 and is valid until 25 February 2027. `release/build-apt-repository.py` now defaults to a 90-day window, so a rebuild without `--valid-days` no longer returns to the old 14 days. Confirm `Valid-Until` in `InRelease` after every publication and re-sign before it lapses even if no package versions changed; installed systems reject expired metadata and stop receiving updates until the feed is refreshed.
 
 The signing key expires in November 2028 and needs renewal or a documented rotation before then. Maintain protected offline recovery material. Private signing storage must stay outside GitHub, SourceForge and all project/source/release bundles.
 

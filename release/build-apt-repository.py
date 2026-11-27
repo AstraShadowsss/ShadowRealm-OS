@@ -11,7 +11,9 @@ p.add_argument('packages', type=pathlib.Path)
 p.add_argument('output', type=pathlib.Path)
 p.add_argument('--signing-key', required=True, help='Full fingerprint of your signing key')
 p.add_argument('--gnupg-home', type=pathlib.Path)
-p.add_argument('--valid-days', type=int, default=14)
+# Installed machines refresh this index on their own schedule, so the window must
+# outlast a release cycle; a short default silently breaks `apt update` later.
+p.add_argument('--valid-days', type=int, default=90)
 p.add_argument('--existing-index', type=pathlib.Path, help='Verified existing Packages index to retain')
 p.add_argument('--metadata-only', action='store_true', help='Prepare metadata for signing on a separate machine')
 a = p.parse_args()
