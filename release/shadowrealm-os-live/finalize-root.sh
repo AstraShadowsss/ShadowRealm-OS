@@ -18,7 +18,7 @@ rm -f "$root/etc/resolv.conf";cp -L /etc/resolv.conf "$root/etc/resolv.conf"
 chroot "$root" apt-get install -y systemd-timesyncd drawing xfce4-screensaver
 rm -rf -- "$root/tmp/shadowrealm-os-final-packages"
 mkdir -p "$root/tmp/shadowrealm-os-final-packages"
-for name in artwork desktop terminal panel security installer-settings experience; do
+for name in artwork desktop terminal panel security installer-settings experience messenger; do
  file=$(find "$packages" -maxdepth 1 -name "shadowrealm-os-${name}_*_*.deb" -print | sort -V | tail -n1);test -s "$file";cp "$file" "$root/tmp/shadowrealm-os-final-packages/"
 done
 cp "$packages/shadowrealm-os-release_2026.11-4_all.deb" "$root/tmp/shadowrealm-os-final-packages/"

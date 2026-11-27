@@ -35,7 +35,6 @@ impl ConversationsView {
     pub fn release_to_main(&self){
         if self.window.transient_for().as_ref()!=Some(&self.main){self.window.set_transient_for(Some(&self.main));if self.window.is_visible(){self.window.present();}}
     }
-    pub fn present(&self){self.window.present();}
     pub fn invitations(&self,invites:Vec<Invitation>){
         while let Some(child)=self.list.first_child(){self.list.remove(&child);}
         if invites.is_empty(){let label=gtk::Label::new(Some("No pending invitations"));label.set_xalign(0.0);self.list.append(&label);}

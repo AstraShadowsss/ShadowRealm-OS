@@ -13,7 +13,7 @@ target=$(cd -- "$target" && pwd)
 install -Dm644 "$source_dir/config/package-lists/shadowrealm-os-base.list.chroot" "$target/config/package-lists/shadowrealm-os-base.list.chroot"
 mkdir -p "$target/config/packages.chroot"
 # Build the custom components first using the docs/build-guide.md.
-for name in artwork desktop terminal panel security installer-settings experience; do
+for name in artwork desktop terminal panel security installer-settings experience messenger; do
  deb=$(find "$repo/outputs" -maxdepth 1 -name "shadowrealm-os-${name}_*_*.deb" -print | sort -V | tail -n1)
  test -s "$deb"
  install -m644 "$deb" "$target/config/packages.chroot/"

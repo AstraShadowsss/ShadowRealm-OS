@@ -38,7 +38,7 @@ chroot "$root" apt-get -y full-upgrade
 chroot "$root" apt-get install -y librewolf thunderbird guvcview gnome-authenticator sirikali gocryptfs gparted gnupg torbrowser-launcher openvpn wireguard-tools network-manager-openvpn-gnome network-manager-openconnect-gnome xarchiver xfce4-taskmanager gnome-clocks mousepad galculator ristretto onboard seahorse libpam-gnome-keyring gvfs-backends gvfs-fuse thunar-archive-plugin thunar-volman xfce4-notes xfce4-clipman pipewire-audio wireplumber pavucontrol pulseaudio-utils bluez blueman dnscrypt-proxy flatpak xdg-desktop-portal-gtk mate-polkit
 rm -rf -- "$root/tmp/shadowrealm-os-packages"
 mkdir -p "$root/tmp/shadowrealm-os-packages"
-for name in artwork desktop terminal panel security installer-settings; do
+for name in artwork desktop terminal panel security installer-settings experience messenger; do
  file=$(find "$packages" -maxdepth 1 -name "shadowrealm-os-${name}_*_*.deb" -print | sort -V | tail -n1)
  test -s "$file";cp "$file" "$root/tmp/shadowrealm-os-packages/"
 done
@@ -46,7 +46,7 @@ chroot "$root" /bin/sh -c 'apt-get install -y /tmp/shadowrealm-os-packages/*.deb
 # Refresh games from their current package versions, including Spider and the spiral map.
 test "$(find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' ! -name 'shadowrealm-os-*' | wc -l)" -eq 9
 find "$packages" -maxdepth 1 -type f -name '*-1_all.deb' ! -name 'shadowrealm-os-*' -exec cp {} "$root/tmp/shadowrealm-os-packages/" \;
-test "$(find "$root/tmp/shadowrealm-os-packages" -name '*_all.deb' | wc -l)" -eq 11
+test "$(find "$root/tmp/shadowrealm-os-packages" -name '*.deb' | wc -l)" -eq 18
 cp "$packages/shadowrealm-os-archive-keyring_2026.11-2_all.deb" "$root/tmp/shadowrealm-os-packages/"
 chroot "$root" /bin/sh -c 'apt-get install -y /tmp/shadowrealm-os-packages/*.deb' 
 rm -rf -- "$root/tmp/shadowrealm-os-packages"

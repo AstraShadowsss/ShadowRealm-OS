@@ -17,6 +17,7 @@ apparmor-utils
 unattended-upgrades
 dnscrypt-proxy
 flatpak
+gnome-keyring
 xdg-desktop-portal-gtk
 debian-installer-launcher
 cryptsetup-initramfs

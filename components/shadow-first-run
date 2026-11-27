@@ -1,0 +1,128 @@
+#!/usr/bin/python3
+"""First-run transparency summary for a new ShadowRealm-OS account."""
+
+import argparse
+from pathlib import Path
+import subprocess
+import sys
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
+STATE = Path.home() / ".config/shadowrealm-os/first-run-complete"
+LIVE_MEDIA = Path("/run/live/medium/live/filesystem.squashfs")
+
+
+def section(parent, title, body):
+    heading = Gtk.Label(label=title, xalign=0)
+    heading.get_style_context().add_class("section-title")
+    heading.set_margin_top(6)
+    text = Gtk.Label(label=body, xalign=0, wrap=True)
+    text.get_accessible().set_name(title)
+    parent.pack_start(heading, False, False, 0)
+    parent.pack_start(text, False, False, 0)
+
+
+def open_control(action):
+    try:
+        subprocess.Popen(["shadowrealm-os-desktop", action])
+    except OSError:
+        pass
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--force", action="store_true",
+                        help="show the summary even if it was dismissed before")
+    args = parser.parse_args()
+    if not args.force and (STATE.exists() or LIVE_MEDIA.is_file()):
+        return 0
+
+    window = Gtk.Window(title="Welcome to ShadowRealm-OS")
+    window.set_default_size(640, 600)
+    window.set_position(Gtk.WindowPosition.CENTER)
+    window.set_border_width(0)
+
+    outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    header = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4,
+                     margin=24)
+    title = Gtk.Label(label="Welcome to ShadowRealm-OS", xalign=0)
+    title.get_style_context().add_class("title")
+    subtitle = Gtk.Label(label="A short, plain-language summary of this computer.",
+                         xalign=0)
+    header.pack_start(title, False, False, 0)
+    header.pack_start(subtitle, False, False, 0)
+    outer.pack_start(header, False, False, 0)
+
+    scrolled = Gtk.ScrolledWindow()
+    scrolled.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=14,
+                      margin=24)
+    scrolled.add(content)
+    outer.pack_start(scrolled, True, True, 0)
+
+    section(content, "What is installed",
+            "The ShadowRealm-OS desktop, panel and widgets, file manager, terminal, "
+            "browser, notes, screenshot tools, Shadow Shield security controls and "
+            "Software & Updates. The complete package list is available in "
+            "Software & Updates.")
+    section(content, "What runs in your session",
+            "The desktop session starts the panel, live status widgets, desktop "
+            "keyring and network management. Shadow Shield reports the firewall and "
+            "AppArmor state from local system services. You can review or change "
+            "those controls in Shadow Shield.")
+    section(content, "Network access",
+            "Package updates contact the Debian and ShadowRealm-OS package sources "
+            "you configure in Software & Updates. Weather contacts MET Norway only "
+            "after you set a location. Web pages and other apps make the connections "
+            "you ask them to make. No analytics or usage telemetry is included.")
+    section(content, "First boot and recovery",
+            "Keep the installation media removed before the first boot. If you chose "
+            "disk encryption, keep the recovery key somewhere separate from this "
+            "computer. Shadow Shield and Software & Updates can be reopened from the "
+            "application menu at any time.")
+
+    footer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10, margin=20)
+    again = Gtk.CheckButton(label="Don't show this summary again")
+    again.set_active(True)
+    again.get_accessible().set_name("Don't show this summary again")
+    footer.pack_start(again, False, False, 0)
+
+    buttons = Gtk.Box(spacing=8)
+    shield = Gtk.Button(label="Open Shadow Shield")
+    shield.get_accessible().set_name("Open Shadow Shield")
+    shield.connect("clicked", lambda *_: open_control("shield"))
+    software = Gtk.Button(label="Software & Updates")
+    software.get_accessible().set_name("Open Software and Updates")
+    software.connect("clicked", lambda *_: open_control("software"))
+    close = Gtk.Button(label="Close")
+    close.get_accessible().set_name("Close welcome summary")
+
+    def finish(*_):
+        try:
+            if again.get_active():
+                STATE.parent.mkdir(parents=True, exist_ok=True)
+                STATE.write_text("1\n", encoding="utf-8")
+            else:
+                STATE.unlink(missing_ok=True)
+        except OSError:
+            pass
+        window.destroy()
+
+    close.connect("clicked", finish)
+    buttons.pack_start(shield, False, False, 0)
+    buttons.pack_start(software, False, False, 0)
+    buttons.pack_end(close, False, False, 0)
+    footer.pack_start(buttons, False, False, 0)
+    outer.pack_start(footer, False, False, 0)
+
+    window.connect("destroy", Gtk.main_quit)
+    window.add(outer)
+    window.show_all()
+    Gtk.main()
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

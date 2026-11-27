@@ -1,4 +1,38 @@
-# 2026.11 beta 1 r4 validation
+# Validation history
+
+## r5 development checkpoint (27 November 2026)
+
+This is not a released image. No r5 ISO has been built or installed. Package and desktop checks below were run in the disposable Debian 13 VirtualBox guest; installer, Secure Boot and physical-hardware gates remain open.
+
+### Shadow Messenger
+
+The native client built without warnings, and the ordinary Rust tests passed. The GUI was exercised against the isolated loopback Synapse fixture: test-account login, an encrypted direct invitation accepted by a second profile, encrypted send/receive between two accounts, Presence selection, a custom away message, the Activity feed, normal and mention notifications, Do Not Disturb suppression, saved-account restore, message persistence after restart, Preferences, Devices & Security, and recovery-key setup. The notification click action did **not** open the conversation. The notification now also carries an explicit **Open** action button, and the session notification daemon reports the `actions` capability; a fresh click test is still required. The full test suite is still flaky when run in one process, while the ignored integration and theme tests pass individually.
+
+### Themes and icons
+
+All twelve live palette windows passed the palette test, including Black/Blue, Black/White, Hacker, Neon, the four Professional variants, Purple/Black, Red/Black, White/Silver/Gold and Woodland. The signed-out/signed-in menu-bar text colours were corrected. A new `shadow-messenger-app` chat-bubble icon was generated for every palette and visually inspected in a contact sheet; the release package installs it under a package-owned name to avoid colliding with the artwork package. The development launcher was pointing at a fixed email-icon path, which explains category icon fallbacks in the menu; the packaged launcher now uses the shared theme icon.
+
+### Firewall and Messenger
+
+Shadow Shield keeps inbound and forwarded traffic denied by default and allows outbound traffic. Messenger is an outbound HTTPS/WebSocket client, so this policy does not block normal sign-in or sync. Docker is optional and not installed in the image; its bridge and published-port path was the unresolved exception. Security 0.2.1 adds scoped forwarding for `docker0`/`br-*`, established/related traffic and root-configured DNAT published ports, while the forward policy remains `drop`. The nftables rules passed `nft -c` syntax validation; a running Docker engine was not available for an end-to-end test.
+
+### Installer and first run
+
+A pre-installer guidance window now covers disk erasure, encryption recovery and media removal. The first-run Welcome Summary is dismissible and can be reopened from the application menu. Neither has been viewed from a fresh r5 ISO. Existing r4 validation remains the only completed install evidence.
+
+### Package and disk state
+
+Current r5 packages staged in `/var/tmp/r5-out`: desktop 0.2.21, Terminal 0.2.3, artwork 0.2.6, panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, archive keyring 2026.11-2, all nine games and `shadowrealm-os-messenger` 0.1.0. Regenerable `/var/tmp` build and test directories were removed, reclaiming about 6 GB; the Synapse fixture and account data were kept. The VM still has no root access, live-build, xorriso, mksquashfs, debootstrap or the expected build volume.
+
+### Release-folder audit
+
+The SourceForge 2026.11-beta1 folder contains desktop 0.2.20 and Terminal 0.2.3 DEBs uploaded on 26 November, plus an older archive-keyring 2026.11-1. These are current builds but are not signed APT updates. The release folder should contain only the ISO, checksums, notices and source material; the DEBs should move to the signed pool through the repository publisher or be removed. The signed feed already supplies archive-keyring 2026.11-2.
+
+### Dock shelf
+
+The dock shelf code is present in desktop 0.2.21 and in the r5 package set, but it was never published as a signed APT update: the signed trixie feed still publishes desktop 0.2.19+window1.icon1.clean3+refresh1+launch1. Publish desktop 0.2.21 before advertising it. Direct dragging, edge drops, multi-monitor behavior and final polish were not rechecked for r5.
+
+## 2026.11 beta 1 r4 validation
 
 First-login wallpaper follow-up: desktop package 0.2.4 installed over 0.2.3 in the r4 test VM and passed the package audit. On a new account, the packaged wallpaper was selected 5 seconds after the Xfce test timer started and the widget process appeared at 100 seconds. The test measured one VirtualBox configuration. It confirms that the wallpaper can load early and that widget startup still needs separate work.
 

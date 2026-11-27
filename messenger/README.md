@@ -1,6 +1,6 @@
 # Shadow Messenger
 
-A native GTK4 Matrix client under development for ShadowRealm-OS. It is not included in the public r4 installer or distributed as a finished messaging application.
+A native GTK4 Matrix client under development for ShadowRealm-OS. It is included in the private r5 development image as a test-account preview, but it is not in the public r4 installer and is not a finished messaging application.
 
 ## Current implementation
 
@@ -20,7 +20,7 @@ The development window follows the selected desktop palette through GTK4 applica
 
 ## Stack
 
-Rust, GTK4/gtk4-rs, GTK CSS, Matrix Rust SDK, Tokio, SDK-supported SQLite storage and Secret Service. Timeline integration uses matrix-sdk-ui 0.19.1. Desktop notifications use GIO/D-Bus; notification tones are embedded WAV files played through GTK's media backend, with a best-effort fallback when no audio sink is available. A Debian package builder is included and has produced an installable package containing the binary, launcher, icon, README, copyright and declared runtime dependencies; the package has not yet been installed from the release image. The primary interface does not embed a browser.
+Rust, GTK4/gtk4-rs, GTK CSS, Matrix Rust SDK, Tokio, SDK-supported SQLite storage and Secret Service. Timeline integration uses matrix-sdk-ui 0.19.1. Desktop notifications use GIO/D-Bus; notification tones are embedded WAV files played through GTK's media backend, with a best-effort fallback when no audio sink is available. A Debian package builder is included and has produced an installable package containing the binary, launcher, theme-generated icons, README, copyright and declared runtime dependencies. The package installs `shadow-messenger-app` into every ShadowRealm-OS palette, plus a hicolor fallback, so the application menu, dock, desktop shortcut and window title use the same icon. The package has not yet been installed from a fresh r5 image; that remains an installer gate. The primary interface does not embed a browser.
 
 One account worker owns the session. Network and keyring work run outside GTK, with two Tokio worker threads and bounded command queues. One SDK long-poll synchronization task runs per connected account. A failed sync requires an explicit reconnect through Restore saved account. Passwords, tokens, recovery material and message content must not be logged.
 
@@ -35,7 +35,13 @@ cargo test --locked --manifest-path native/Cargo.toml
 bash build-deb.sh ../outputs
 ```
 
-`build-deb.sh` performs a release build unless `MESSENGER_BINARY` points at an existing binary. It packages `/usr/bin/shadow-messenger`, the desktop launcher, the ShadowRealm-OS icon and the documentation. The package declares GTK4, SQLite, D-Bus, GLib and CA-certificate dependencies; a Secret Service provider is required at runtime.
+`build-deb.sh` performs a release build unless `MESSENGER_BINARY` points at an existing binary. It packages `/usr/bin/shadow-messenger`, the desktop launcher, the `shadow-messenger-app` icon family and the documentation. The package declares GTK4, SQLite, D-Bus, GLib, CA-certificate and `gnome-keyring` dependencies. A Secret Service provider is required at runtime.
+
+Regenerate the icon family after a palette change and inspect the contact sheet before packaging:
+
+```sh
+python3 packaging/build-icons.py ../branding/palettes.json packaging/icons
+```
 
 The native suite contains ordinary settings/timeline tests and ignored fixture tests. Run the fixture tests only in the disposable loopback session:
 

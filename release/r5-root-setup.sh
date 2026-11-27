@@ -18,8 +18,14 @@ if [ "${1:-}" = "--resize" ]; then
     resize2fs /dev/sda2
 fi
 
-dpkg -i "$PKG"/shadowrealm-os-terminal_*.deb "$PKG"/shadowrealm-os-desktop_*.deb
+# Install the staged r5 set in version order. If an older desktop build is
+# still present, the newer one is installed last; the r5 staging directory
+# should normally contain only the current versions.
+set -- $(ls -1 "$PKG"/*.deb 2>/dev/null | sort -V)
+[ "$#" -gt 0 ] || { echo "No packages found in $PKG" >&2; exit 1; }
+dpkg -i "$@"
 apt-get -f install -y || true
+systemctl try-restart shadowrealm-os-firewall.service 2>/dev/null || true
 
 for theme in /usr/share/icons/ShadowRealm-OS-*; do
     [ -d "$theme" ] && gtk-update-icon-cache -f -q "$theme" 2>/dev/null || true

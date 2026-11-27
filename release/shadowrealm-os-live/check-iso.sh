@@ -58,7 +58,7 @@ for block in text.split('\n\n'):
         assert fields.get('Auto-Installed') != '1', 'Installer cleanup could remove boot maintenance tools: ' + fields['Package']
 print('Boot maintenance packages retained across installer cleanup.')
 PY
-for name in shadowrealm-os-desktop shadowrealm-os-security shadowrealm-os-artwork shadow-pinball shadow-runner skull-invaders circuit-chase marble-reactor neon-ascent neon-breaker shadow-snake shadow-solitaire; do
+for name in shadowrealm-os-desktop shadowrealm-os-security shadowrealm-os-artwork shadowrealm-os-messenger shadow-pinball shadow-runner skull-invaders circuit-chase marble-reactor neon-ascent neon-breaker shadow-snake shadow-solitaire; do
     grep -Eq "^$name[[:space:]]" "$root/live/filesystem.packages"
 done
 unsquashfs -cat "$fs" etc/passwd |

@@ -1,7 +1,13 @@
 # Release notes
 
-## In development for r5 (2026-11-26)
+## In development for r5 (2026-11-27)
 
+- Include Shadow Messenger 0.1.0 as a development preview in the private r5 image only. The package installs the native GTK4 client, a dedicated `shadow-messenger-app` icon in all twelve palettes, and a Secret Service dependency. Messenger is not part of the public r4 image and is not a finished messaging product.
+- Add a dismissible first-run summary and a **Welcome Summary** application-menu entry that reopens it with `--force`. Add a pre-installer guidance window covering disk erasure, encryption recovery and media removal.
+- Raise desktop to 0.2.21 for the reopenable welcome summary; installer settings to 0.2.2; security to 0.2.1 for the scoped Docker forwarding rules. Artwork remains 0.2.6.
+- Create the r5 package set but do not publish it. The image build and fresh install gates remain blocked until a root-capable Debian builder is available.
+- Add the optional Docker forwarding path without restoring global forwarding: Docker bridge traffic is accepted only on `docker0`/`br-*`, established/related traffic is allowed, and published ports are accepted through `ct status dnat`; the forward policy remains `drop`. Docker itself is still optional and was not exercised in this VM.
+- Note the release-folder cleanup: the SourceForge release folder must contain ISO, checksums, notices and source material only. The desktop 0.2.20 and Terminal 0.2.3 DEBs currently posted there are current builds but belong in the signed APT pool or should be removed; they are not a substitute for a signed update.
 - Ship Shadow Icon Studio inside the desktop package: the studio, its render engine and glyphs, the launcher, the menu entry and the session hook now install from the same source tree as the desktop, so a fresh image no longer needs the private builder tree.
 - Fix the blank Bluetooth glyph on every palette. Panel launchers ask for `shadow-panel-bluetooth`, but the themes only shipped `shadowrealm-os-release-shadow-panel-bluetooth`, so the icon lookup failed. The theme repair now writes the short names beside the prefixed artwork at every installed size.
 - Control Center and the settings windows take their header mark from the active icon theme instead of the fixed Neon logo; unbranded Professional keeps its neutral symbol.
@@ -42,12 +48,12 @@
 - Publish shadowrealm-os-archive-keyring 2026.11-2, which authorises the three keyring packages at priority 500 while keeping the restriction that stops the custom repository replacing unrelated Debian packages.
 - Existing installations may need two update cycles: the policy package first, then the keyring packages. Sign out and back in, or restart, after the keyring update.
 
-## In development — dock shelf
+## Dock shelf (desktop 0.2.20+)
 
 - Add an optional full-width dock shelf with centered launchers and a compact-layout switch.
 - Preserve launcher order, size and visibility settings; keep structural spacing out of the editable launcher list.
 - Restore the prior compact layout and background opacity when switching back.
-- Local preview only; not yet included in the signed APT feed or r4 installer. Direct dragging, edge drops, multi-monitor behavior and final visual polish still need coverage.
+- Included in the private desktop 0.2.20 package and therefore in the r5 image. The signed feed still publishes desktop 0.2.19+window1.icon1.clean3+refresh1+launch1, so the shelf was not published as an update; publish 0.2.20/0.2.21 before advertising it. Direct dragging, edge drops, multi-monitor behavior and final visual polish still need coverage.
 
 ## Shadow Games for Android 1.0.1 (2026-11-23)
 

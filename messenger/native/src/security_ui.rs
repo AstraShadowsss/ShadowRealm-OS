@@ -29,7 +29,7 @@ impl SecurityView {
         let numbers=gtk::Label::new(None);numbers.add_css_class("title-1");numbers.set_selectable(true);outer.append(&numbers);
         let accept=gtk::Button::with_label("Accept verification");accept.set_visible(false);
         let buttons=gtk::Box::new(gtk::Orientation::Horizontal,8);let confirm=gtk::Button::with_label("Numbers match");confirm.set_sensitive(false);let cancel=gtk::Button::with_label("Cancel verification");cancel.set_sensitive(false);let refresh=gtk::Button::with_label("Refresh devices");for button in [&accept,&confirm,&cancel,&refresh]{buttons.append(button);}outer.append(&buttons);
-        let note=gtk::Label::new(Some("Accept only a request you expect. Compare the numbers on both devices; never confirm a mismatch. Recovery controls are still in development."));note.set_wrap(true);note.set_xalign(0.0);outer.append(&note);window.set_child(Some(&outer));
+        let note=gtk::Label::new(Some("Accept only a request you expect. Compare the numbers on both devices; never confirm a mismatch. Account recovery is available from the Account recovery window."));note.set_wrap(true);note.set_xalign(0.0);outer.append(&note);window.set_child(Some(&outer));
         let flow=Rc::new(RefCell::new(None::<String>));let confirmed=Rc::new(Cell::new(false));
         let id=flow.clone();let tx=commands.clone();accept.connect_clicked(move|button|{if let Some(id)=id.borrow().clone(){if tx.try_send(Command::AcceptVerification(id)).is_ok(){button.set_sensitive(false);}}});
         let id=flow.clone();let tx=commands.clone();let done=confirmed.clone();let label=status.clone();confirm.connect_clicked(move|button|{if let Some(id)=id.borrow().clone(){if tx.try_send(Command::ConfirmVerification(id)).is_ok(){done.set(true);button.set_sensitive(false);label.set_text("Match confirmed here. Confirm on the other device to finish.");}}});
@@ -46,7 +46,6 @@ impl SecurityView {
         if self.window.transient_for().as_ref()!=Some(&self.main){self.window.set_transient_for(Some(&self.main));if self.window.is_visible(){self.window.present();}}
     }
     pub fn signed_out(&self){self.window.hide();self.numbers.set_text("");self.accept.set_visible(false);self.confirm.set_sensitive(false);self.cancel.set_sensitive(false);self.list.set_sensitive(true);*self.flow.borrow_mut()=None;self.confirmed.set(false);while let Some(child)=self.list.first_child(){self.list.remove(&child);}}
-    pub fn present(&self){self.window.present();}
     pub fn error(&self,message:&str){if self.window.is_visible(){self.status.set_text(message);}}
     pub fn devices(&self,user:&str,devices:Vec<DeviceInfo>){
         self.account.set_text(user);while let Some(child)=self.list.first_child(){self.list.remove(&child);}

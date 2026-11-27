@@ -9,7 +9,7 @@ pub struct Actions {
     pub recovery:Rc<dyn Fn()>,
     pub logout:Rc<dyn Fn()>,
     pub test_notification:Rc<dyn Fn()>,
-    pub test_sound:Rc<dyn Fn()>,
+    pub test_sound:Rc<dyn Fn(String)>,
 }
 
 pub struct Preferences {
@@ -28,6 +28,12 @@ fn page(title:&str)->(gtk::Box,gtk::Box){
     let content=gtk::Box::new(gtk::Orientation::Vertical,14);outer.append(&content);
     (outer,content)
 }
+fn add_page(stack:&gtk::Stack,page:&gtk::Box,name:&str){
+    let scroll=gtk::ScrolledWindow::builder().child(page)
+        .hscrollbar_policy(gtk::PolicyType::Never).vexpand(true).build();
+    scroll.set_vexpand(true);
+    stack.add_named(&scroll,Some(name));
+}
 fn toggle(key:&str,default:bool,title:&str,note:&str,status:&gtk::Label)->gtk::Box{
     let row=gtk::Box::new(gtk::Orientation::Horizontal,12);
     let labels=gtk::Box::new(gtk::Orientation::Vertical,2);labels.set_hexpand(true);
@@ -37,6 +43,60 @@ fn toggle(key:&str,default:bool,title:&str,note:&str,status:&gtk::Label)->gtk::B
     let owned_key=key.to_owned();let status=status.clone();
     switch.connect_state_set(move|_,value|{if let Err(message)=settings::set(&owned_key,value){status.set_text(&message);}gtk::glib::Propagation::Proceed});
     row.append(&labels);row.append(&switch);row
+}
+
+fn sound_row(event:&str,title:&str,note:&str,parent:&gtk::Window,status:&gtk::Label,
+             test:&Rc<dyn Fn(String)>)->gtk::Box{
+    let key=format!("sound_{event}");
+    let row=gtk::Box::new(gtk::Orientation::Vertical,6);
+    let labels=gtk::Box::new(gtk::Orientation::Vertical,2);
+    let title_label=gtk::Label::new(Some(title));title_label.set_xalign(0.0);
+    let note_label=gtk::Label::new(Some(note));note_label.set_wrap(true);note_label.set_xalign(0.0);note_label.add_css_class("messenger-muted");
+    labels.append(&title_label);labels.append(&note_label);row.append(&labels);
+    let current=gtk::Label::new(Some("Default chime"));current.set_xalign(0.0);current.add_css_class("messenger-muted");
+    if let Some(path)=settings::get_string(&key){
+        current.set_text(&format!("Custom: {}",std::path::Path::new(&path).file_name().and_then(|name|name.to_str()).unwrap_or(&path)));
+    }
+    row.append(&current);
+    let buttons=gtk::Box::new(gtk::Orientation::Horizontal,8);
+    let preview=gtk::Button::with_label("Test sound");
+    let preview_event=event.to_owned();let preview_action=test.clone();
+    preview.connect_clicked(move|_|preview_action(preview_event.clone()));
+    let choose=gtk::Button::with_label("Choose sound…");
+    let choose_key=key.clone();let choose_event=event.to_owned();let choose_current=current.clone();
+    let choose_status=status.clone();let choose_action=test.clone();let choose_parent=parent.clone();
+    choose.connect_clicked(move|_|{
+        let chooser=gtk::FileChooserDialog::new(Some("Choose a sound"),Some(&choose_parent),gtk::FileChooserAction::Open,
+            &[("Cancel",gtk::ResponseType::Cancel),("Use sound",gtk::ResponseType::Accept)]);
+        let filter=gtk::FileFilter::new();filter.set_name(Some("Audio files"));
+        for pattern in ["*.wav","*.ogg","*.oga","*.mp3","*.flac"]{filter.add_pattern(pattern);}
+        chooser.add_filter(&filter);
+        let key=choose_key.clone();let event=choose_event.clone();let current=choose_current.clone();
+        let status=choose_status.clone();let action=choose_action.clone();
+        chooser.connect_response(move|chooser,response|{
+            if response==gtk::ResponseType::Accept{
+                if let Some(path)=chooser.file().and_then(|file|file.path()){
+                    match settings::set_string(&key,path.to_string_lossy().as_ref()){
+                        Ok(())=>{current.set_text(&format!("Custom: {}",path.file_name().and_then(|name|name.to_str()).unwrap_or("selected file")));
+                            status.set_text("Sound saved. Use Test sound to preview it.");action(event.clone());},
+                        Err(message)=>status.set_text(&message),
+                    }
+                }
+            }
+            chooser.close();
+        });
+        chooser.show();
+    });
+    let reset=gtk::Button::with_label("Reset");
+    let reset_key=key.clone();let reset_current=current.clone();let reset_status=status.clone();let reset_action=test.clone();let reset_event=event.to_owned();
+    reset.connect_clicked(move|_|{
+        match settings::set_string(&reset_key,""){
+            Ok(())=>{reset_current.set_text("Default chime");reset_status.set_text("Default sound restored.");reset_action(reset_event.clone());},
+            Err(message)=>reset_status.set_text(&message),
+        }
+    });
+    for button in [&preview,&choose,&reset]{buttons.append(button);}
+    row.append(&buttons);row
 }
 
 impl Preferences {
@@ -66,14 +126,14 @@ impl Preferences {
         let (general,general_content)=page("General");
         general_content.append(&toggle("auto_restore",false,"Restore my saved account at startup","The session is read from the desktop keyring and never stored in plain text.",&status));
         let hint=gtk::Label::new(Some("Shadow Messenger keeps one account per profile. Sign out to remove the saved session from this device."));hint.set_wrap(true);hint.set_xalign(0.0);hint.add_css_class("messenger-muted");general_content.append(&hint);
-        stack.add_named(&general,Some("general"));
+        add_page(&stack,&general,"general");
 
         let (appearance_page,appearance_content)=page("Appearance");
         let theme=gtk::Label::new(Some(&format!("Following ShadowRealm-OS: {}",appearance::current_label())));theme.set_xalign(0.0);theme.set_wrap(true);appearance_content.append(&theme);
         let note=gtk::Label::new(Some("Shadow Messenger uses the active desktop palette for windows, navigation, message bubbles and dialogs. Change the theme in Settings → Appearance; the messenger updates without a restart."));note.set_wrap(true);note.set_xalign(0.0);note.add_css_class("messenger-muted");appearance_content.append(&note);
         let reload=gtk::Button::with_label("Reload theme");let theme_copy=theme.clone();reload.connect_clicked(move|_|{appearance::refresh_now();theme_copy.set_text(&format!("Following ShadowRealm-OS: {}",appearance::current_label()));});
         reload.set_halign(gtk::Align::Start);appearance_content.append(&reload);
-        stack.add_named(&appearance_page,Some("appearance"));
+        add_page(&stack,&appearance_page,"appearance");
 
         let (notifications,notifications_content)=page("Notifications");
         notifications_content.append(&toggle("notifications",true,"Show desktop notifications","Messages from other people appear through the desktop notification service.",&status));
@@ -82,10 +142,19 @@ impl Preferences {
         notifications_content.append(&toggle("presence_sounds",true,"Play sign-on and sign-off sounds","A quiet chime when an account connects or signs out.",&status));
         let test_row=gtk::Box::new(gtk::Orientation::Horizontal,8);
         let test_notification=gtk::Button::with_label("Send test notification");let action=actions.test_notification.clone();test_notification.connect_clicked(move|_|action());
-        let test_sound=gtk::Button::with_label("Play message sound");let action=actions.test_sound.clone();test_sound.connect_clicked(move|_|action());
-        test_row.append(&test_notification);test_row.append(&test_sound);notifications_content.append(&test_row);
+        test_row.append(&test_notification);notifications_content.append(&test_row);
+        let sound_note=gtk::Label::new(Some("Each event uses its own original chime. Choose a WAV, OGG, MP3 or FLAC file to replace it; Reset returns to the bundled sound. Volume follows the system output and mute."));
+        sound_note.set_wrap(true);sound_note.set_xalign(0.0);sound_note.add_css_class("messenger-muted");notifications_content.append(&sound_note);
+        for (event,title,note) in [
+            ("message","New message","Played for a message in another conversation."),
+            ("mention","Mention","Played when a message mentions you or your name."),
+            ("sign-on","Sign-on","Played when an account connects."),
+            ("sign-off","Sign-off","Played when an account signs out."),
+        ]{
+            notifications_content.append(&sound_row(event,title,note,&window,&status,&actions.test_sound));
+        }
         let dnd=gtk::Label::new(Some("Do Not Disturb and Invisible suppress every alert and sound, including mentions. Activity still records what arrived."));dnd.set_wrap(true);dnd.set_xalign(0.0);dnd.add_css_class("messenger-muted");notifications_content.append(&dnd);
-        stack.add_named(&notifications,Some("notifications"));
+        add_page(&stack,&notifications,"notifications");
 
         let (privacy,privacy_content)=page("Privacy & Security");
         let privacy_note=gtk::Label::new(Some("Encrypted rooms use Matrix end-to-end encryption. Your password is used once for sign-in and is never saved. Session tokens and the local store key live in the desktop keyring."));privacy_note.set_wrap(true);privacy_note.set_xalign(0.0);privacy_note.add_css_class("messenger-muted");privacy_content.append(&privacy_note);
@@ -93,19 +162,19 @@ impl Preferences {
         let security=gtk::Button::with_label("Devices & security");let action=actions.security.clone();security.connect_clicked(move|_|action());
         let recovery=gtk::Button::with_label("Account recovery");let action=actions.recovery.clone();recovery.connect_clicked(move|_|action());
         privacy_buttons.append(&security);privacy_buttons.append(&recovery);privacy_content.append(&privacy_buttons);
-        stack.add_named(&privacy,Some("privacy-security"));
+        add_page(&stack,&privacy,"privacy-security");
 
         let (accounts,accounts_content)=page("Accounts");
         let account=gtk::Label::new(Some("Not signed in"));account.set_xalign(0.0);account.set_wrap(true);accounts_content.append(&account);
         let account_note=gtk::Label::new(Some("Signing out removes the saved session and its local encryption key from the desktop keyring. Encrypted history remains on your homeserver."));account_note.set_wrap(true);account_note.set_xalign(0.0);account_note.add_css_class("messenger-muted");accounts_content.append(&account_note);
         let sign_out=gtk::Button::with_label("Sign out");sign_out.set_halign(gtk::Align::Start);let action=actions.logout.clone();sign_out.connect_clicked(move|_|action());accounts_content.append(&sign_out);
-        stack.add_named(&accounts,Some("accounts"));
+        add_page(&stack,&accounts,"accounts");
 
         let (advanced,advanced_content)=page("Advanced");
         let version=gtk::Label::new(Some(&format!("Development build {}",env!("CARGO_PKG_VERSION"))));version.set_xalign(0.0);advanced_content.append(&version);
-        let development=gtk::Label::new(Some("This build is for testing. Verification, recovery and independent-client interoperability checks are still in progress; do not use it for personal conversations."));development.set_wrap(true);development.set_xalign(0.0);development.add_css_class("messenger-muted");advanced_content.append(&development);
+        let development=gtk::Label::new(Some("This development build has working verification and recovery against the private fixture, but independent-client interoperability and the rest of the release checklist are still in progress. Do not use it for personal conversations."));development.set_wrap(true);development.set_xalign(0.0);development.add_css_class("messenger-muted");advanced_content.append(&development);
         let storage=gtk::Label::new(Some("Account data: ~/.local/share/shadow-messenger/accounts (private directory, SDK-encrypted store)."));storage.set_wrap(true);storage.set_xalign(0.0);storage.add_css_class("messenger-muted");advanced_content.append(&storage);
-        stack.add_named(&advanced,Some("advanced"));
+        add_page(&stack,&advanced,"advanced");
 
         if let Some(row)=nav.row_at_index(0){nav.select_row(Some(&row));}
         window.connect_close_request(|window|{window.hide();gtk::glib::Propagation::Stop});
@@ -137,10 +206,6 @@ impl Preferences {
             if let Some(row)=self.nav.row_at_index(index as i32){self.nav.select_row(Some(&row));}
         }
         if page=="appearance"{self.theme.set_text(&format!("Following ShadowRealm-OS: {}",appearance::current_label()));}
-    }
-    pub fn present(&self,page:&str){
-        self.select(page);
-        self.window.present();
     }
     pub fn set_account(&self,account:&str){self.account.set_text(account);}
     #[allow(dead_code)]

@@ -31,6 +31,8 @@ COMMANDS = {
     "widgets": ("shadow-link", "--widgets"),
     "widget-settings": ("shadow-link", "--widget-settings"),
     "session": ("shadow-xfce-session",),
+    "first-run": ("shadow-first-run",),
+    "welcome": ("shadow-first-run", "--force"),
 }
 
 

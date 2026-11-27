@@ -27,7 +27,16 @@ with tempfile.TemporaryDirectory() as tmp:
   limit rate 5/minute log prefix "ShadowRealm-OS blocked: "
   # Shadow Shield managed ports end
  }
- chain forward { type filter hook forward priority 0; policy drop; }
+ chain forward {
+  type filter hook forward priority 0; policy drop;
+  ct state established,related accept
+  ct state invalid drop
+  # Docker is optional. Its bridge traffic stays local to Docker, and only
+  # root-configured published ports are accepted through DNAT. Arbitrary
+  # forwarding remains blocked by the policy above.
+  iifname { "docker0", "br-*" } accept
+  ct status dnat accept
+ }
  chain output { type filter hook output priority 0; policy accept; }
 }
 ''')

@@ -1,6 +1,6 @@
 # Build the ShadowRealm-OS AMD64 live installer
 
-Use a disposable Debian 13 AMD64 builder. Read the docs/build-guide.md for dependencies and the commands that build all nine ShadowRealm-OS packages and nine game packages into outputs/. Keep outputs/ next to components/, games/ and release/.
+Use a disposable Debian 13 AMD64 builder. Read the docs/build-guide.md for dependencies and the commands that build all ten ShadowRealm-OS packages (including the Messenger development preview) and nine game packages into outputs/. Keep outputs/ next to components/, games/ and release/.
 
 The supported build layout is deliberately fixed:
 

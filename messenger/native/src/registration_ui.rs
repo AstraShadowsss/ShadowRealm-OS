@@ -57,8 +57,6 @@ impl RegistrationView {
     pub fn release_to_main(&self){
         if self.window.transient_for().as_ref()!=Some(&self.main){self.window.set_transient_for(Some(&self.main));if self.window.is_visible(){self.window.present();}}
     }
-    pub fn window(&self)->&gtk::Window{&self.window}
-    pub fn is_visible(&self)->bool{self.window.is_visible()}
     pub fn set_homeserver(&self,homeserver:&str){if self.server.text().is_empty(){self.server.set_text(homeserver);}}
     pub fn succeeded(&self){
         self.password.set_text("");self.confirm.set_text("");self.token.set_text("");self.create.set_sensitive(true);

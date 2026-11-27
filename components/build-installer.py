@@ -241,11 +241,15 @@ deb-src https://security.debian.org/debian-security trixie-security main contrib
         put(root, base+'module.desc', f'---\ntype: job\nname: {name}\ninterface: python\nscript: main.py\n')
         put(root, base+'main.py', body)
         compile(body, name, 'exec')
+    put(root, 'usr/bin/shadowrealm-os-install-guidance', (a.source/'shadow-install-guidance').read_text(), 0o755)
     put(root, 'usr/bin/shadowrealm-os-install', '''#!/bin/sh
 set -eu
 if [ ! -f /run/live/medium/live/filesystem.squashfs ]; then
  echo 'Start the ShadowRealm-OS installer from the live USB or ISO.' >&2
  exit 1
+fi
+if [ -n "${DISPLAY:-}" ] && [ -x /usr/bin/shadowrealm-os-install-guidance ]; then
+ /usr/bin/shadowrealm-os-install-guidance || exit 0
 fi
 runtime_dir=${XDG_RUNTIME_DIR:-/tmp}
 exec 9>"$runtime_dir/shadowrealm-os-installer.lock"

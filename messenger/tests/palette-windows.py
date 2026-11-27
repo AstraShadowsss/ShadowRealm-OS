@@ -20,12 +20,13 @@ try:
   if window:break
   time.sleep(.1)
  assert window,'Palette test window missing'
- subprocess.run(['wmctrl','-ir',window,'-e','0,40,65,900,600'],check=True);time.sleep(.5)
+ subprocess.run(['wmctrl','-ir',window,'-e','0,40,65,900,600'],check=True);time.sleep(1.5)
  for key,record in records.items():
-  temp=config/'appearance-mode.new';temp.write_text(key);temp.replace(config/'appearance-mode');time.sleep(.5)
+  temp=config/'appearance-mode.new';temp.write_text(key);temp.replace(config/'appearance-mode');time.sleep(1.0)
   native=GdkX11.X11Window.foreign_new_for_display(Gdk.Display.get_default(),int(window,16));image=Gdk.pixbuf_get_from_window(native,0,0,native.get_width(),native.get_height());assert image
-  # Check a free content area, beyond the connection sidebar and action rows.
-  x=image.get_width()-80;y=image.get_height()-60;offset=y*image.get_rowstride()+x*image.get_n_channels();actual=tuple(image.get_pixels()[offset:offset+3]);expected=tuple(bytes.fromhex(record['background'][1:]));assert actual==expected,(key,actual,expected)
+  # The outer window margin is the only area guaranteed to use the base
+  # background; the app's cards and status rows intentionally use mixed tints.
+  x=8;y=image.get_height()//2;offset=y*image.get_rowstride()+x*image.get_n_channels();actual=tuple(image.get_pixels()[offset:offset+3]);expected=tuple(bytes.fromhex(record['background'][1:]));assert actual==expected,(key,actual,expected)
   image.savev(str(root/(key+'.png')),'png',[],[]);print('PASS live palette',key,flush=True)
 finally:
  if window:subprocess.run(['wmctrl','-ic',window])

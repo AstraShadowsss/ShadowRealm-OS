@@ -254,12 +254,43 @@ static gboolean draw(GtkWidget*w,cairo_t*c,gpointer p){int k=GPOINTER_TO_INT(p);
  if(k==0){bar(c,61,"CPU",cpu);bar(c,85,"RAM",ram);bar(c,109,"SWAP",swp);bar(c,133,"DISK",diskpct);}
  if(k==1){char rates[80];txt(c,15,61,12,iftext,"f8f0ff",1);txt(c,15,81,12,iptext,"00f0ff",1);snprintf(rates,sizeof rates,"DOWN  %.2f Mb/s",net_down_kib*8192./1000000.);txt(c,15,105,11,rates,"f5e9ff",0);snprintf(rates,sizeof rates,"UP    %.2f Mb/s",net_up_kib*8192./1000000.);txt(c,15,128,11,rates,"f5e9ff",0);}
  if(k==2){double pid_right=55,name_x=66,cpu_right=ww-66,mem_right=ww-15;txt_right(c,pid_right,58,11,"PID","f4eaff",1);txt(c,name_x,58,11,"NAME","f4eaff",1);txt_right(c,cpu_right,58,11,"CPU%","f4eaff",1);txt_right(c,mem_right,58,11,"MEM%","f4eaff",1);for(int i=0;i<PROCESS_VISIBLE&&i+process_offset<process_count;i++){ProcessRow*r=&process_rows[i+process_offset];char pid[24],name[15],pc[24],pm[24];snprintf(pid,sizeof pid,"%d",r->pid);snprintf(name,sizeof name,"%.14s",r->name);snprintf(pc,sizeof pc,"%.1f",r->cpu);snprintf(pm,sizeof pm,"%.1f",r->mem);const char*co=i%2?"f2e4fa":"19ebf5";double y=80+i*18;txt_right(c,pid_right,y,10,pid,co,0);txt(c,name_x,y,10,name,co,0);txt_right(c,cpu_right,y,10,pc,co,0);txt_right(c,mem_right,y,10,pm,co,0);}}
+ if(k==2&&!process_count){txt(c,15,84,11,"No process data available","e5bb6a",0);}
  if(k==3){txt(c,15,61,11,"FIREWALL","f2e9f8",0);txt(c,15,79,11,firewall_status,"e5bb6a",1);txt(c,15,102,11,policy_status,"c7b4d6",0);char vp[64];snprintf(vp,sizeof vp,"VPN: %.28s",vpn);txt(c,15,124,10,vp,"00dce9",0);txt(c,15,146,10,tor_status,"c7b4d6",0);}
  if(k==WIDGET_CLOCK)draw_widget_clock(c);
  if(k==WIDGET_CALENDAR)draw_widget_calendar(c);
  if(k==WIDGET_NOTES)draw_widget_notes(c);
  if(k==WIDGET_WEATHER)draw_widget_weather(c);
  return FALSE;}
+static void process_fallback(void){
+ /* Minimal systems may not ship ps/procps. Enumerate /proc so the card still
+    lists processes instead of staying blank; CPU needs a prior sample and is
+    shown as 0.0 in this fallback. */
+ DIR *dir=opendir("/proc");
+ if(!dir)return;
+ unsigned long long total_kib=0;
+ FILE *mem=fopen("/proc/meminfo","r");
+ char line[128];
+ if(mem){while(fgets(line,sizeof line,mem)){if(sscanf(line,"MemTotal: %llu",&total_kib)==1)break;}fclose(mem);}
+ long page=sysconf(_SC_PAGESIZE);
+ struct dirent *entry;process_count=0;
+ while((entry=readdir(dir))&&process_count<PROCESS_MAX){
+  if(entry->d_name[0]<'0'||entry->d_name[0]>'9')continue;
+  int pid=atoi(entry->d_name);if(pid<=0)continue;
+  char path[64],name[64]="unknown";
+  snprintf(path,sizeof path,"/proc/%d/comm",pid);
+  FILE *file=fopen(path,"r");if(!file)continue;
+  if(!fgets(name,sizeof name,file)){fclose(file);continue;}
+  fclose(file);g_strchomp(name);
+  unsigned long size=0,resident=0;
+  snprintf(path,sizeof path,"/proc/%d/statm",pid);
+  file=fopen(path,"r");if(file){if(fscanf(file,"%lu %lu",&size,&resident)!=2)resident=0;fclose(file);}
+  ProcessRow *row=&process_rows[process_count++];
+  row->pid=pid;g_strlcpy(row->name,name,sizeof row->name);row->cpu=0;
+  row->mem=(total_kib&&page&&resident)?100.0*(double)resident*page/(total_kib*1024.0):0;
+ }
+ closedir(dir);
+ for(int i=0;i<process_count;i++)for(int j=i+1;j<process_count;j++)if(process_rows[j].mem>process_rows[i].mem){ProcessRow swap=process_rows[i];process_rows[i]=process_rows[j];process_rows[j]=swap;}
+}
 static void refresh_stats(void){FILE*f=fopen("/proc/stat","r");unsigned long long u,n,s,id,iw,irq,si,st;if(f){if(fscanf(f,"cpu %llu %llu %llu %llu %llu %llu %llu %llu",&u,&n,&s,&id,&iw,&irq,&si,&st)==8){unsigned long long t=u+n+s+id+iw+irq+si+st,ii=id+iw;if(lasttotal&&t>lasttotal)cpu=100.*(1.-(double)(ii-lastidle)/(t-lasttotal));lasttotal=t;lastidle=ii;}fclose(f);}unsigned long mt=0,ma=0,ss=0,sf=0,v;char b[256],key[64];f=fopen("/proc/meminfo","r");if(f){while(fgets(b,sizeof b,f)){if(sscanf(b,"%63s %lu",key,&v)==2){if(!strcmp(key,"MemTotal:"))mt=v;if(!strcmp(key,"MemAvailable:"))ma=v;if(!strcmp(key,"SwapTotal:"))ss=v;if(!strcmp(key,"SwapFree:"))sf=v;}}fclose(f);}ram=mt?100.*(mt-ma)/mt:0;ram_used_mib=(mt-ma)/1024.;ram_total_mib=mt/1024.;swp=ss?100.*(ss-sf)/ss:0;struct statvfs fs;if(!statvfs("/",&fs)&&fs.f_blocks)diskpct=100.*(fs.f_blocks-fs.f_bfree)/fs.f_blocks;
  active_if[0]=0;strcpy(iptext,"NO ADDRESS");strcpy(iftext,"OFFLINE");strcpy(vpn,"NO ACTIVE INTERFACE");struct ifaddrs*a=NULL;if(!getifaddrs(&a)){for(struct ifaddrs*i=a;i;i=i->ifa_next){if(!i->ifa_addr||i->ifa_addr->sa_family!=AF_INET||!(i->ifa_flags&IFF_UP)||(i->ifa_flags&IFF_LOOPBACK))continue;if(!strncmp(i->ifa_name,"tun",3)||!strncmp(i->ifa_name,"wg",2)||!strncmp(i->ifa_name,"tap",3)){snprintf(vpn,sizeof vpn,"%s UP",i->ifa_name);continue;}snprintf(active_if,sizeof active_if,"%s",i->ifa_name);snprintf(iftext,sizeof iftext,"%s // UP",i->ifa_name);inet_ntop(AF_INET,&((struct sockaddr_in*)i->ifa_addr)->sin_addr,iptext,sizeof iptext);}freeifaddrs(a);}
  static unsigned long long old_rx,old_tx;static gint64 net_time;static char old_if[IFNAMSIZ];unsigned long long rx=0,tx=0;char netpath[256];gint64 stamp=g_get_monotonic_time();
@@ -274,6 +305,7 @@ static void refresh_stats(void){FILE*f=fopen("/proc/stat","r");unsigned long lon
    process_count++;
  }
  if(f)pclose(f);
+ if(process_count==0)process_fallback();
  process_offset=CLAMP(process_offset,0,MAX(0,process_count-PROCESS_VISIBLE));
 }
 static gboolean tick(gpointer unused){double previous_opacity=widget_background_alpha;char*opacity_path=g_build_filename(g_get_home_dir(),".config","shadowrealm-os","transparency.ini",NULL);GKeyFile*opacity=g_key_file_new();if(g_key_file_load_from_file(opacity,opacity_path,G_KEY_FILE_NONE,NULL)&&g_key_file_has_key(opacity,"Appearance","widget-opacity",NULL))widget_background_alpha=CLAMP(g_key_file_get_integer(opacity,"Appearance","widget-opacity",NULL),0,100)/100.;g_key_file_unref(opacity);g_free(opacity_path);if(fabs(previous_opacity-widget_background_alpha)>.001)for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);appearance_read();static gint64 previous=0;widgets_read();update_weather_from_config();reflow_widgets();gint64 now=g_get_monotonic_time();int interval=CLAMP(widget_integer("RefreshSeconds",2),1,15);if(now-previous>=interval*1000000LL){refresh_stats();previous=now;char tip[160];snprintf(tip,sizeof tip,"RAM: %.0f MiB used of %.0f MiB (%.1f%%). Updated every %d seconds. Drag the header to move or the bottom-right corner to resize.",ram_used_mib,ram_total_mib,ram,interval);if(cards[0])gtk_widget_set_tooltip_text(cards[0],tip);gchar*sec=NULL;if(g_file_get_contents("/run/shadowrealm-os/security-status",&sec,NULL,NULL)){g_strlcpy(firewall_status,strstr(sec,"firewall=active")?"ACTIVE":"INACTIVE",sizeof firewall_status);g_strlcpy(policy_status,strstr(sec,"apparmor=enforcing")?"APPARMOR: ENFORCING":strstr(sec,"apparmor=enabled")?"APPARMOR: ENABLED":strstr(sec,"apparmor=available")?"APPARMOR: NO POLICY":"APPARMOR: NOT ACTIVE",sizeof policy_status);g_strlcpy(tor_status,strstr(sec,"tor=running")?"TOR: SERVICE RUNNING":strstr(sec,"tor=stopped")?"TOR: STOPPED":"TOR: NOT INSTALLED",sizeof tor_status);char*vi=strstr(sec,"vpn_interface=");if(vi){vi+=14;char*end=strchr(vi,'\n');int length=end?end-vi:strlen(vi);if(length>0)snprintf(vpn,sizeof vpn,"%.*s CONNECTED",MIN(length,20),vi);}g_free(sec);}for(int i=0;i<WIDGET_COUNT;i++)if(cards[i])gtk_widget_queue_draw(cards[i]);}return G_SOURCE_CONTINUE;}
@@ -291,7 +323,7 @@ static gboolean process_scroll(GtkWidget *widget,GdkEventScroll *event,gpointer 
  (void)widget;gtk_widget_queue_draw(cards[2]);
  return TRUE;
 }
-static void widgets(void){widgets_read();widget_layout_read();for(int i=0;i<WIDGET_COUNT;i++){GtkWidget*w=gtk_window_new(GTK_WINDOW_TOPLEVEL);cardwindows[i]=w;gtk_window_set_title(GTK_WINDOW(w),"Shadow Link Ã‚Â· Live Status");gtk_window_set_decorated(GTK_WINDOW(w),FALSE);gtk_window_set_resizable(GTK_WINDOW(w),FALSE);gtk_window_set_skip_taskbar_hint(GTK_WINDOW(w),TRUE);gtk_window_set_skip_pager_hint(GTK_WINDOW(w),TRUE);gtk_window_set_accept_focus(GTK_WINDOW(w),FALSE);gtk_window_set_type_hint(GTK_WINDOW(w),GDK_WINDOW_TYPE_HINT_NORMAL);gtk_window_set_keep_below(GTK_WINDOW(w),TRUE);gtk_window_stick(GTK_WINDOW(w));GdkVisual*v=gdk_screen_get_rgba_visual(gtk_widget_get_screen(w));if(v)gtk_widget_set_visual(w,v);gtk_widget_set_app_paintable(w,TRUE);cards[i]=gtk_drawing_area_new();
+static void widgets(void){widgets_read();widget_layout_read();for(int i=0;i<WIDGET_COUNT;i++){GtkWidget*w=gtk_window_new(GTK_WINDOW_TOPLEVEL);cardwindows[i]=w;gtk_window_set_title(GTK_WINDOW(w),"Shadow Link - Live Status");gtk_window_set_decorated(GTK_WINDOW(w),FALSE);gtk_window_set_resizable(GTK_WINDOW(w),FALSE);gtk_window_set_skip_taskbar_hint(GTK_WINDOW(w),TRUE);gtk_window_set_skip_pager_hint(GTK_WINDOW(w),TRUE);gtk_window_set_accept_focus(GTK_WINDOW(w),FALSE);gtk_window_set_type_hint(GTK_WINDOW(w),GDK_WINDOW_TYPE_HINT_NORMAL);gtk_window_set_keep_below(GTK_WINDOW(w),TRUE);gtk_window_stick(GTK_WINDOW(w));GdkVisual*v=gdk_screen_get_rgba_visual(gtk_widget_get_screen(w));if(v)gtk_widget_set_visual(w,v);gtk_widget_set_app_paintable(w,TRUE);cards[i]=gtk_drawing_area_new();
  if(i==2){
   gtk_widget_add_events(w,GDK_SCROLL_MASK|GDK_SMOOTH_SCROLL_MASK);
   g_signal_connect(w,"scroll-event",G_CALLBACK(process_scroll),NULL);

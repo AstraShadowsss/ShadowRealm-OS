@@ -12,12 +12,12 @@ Back up the destination computer. If using a USB drive, write the ISO as a disk 
 
 1. Boot the USB using the computer's boot menu. Choose the live desktop entry.
 2. Test display, keyboard, mouse, audio and network before installing. This beta has not been certified for Secure Boot; disable it if the image will not start.
-3. Open **Install ShadowRealm-OS**. Choose your language, time zone and keyboard layout.
+3. Open **Install ShadowRealm-OS**. Read the pre-installer guidance, then choose your language, time zone and keyboard layout. The guidance restates that erase removes the selected disk, that manual partitioning is not automatic, and that an encryption recovery key must be kept separately.
 4. Choose the destination disk. **Erase disk** is the simplest path for a dedicated disk and removes everything on it; back up first. Optional encryption protects the installed disk while powered off; keep the encryption passphrase safe. Manual partitioning and installing alongside another system need extra care and are not certified by this beta.
 5. Create your own account and password. Use a username you are comfortable typing at the login screen, and keep the password somewhere safe. Read the installer's final summary before confirming disk changes. Installation uses the packages already on the image and does not need a network connection; updates after first boot do.
 6. Finish, restart and remove the USB when prompted. With encryption enabled, enter the disk passphrase during boot, then sign in with your account password.
 
-The first sign-in may take longer while your desktop is prepared. Let the wallpaper and widgets finish loading; later sign-ins reuse your saved profile.
+The first sign-in may take longer while your desktop is prepared. Let the wallpaper and widgets finish loading; later sign-ins reuse your saved profile. A **Welcome Summary** then lists installed software, session services and network access. It is dismissible and can be reopened from the application menu.
 
 The live environment is temporary and automatically signs in. Its account is `user`, password `live`; this is not the password of an installed system. The installer creates the account you specify.
 

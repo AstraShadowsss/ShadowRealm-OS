@@ -10,6 +10,10 @@ Open **Local Search** from the Applications menu. Choose a folder and search by 
 
 Open **Shadow Control Center** to browse settings by section. Press **Ctrl+F** to find a setting by name or description. Use **Desktop → Dock** to change its size and visibility. **Fit dock to launchers** lets the dock expand as items are added. **Edit dock launchers and position** opens the dock’s panel preferences. Use the **Items** tab there to add, reorder or remove launchers. In the Applications menu, right-click an app and select **Pin to Dock** to add it. You can also drag a launcher along the dock to reorder it. Drag an application from the menu or a shortcut from the desktop onto the dock, then choose **Create Launcher**.
 
+## First-run summary
+
+A new account shows a short **Welcome Summary** covering installed software, session services, network access and first-boot recovery guidance. Clear **Don't show this summary again** and close it to dismiss future automatic prompts. To reread it, open **Welcome Summary** from the application menu; that entry starts the same summary with the last-used state ignored.
+
 ## Appearance
 
 Use Control Center → Appearance → Themes and wallpapers to choose one of twelve coordinated palettes: Neon, Black & Blue, Red & Black, Purple & Black, Hacker, Woodland, White, Silver & Gold, Black & White, or Professional with Emerald, Ocean, Graphite or Plum accents. Wallpaper selection is separate, so changing a picture does not silently change the whole style. Terminal, widget and menu background transparency controls affect supported backgrounds; application text and controls remain readable. Some third-party applications draw their own interface and may not follow every GTK setting.
@@ -28,7 +32,9 @@ Network controls manage connections and custom DNS. Shadow Shield groups securit
 
 VPN support includes NetworkManager plugins and OpenVPN/WireGuard tools. A working VPN still needs a provider or server configuration and credentials. No VPN subscription or account is included. Tor Browser and the Tor service are different: the browser isolates and routes its own browsing traffic; starting the Tor service does not route every application through Tor. Tor Browser Launcher needs the internet for the browser download.
 
-Internet pause/airplane controls can disconnect your session. The firewall starts with inbound connections restricted and allows users to manage explicit rules. There is no hidden, undeletable administrator SSH exception. Do not open ports you do not need.
+Internet pause/airplane controls can disconnect your session. The firewall starts with inbound connections restricted and allows users to manage explicit rules. There is no hidden, undeletable administrator SSH exception. Do not open ports you do not need. Messenger only makes outbound connections, so the default inbound policy does not block it; it still needs the homeserver to be reachable and the desktop keyring to be unlocked.
+
+Docker is optional and not installed by the image. The firewall permits Docker bridge traffic and root-published container ports through scoped rules while leaving arbitrary forwarding blocked. This path was syntax-checked but not exercised with a running Docker engine in the build VM; test published ports and DNS before relying on them.
 
 ## Accounts
 

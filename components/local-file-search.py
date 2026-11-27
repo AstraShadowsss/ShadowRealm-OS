@@ -51,12 +51,13 @@ def find_files(folder, query, cancelled=lambda: False):
 def desktop_search():
     import gi
     gi.require_version("Gtk", "3.0")
-    from gi.repository import Gio, GLib, Gtk
+    from gi.repository import Gdk, Gio, GLib, Gtk
 
     window = Gtk.Window(title="Local Search", default_width=560, default_height=420)
     box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8, margin=12)
     window.add(box)
     query = Gtk.SearchEntry(placeholder_text="Search file names or settings")
+    query.get_accessible().set_name("Search query")
     box.pack_start(query, False, False, 0)
     folder = Gtk.FileChooserButton(title="Choose a folder", action=Gtk.FileChooserAction.SELECT_FOLDER)
     folder.set_local_only(True)
@@ -69,10 +70,13 @@ def desktop_search():
     search = Gtk.Button(label="Find Files")
     stop = Gtk.Button(label="Cancel Search", sensitive=False)
     settings = Gtk.Button(label="Find Settings")
-    for button in (search, stop, settings):
+    for button, accessible in ((search, "Find files"), (stop, "Cancel search"),
+                               (settings, "Find settings")):
+        button.get_accessible().set_name(accessible)
         buttons.pack_start(button, False, False, 0)
     results = Gtk.ListStore(str, str)
     view = Gtk.TreeView(model=results)
+    view.get_accessible().set_name("Search results")
     for index, title in enumerate(("File", "Folder")):
         column = Gtk.TreeViewColumn(title, Gtk.CellRendererText(), text=index)
         column.set_resizable(True)
@@ -80,7 +84,9 @@ def desktop_search():
     scroll = Gtk.ScrolledWindow()
     scroll.add(view)
     box.pack_start(scroll, True, True, 0)
-    status = Gtk.Label(label="Search file names in the selected folder.", xalign=0)
+    status = Gtk.Label(label="Search file names in the selected folder. "
+                             "Ctrl+F focuses search, Down opens results, Enter opens, Esc cancels.", xalign=0)
+    status.get_accessible().set_name("Search status")
     box.pack_start(status, False, False, 0)
     worker = ThreadPoolExecutor(max_workers=1)
     active = None
@@ -129,7 +135,10 @@ def desktop_search():
             status.set_text(str(error))
 
     def open_result(_, row, column):
-        name, directory = results[row]
+        model, treeiter = results.get_iter(row)
+        if treeiter is None:
+            return
+        name, directory = model[treeiter][0], model[treeiter][1]
         path = Path(directory) / name
         if not path.is_file() or path.is_symlink():
             status.set_text("This file is no longer available.")
@@ -144,6 +153,38 @@ def desktop_search():
         worker.shutdown(wait=False, cancel_futures=True)
         Gtk.main_quit()
 
+    def key_press(_, event):
+        key = event.keyval
+        control = bool(event.state & Gdk.ModifierType.CONTROL_MASK)
+        if key == Gdk.KEY_Escape:
+            if active:
+                cancel()
+            elif query.get_text():
+                query.set_text("")
+            else:
+                window.destroy()
+            return True
+        if control and key in (Gdk.KEY_f, Gdk.KEY_F):
+            query.grab_focus()
+            query.select_region(0, -1)
+            return True
+        if control and key in (Gdk.KEY_l, Gdk.KEY_L):
+            folder.grab_focus()
+            return True
+        if control and key in (Gdk.KEY_q, Gdk.KEY_Q):
+            window.destroy()
+            return True
+        if key == Gdk.KEY_F5:
+            start()
+            return True
+        if key == Gdk.KEY_Down and query.has_focus():
+            if len(results):
+                view.get_selection().select_path(Gtk.TreePath.new_first())
+            view.grab_focus()
+            return True
+        return False
+
+    window.connect("key-press-event", key_press)
     query.connect("activate", start)
     search.connect("clicked", start)
     stop.connect("clicked", cancel)

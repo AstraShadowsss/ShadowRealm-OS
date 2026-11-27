@@ -145,6 +145,49 @@ def wait_for_encrypted_dns(device):
     raise RuntimeError("System DNS did not switch exclusively to DNSCrypt.")
 
 
+MAC_FIELDS = {"802-11-wireless": "wifi.cloned-mac-address",
+              "802-3-ethernet": "ethernet.cloned-mac-address"}
+MAC_LABELS = {"permanent": "Hardware address", "stable": "Stable per connection",
+              "random": "New random address on each activation"}
+
+
+def read_mac(uuid, kind):
+    field = MAC_FIELDS.get(kind)
+    if not field:
+        raise RuntimeError("MAC privacy is available for wired and Wi-Fi connections.")
+    value = nm("-g", field, "connection", "show", uuid).strip()
+    return value if value in MAC_LABELS else "permanent"
+
+
+def change_mac(device, mode):
+    if mode not in MAC_LABELS:
+        raise ValueError("Choose a supported MAC address mode.")
+    uuid = active_profile(device)
+    kind = nm("-g", "GENERAL.TYPE", "device", "show", device).strip()
+    field = MAC_FIELDS.get(kind)
+    if not field:
+        raise RuntimeError("MAC privacy is available for wired and Wi-Fi connections.")
+    previous = read_mac(uuid, kind)
+    if previous == mode:
+        return "This MAC address mode is already saved."
+    if active_profile(device) != uuid:
+        raise RuntimeError("The active connection changed. Reload the MAC privacy page and try again.")
+    nm("connection", "modify", "uuid", uuid, field, mode)
+    try:
+        if active_profile(device) != uuid:
+            raise RuntimeError("The active connection changed before the MAC setting could be applied.")
+        nm("device", "reapply", device)
+    except (OSError, RuntimeError, subprocess.TimeoutExpired) as error:
+        try:
+            nm("connection", "modify", "uuid", uuid, field, previous)
+            if active_profile(device) == uuid:
+                nm("device", "reapply", device)
+        except (RuntimeError, subprocess.TimeoutExpired) as restore:
+            raise RuntimeError(f"{error} Restore failed: {restore}") from error
+        raise RuntimeError(f"{error} The original MAC setting was restored.") from error
+    return "MAC privacy applied. Reconnect the interface if the address did not change."
+
+
 def label(box, message):
     widget = Gtk.Label(label=message, xalign=0, wrap=True)
     box.pack_start(widget, False, False, 0)
@@ -242,6 +285,70 @@ class DNSPage:
             self.load()
             return False
         self.panel.async_run(lambda: change_dns(device, mode, v4, v6), done)
+
+
+class MACPage:
+    def __init__(self, panel, box):
+        self.panel = panel
+        label(box, "Choose how NetworkManager presents this wired or Wi-Fi interface. "
+                   "Random addressing can make captive portals and network access policies "
+                   "treat this computer as new. It does not hide other network metadata.")
+        self.current = label(box, "Select Load Current Settings to inspect this connection.")
+        self.mode = Gtk.ComboBoxText()
+        for identity in ("permanent", "stable", "random"):
+            self.mode.append(identity, MAC_LABELS[identity])
+        self.mode.set_active_id("permanent")
+        self.mode.get_accessible().set_name("MAC address mode")
+        box.pack_start(self.mode, False, False, 0)
+        row = Gtk.Box(spacing=10)
+        box.pack_start(row, False, False, 0)
+        panel.button(row, "Load Current Settings", self.load)
+        self.apply_button = panel.button(row, "Apply MAC Setting", self.apply)
+        self.apply_button.set_sensitive(False)
+        self.loaded_device = None
+        panel.device.connect("changed", lambda *_: self.load())
+
+    def load(self, *_):
+        device = self.panel.device.get_active_id()
+        if not device:
+            return
+        self.loaded_device = None
+        self.apply_button.set_sensitive(False)
+        self.current.set_text("Reading MAC privacy setting…")
+
+        def work():
+            uuid = active_profile(device)
+            kind = nm("-g", "GENERAL.TYPE", "device", "show", device).strip()
+            return read_mac(uuid, kind), nm("-g", "GENERAL.HWADDR", "device", "show", device).strip()
+
+        def done(value, error):
+            if self.panel.device.get_active_id() != device:
+                return False
+            if error:
+                self.current.set_text(error)
+            else:
+                mode, address = value
+                self.mode.set_active_id(mode)
+                self.current.set_text(f"{device}: {MAC_LABELS[mode]}" + (f" ({address})" if address else ""))
+                self.loaded_device = device
+                self.apply_button.set_sensitive(True)
+            return False
+
+        self.panel.async_run(work, done)
+
+    def apply(self, *_):
+        device = self.panel.device.get_active_id()
+        if not device or device != self.loaded_device:
+            return
+        self.apply_button.set_sensitive(False)
+        self.panel.status.set_text("Applying MAC privacy. NetworkManager may ask for authentication…")
+
+        def done(message, error):
+            self.panel.status.set_text(error or message)
+            self.load()
+            return False
+
+        self.panel.async_run(lambda: change_mac(device, self.mode.get_active_id()), done)
 
 
 class VPNPage:

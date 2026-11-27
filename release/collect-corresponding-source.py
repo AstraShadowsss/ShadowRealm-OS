@@ -7,7 +7,7 @@ import argparse,json,pathlib,subprocess
 import apt_pkg
 p=argparse.ArgumentParser();p.add_argument('--root',type=pathlib.Path,required=True);p.add_argument('--output',type=pathlib.Path,required=True);a=p.parse_args()
 apt_pkg.init();root=a.root.resolve();assert (root/'var/lib/dpkg/status').is_file()
-custom={'shadowrealm-os-experience','shadowrealm-os-desktop','shadowrealm-os-terminal','shadowrealm-os-panel','shadowrealm-os-security','shadowrealm-os-artwork','shadowrealm-os-release','shadowrealm-os-installer-settings','shadow-pinball','shadow-runner','skull-invaders','circuit-chase','marble-reactor','neon-ascent','neon-breaker','shadow-snake','shadow-solitaire'}
+custom={'shadowrealm-os-experience','shadowrealm-os-desktop','shadowrealm-os-terminal','shadowrealm-os-panel','shadowrealm-os-security','shadowrealm-os-artwork','shadowrealm-os-release','shadowrealm-os-installer-settings','shadowrealm-os-messenger','shadow-pinball','shadow-runner','skull-invaders','circuit-chase','marble-reactor','neon-ascent','neon-breaker','shadow-snake','shadow-solitaire'}
 vendors={'librewolf','jami','jami-daemon','libqt-jami'}
 fmt='${db:Status-Status}\t${binary:Package}\t${Version}\t${source:Package}\t${source:Version}\n'
 raw=subprocess.check_output(['dpkg-query','--admindir='+str(root/'var/lib/dpkg'),'-W','-f='+fmt],text=True)

@@ -31,7 +31,8 @@ static void weather_finished(GObject *source, GAsyncResult *result, gpointer unu
         g_strfreev(lines);
     } else {
         g_free(weather_condition);
-        weather_condition = g_strdup(weather_temperature ? "Offline · cached forecast" : "Forecast unavailable");
+        weather_condition = g_strdup(weather_temperature ? "Offline · cached forecast" :
+                                     weather_network_available ? "Forecast unavailable" : "Offline · no network");
     }
     weather_next = g_get_monotonic_time() +
                    (fresh ? 10800LL : 600LL) * G_USEC_PER_SEC;
@@ -84,8 +85,14 @@ static void weather_update(gboolean enabled, double latitude, double longitude)
 
 static void draw_widget_weather(cairo_t *canvas)
 {
+    if (!weather_location) {
+        txt(canvas, 16, 76, 18, "Location not set", "f5e9ff", 1);
+        txt(canvas, 16, 104, 10, "Choose a location in Widget Settings", "f5e9ff", 0);
+        txt(canvas, 16, 124, 10, "Forecast from MET Norway", "00eaff", 0);
+        return;
+    }
     const gchar *fallback = weather_process ? "Fetching forecast…" :
-                            weather_location ? "Forecast unavailable" : "Choose a location in Widget Settings";
+                            !weather_network_available ? "Offline · no network" : "Forecast unavailable";
     if (weather_temperature) {
         double temperature = g_ascii_strtod(weather_temperature, NULL);
         char formatted[64], number[G_ASCII_DTOSTR_BUF_SIZE];

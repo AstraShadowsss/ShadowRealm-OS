@@ -23,7 +23,8 @@ def fields(line):
  return parts+[word]
 
 def page(tabs,name):
- box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14,margin=18);tabs.append_page(box,Gtk.Label(label=name));return box
+ box=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14,margin=18)
+ scroller=Gtk.ScrolledWindow();scroller.set_policy(Gtk.PolicyType.NEVER,Gtk.PolicyType.AUTOMATIC);scroller.set_shadow_type(Gtk.ShadowType.NONE);scroller.add(box);tabs.append_page(scroller,Gtk.Label(label=name));return box
 
 def textview(box):
  view=Gtk.TextView(editable=False,cursor_visible=False,wrap_mode=Gtk.WrapMode.WORD_CHAR,monospace=True);scroll=Gtk.ScrolledWindow();scroll.set_min_content_height(160);scroll.add(view);box.pack_start(scroll,True,True,0);return view
@@ -42,7 +43,7 @@ class Panel(Gtk.Application):
  def activate(self,*args):
   if hasattr(self,'window'):self.window.present();return
   title={'shield':'Shadow Shield','network':'Shadow Network','bluetooth':'Shadow Bluetooth'}[self.mode]
-  self.window=Gtk.ApplicationWindow(application=self,title=title);self.window.set_default_size(730,600)
+  self.window=Gtk.ApplicationWindow(application=self,title=title);self.window.set_default_size(700,560)
   from shadow_effects import attach, heading
   attach(self.window)
   outer=Gtk.Box(orientation=Gtk.Orientation.VERTICAL,spacing=14,margin=20);self.window.add(outer);outer.pack_start(heading(title),False,False,0)
@@ -163,8 +164,9 @@ class Panel(Gtk.Application):
   box=page(self.tabs,'Connection');self.device=Gtk.ComboBoxText();self.device.connect('changed',lambda *_:self.refresh());box.pack_start(self.device,False,False,0);self.netinfo=Gtk.Label(xalign=0,yalign=0,selectable=True,wrap=True);box.pack_start(self.netinfo,True,True,0)
   self.button(box,'Connect / reconnect selected device',lambda *_:self.network_action('connect'));self.button(box,'Disconnect selected device…',lambda *_:self.network_action('disconnect'));self.button(box,'Manage saved connections',lambda *_:self.launch('nm-connection-editor'))
   box=page(self.tabs,'Wi-Fi');box.pack_start(Gtk.Label(label='Join Wi-Fi networks from the top-bar network menu. Saved networks and passwords can be edited in connection settings.',xalign=0,wrap=True),False,False,0);self.wifi=textview(box);self.button(box,'Refresh available Wi-Fi networks',lambda *_:self.refresh());self.button(box,'Open connection settings',lambda *_:self.launch('nm-connection-editor'))
-  from shadow_network_tools import DNSPage, VPNPage
+  from shadow_network_tools import DNSPage, MACPage, VPNPage
   self.dns_page=DNSPage(self,page(self.tabs,'DNS'))
+  self.mac_page=MACPage(self,page(self.tabs,'MAC privacy'))
   self.vpn_page=VPNPage(self,page(self.tabs,'VPN'))
   box=page(self.tabs,'Airplane Mode')
   box.pack_start(Gtk.Label(label='Pause Wi-Fi, mobile broadband, and Bluetooth. Ethernet stays connected.',xalign=0,wrap=True),False,False,0)

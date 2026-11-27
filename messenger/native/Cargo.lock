@@ -4039,6 +4039,7 @@ dependencies = [
  "keyring",
  "matrix-sdk",
  "matrix-sdk-ui",
+ "mime",
  "serde",
  "serde_json",
  "shadow-messenger-core",

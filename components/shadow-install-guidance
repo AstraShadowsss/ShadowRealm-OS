@@ -1,0 +1,68 @@
+#!/usr/bin/python3
+"""Show disk and first-boot guidance before the installer opens."""
+
+import sys
+
+import gi
+gi.require_version("Gtk", "3.0")
+from gi.repository import Gtk
+
+
+def main():
+    window = Gtk.Window(title="Before you install ShadowRealm-OS")
+    window.set_default_size(600, 520)
+    window.set_position(Gtk.WindowPosition.CENTER)
+    outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12, margin=22)
+
+    title = Gtk.Label(label="Before you change a disk", xalign=0)
+    title.get_style_context().add_class("title")
+    outer.pack_start(title, False, False, 0)
+
+    text = (
+        "Erase disk overwrites the selected disk and every partition on it. "
+        "There is no undo; back up anything you need first.\n\n"
+        "Manual partitioning is only for disks whose layout you understand. "
+        "The installer does not resize another operating system automatically.\n\n"
+        "If you choose disk encryption, you will set a separate passphrase. "
+        "Keep the recovery key somewhere other than this computer; losing it "
+        "means the encrypted installation cannot be recovered.\n\n"
+        "When installation finishes, shut down, remove the USB or ISO, then "
+        "start the computer from the installed disk. On first boot, ShadowRealm-OS "
+        "shows a short summary of installed software, active services and network "
+        "access before you continue."
+    )
+    label = Gtk.Label(label=text, xalign=0, wrap=True)
+    label.set_selectable(True)
+    label.get_accessible().set_name("Installation disk and first boot guidance")
+    scroll = Gtk.ScrolledWindow()
+    scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    scroll.add(label)
+    outer.pack_start(scroll, True, True, 0)
+
+    buttons = Gtk.Box(spacing=8)
+    back = Gtk.Button(label="Go back")
+    back.get_accessible().set_name("Go back without starting the installer")
+    forward = Gtk.Button(label="Continue to installer")
+    forward.get_accessible().set_name("Continue to the installer")
+    forward.get_style_context().add_class("suggested-action")
+    buttons.pack_end(forward, False, False, 0)
+    buttons.pack_end(back, False, False, 0)
+    outer.pack_start(buttons, False, False, 0)
+
+    result = {"continue": False}
+
+    def close(cont):
+        result["continue"] = cont
+        window.destroy()
+
+    back.connect("clicked", lambda *_: close(False))
+    forward.connect("clicked", lambda *_: close(True))
+    window.connect("destroy", Gtk.main_quit)
+    window.add(outer)
+    window.show_all()
+    Gtk.main()
+    return 0 if result["continue"] else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

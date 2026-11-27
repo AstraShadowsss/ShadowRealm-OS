@@ -13,6 +13,16 @@ const SHEET:&str=r#"
 @define-color messenger_accent {accent};
 .messenger-window { background-color:@messenger_bg; color:@messenger_fg; }
 .messenger-window headerbar { background-image:none; background-color:mix(@messenger_bg,@messenger_fg,0.055); color:@messenger_fg; border-bottom:1px solid alpha(@messenger_accent,0.28); box-shadow:none; }
+.messenger-window .messenger-menubar, .messenger-menubar, .messenger-window menubar, menubar.messenger-menubar { background-image:none; background-color:mix(@messenger_bg,@messenger_fg,0.055); color:@messenger_fg; border-bottom:1px solid alpha(@messenger_accent,0.28); box-shadow:none; padding:2px 6px; }
+.messenger-window .messenger-menubar > item, .messenger-menubar > item, .messenger-window menubar > item, menubar.messenger-menubar > item { color:@messenger_fg; border-radius:6px; padding:4px 9px; }
+.messenger-window .messenger-menubar > item:hover, .messenger-menubar > item:hover, .messenger-window menubar > item:hover, menubar.messenger-menubar > item:hover, .messenger-window .messenger-menubar > item:selected, .messenger-menubar > item:selected, .messenger-window menubar > item:selected, menubar.messenger-menubar > item:selected { background-color:alpha(@messenger_accent,0.22); color:@messenger_fg; }
+.messenger-window .messenger-menubar > item > label, .messenger-menubar > item > label, .messenger-window menubar > item > label, menubar.messenger-menubar > item > label { color:@messenger_fg; }
+.messenger-window .messenger-menubar menubutton, .messenger-window .messenger-menubar button { background-image:none; background-color:transparent; color:@messenger_fg; border:none; box-shadow:none; padding:4px 9px; min-height:0; }
+.messenger-window .messenger-menubar menubutton:hover, .messenger-window .messenger-menubar button:hover, .messenger-window .messenger-menubar menubutton:checked, .messenger-window .messenger-menubar button:checked { background-color:alpha(@messenger_accent,0.22); color:@messenger_fg; }
+.messenger-window .messenger-menubar menubutton label, .messenger-window .messenger-menubar button label { color:@messenger_fg; }
+popover.menu, popover.menu > contents, popover.background > contents { background-image:none; background-color:mix(@messenger_bg,@messenger_fg,0.055); color:@messenger_fg; }
+popover.menu modelbutton, popover.menu label { color:@messenger_fg; }
+popover.menu modelbutton:hover { background-color:alpha(@messenger_accent,0.22); }
 .messenger-window decoration { border-radius:12px; box-shadow:0 5px 20px alpha(black,0.4); }
 .messenger-window label { color:@messenger_fg; }
 .messenger-window entry, .messenger-window passwordentry,

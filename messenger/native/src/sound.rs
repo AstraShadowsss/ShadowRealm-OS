@@ -1,6 +1,6 @@
-//! Original short notification tones, played through GTK's media backend.
-//! Audio is best-effort: a missing GStreamer plugin must never interrupt messaging.
-use std::{cell::RefCell,fs,path::PathBuf};
+//! Original short notification tones. Playback is best-effort: a missing
+//! audio server or file must never interrupt messaging.
+use std::{cell::RefCell,fs,path::{Path,PathBuf},process::{Command,Stdio}};
 use gtk::prelude::*;
 
 thread_local! {
@@ -30,11 +30,12 @@ fn prepare(name:&str)->Option<PathBuf>{
     fs::rename(temporary,&path).ok()?;
     Some(path)
 }
-
-/// Plays one named tone on the GTK main thread. Unknown names are ignored.
-pub fn play(name:&str){
-    let Some(path)=prepare(name) else{return};
-    let media=gtk::MediaFile::for_filename(&path);
+fn custom(name:&str)->Option<PathBuf>{
+    let path=PathBuf::from(crate::settings::get_string(&format!("sound_{name}"))?);
+    (path.is_file()&&path.metadata().ok()?.len()>0).then_some(path)
+}
+fn fallback_media(path:&Path){
+    let media=gtk::MediaFile::for_filename(path);
     media.set_volume(0.55);
     media.play();
     PLAYERS.with(|players|{
@@ -42,4 +43,32 @@ pub fn play(name:&str){
         players.retain(|media|media.is_playing());
         players.push(media);
     });
+}
+fn play_path(path:&Path){
+    // GTK's media backend is optional on minimal installs. paplay is present
+    // with the desktop's PulseAudio/PipeWire stack and reports asynchronous
+    // playback reliably; pw-play is the fallback for PipeWire-only systems.
+    let volume=((0.90*65536.0) as u32).to_string();
+    for (program,args) in [
+        ("/usr/bin/paplay",vec![format!("--volume={volume}")]),
+        ("/usr/bin/pw-play",vec!["--volume=0.55".to_owned()]),
+    ]{
+        if !Path::new(program).is_file(){continue;}
+        let spawned=Command::new(program).args(args).arg(path)
+            .stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn();
+        if let Ok(mut child)=spawned{
+            // Reap the short-lived player so repeated alerts cannot accumulate
+            // zombie processes behind the long-running messenger.
+            std::thread::spawn(move||{let _=child.wait();});
+            return;
+        }
+    }
+    fallback_media(path);
+}
+
+/// Plays one named event, preferring a user-selected file over the bundled
+/// chime. Unknown names are ignored.
+pub fn play(name:&str){
+    let Some(path)=custom(name).or_else(||prepare(name)) else{return};
+    play_path(&path);
 }

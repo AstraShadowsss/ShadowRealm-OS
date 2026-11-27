@@ -26,6 +26,7 @@ use shadow_messenger_core::{Buddy,Connection,Presence};
 use worker::{Command,Event};
 
 fn main() -> glib::ExitCode {
+    gtk::Window::set_default_icon_name("shadow-messenger-app");
     let app=gtk::Application::builder().application_id("org.shadowrealm_os.Messenger.Development").build();
     app.connect_activate(build);
     app.run()
@@ -34,14 +35,9 @@ fn main() -> glib::ExitCode {
 struct Login {
     root:gtk::Box,
     server:gtk::Entry,
-    user:gtk::Entry,
-    password:gtk::PasswordEntry,
     consent:gtk::CheckButton,
     login:gtk::Button,
-    restore:gtk::Button,
-    refresh:gtk::Button,
     logout:gtk::Button,
-    validate:gtk::Button,
     status:gtk::Label,
     create_account:gtk::Button,
     help:gtk::Button,
@@ -61,7 +57,7 @@ fn login_page(commands:&Sender<Command>)->Login{
     let server=gtk::Entry::builder().placeholder_text("HTTPS homeserver").build();
     let user=gtk::Entry::builder().placeholder_text("Matrix account").build();
     let password=gtk::PasswordEntry::new();password.set_show_peek_icon(true);password.set_placeholder_text(Some("Password"));
-    let consent=gtk::CheckButton::with_label("Use a test account; verification and recovery are unfinished");
+    let consent=gtk::CheckButton::with_label("Use a test account; this is a development build");
     for widget in [server.upcast_ref::<gtk::Widget>(),user.upcast_ref(),password.upcast_ref(),consent.upcast_ref()]{card.append(widget);}
     let buttons=gtk::FlowBox::builder().selection_mode(gtk::SelectionMode::None).min_children_per_line(1).max_children_per_line(2).column_spacing(8).row_spacing(6).build();
     let login=gtk::Button::with_label("Sign in");login.add_css_class("suggested-action");login.set_sensitive(false);login.set_hexpand(true);
@@ -92,7 +88,7 @@ fn login_page(commands:&Sender<Command>)->Login{
     restore.connect_clicked(move|_|{if tx.try_send(Command::Restore).is_ok(){status_copy.set_text("Restoring the saved account...");}else{status_copy.set_text("An account request is already pending.");}});
     let tx=commands.clone();let status_copy=status.clone();
     refresh.connect_clicked(move|_|{if tx.try_send(Command::Refresh).is_ok(){status_copy.set_text("Refreshing connections...");}else{status_copy.set_text("An account request is already pending.");}});
-    Login{root,server,user,password,consent,login,restore,refresh,logout,validate,status,create_account,help}
+    Login{root,server,consent,login,logout,status,create_account,help}
 }
 
 fn presence_line(buddy:&Buddy)->String{
@@ -106,6 +102,7 @@ fn notify(app:&gtk::Application,room_id:&str,title:&str,body:&str,mention:bool){
     notification.set_body(Some(body));
     if mention{notification.set_priority(gtk::gio::NotificationPriority::High);}
     notification.set_default_action_and_target_value("app.open-room",Some(&room_id.to_variant()));
+    notification.add_button_with_target_value("Open","app.open-room",Some(&room_id.to_variant()));
     app.send_notification(Some(&format!("shadow-messenger:{room_id}")),&notification);
 }
 fn add_action(window:&gtk::ApplicationWindow,name:&str,callback:impl Fn()+ 'static){
@@ -185,7 +182,7 @@ fn build(app:&gtk::Application){
     let registration_views=Rc::new(RefCell::new(None::<registration_ui::RegistrationView>));
 
     let open_chat:Rc<dyn Fn(String,String)> = {
-        let window=window.clone();let commands=commands.clone();let chat=chat.clone();let selected=selected.clone();let buddies=buddies.clone();let app=app.clone();let loaded=loaded.clone();let last_ids=last_ids.clone();
+        let commands=commands.clone();let chat=chat.clone();let selected=selected.clone();let buddies=buddies.clone();let app=app.clone();let loaded=loaded.clone();let last_ids=last_ids.clone();
         let preferences=preferences.clone();let conversation_views=conversation_views.clone();let security_views=security_views.clone();let recovery_views=recovery_views.clone();let registration_views=registration_views.clone();let hooked=Rc::new(Cell::new(false));
         Rc::new(move|room_id,name|{
             app.withdraw_notification(&format!("shadow-messenger:{room_id}"));
@@ -279,7 +276,7 @@ fn build(app:&gtk::Application){
     let open_preferences:Rc<dyn Fn()> = {
         let prefs=preferences.clone();let parent=window.clone();let chat=chat.clone();let security=open_security.clone();let recovery=open_recovery.clone();let logout=logout.clone();let app=app.clone();let account=account_label.clone();
         let test_notification:Rc<dyn Fn()>=Rc::new(move||{notify(&app,"test","Shadow Messenger","Notifications are working.",false);});
-        let test_sound:Rc<dyn Fn()>=Rc::new(||sound::play("message"));
+        let test_sound:Rc<dyn Fn(String)>=Rc::new(|name|sound::play(&name));
         Rc::new(move||{
             let mut slot=prefs.borrow_mut();
             let view=slot.get_or_insert_with(||preferences_ui::Preferences::new(&parent,preferences_ui::Actions{security:security.clone(),recovery:recovery.clone(),logout:logout.clone(),test_notification:test_notification.clone(),test_sound:test_sound.clone()}));
@@ -307,20 +304,25 @@ fn build(app:&gtk::Application){
             chooser.show();
         })
     };
-    let shell_actions=shell::Actions{open_chat:open_chat.clone(),conversations:open_conversations.clone(),security:open_security.clone(),recovery:open_recovery.clone(),preferences:open_preferences.clone(),away:open_away.clone(),logout:logout.clone(),avatar:open_avatar.clone()};
+    let shell_actions=shell::Actions{open_chat:open_chat.clone(),conversations:open_conversations.clone(),security:open_security.clone(),recovery:open_recovery.clone(),preferences:open_preferences.clone(),away:open_away.clone(),avatar:open_avatar.clone()};
     let shell=shell::Shell::new(&commands,rooms.clone(),buddies.clone(),shell_actions);
     let login_logout=login.logout.clone();let logout_copy=logout.clone();login_logout.connect_clicked(move|_|logout_copy());
     let shell_logout=shell.logout.clone();let logout_copy=logout.clone();shell_logout.connect_clicked(move|_|logout_copy());
 
     let stack=gtk::Stack::new();stack.set_vexpand(true);stack.set_transition_type(gtk::StackTransitionType::Crossfade);
     stack.add_named(&login.root,Some("login"));stack.add_named(&shell.root,Some("shell"));stack.set_visible_child_name("login");
-    let menu=gtk::gio::Menu::new();
-    let file=gtk::gio::Menu::new();file.append(Some("Sign out"),Some("win.sign-out"));file.append(Some("Quit"),Some("win.quit"));menu.append_submenu(Some("File"),&file);
-    let view=gtk::gio::Menu::new();view.append(Some("Preferences"),Some("win.preferences"));view.append(Some("Reload theme"),Some("win.reload-theme"));menu.append_submenu(Some("View"),&view);
-    let connections=gtk::gio::Menu::new();connections.append(Some("New conversation"),Some("win.new-conversation"));connections.append(Some("Invitations"),Some("win.invitations"));menu.append_submenu(Some("Connections"),&connections);
-    let tools=gtk::gio::Menu::new();tools.append(Some("Devices & security"),Some("win.security"));tools.append(Some("Account recovery"),Some("win.recovery"));menu.append_submenu(Some("Tools"),&tools);
-    let help=gtk::gio::Menu::new();help.append(Some("How Shadow Messenger Works"),Some("win.how-it-works"));help.append(Some("About Shadow Messenger"),Some("win.about"));menu.append_submenu(Some("Help"),&help);
-    let menubar=gtk::PopoverMenuBar::from_model(Some(&menu));menubar.add_css_class("messenger-menubar");
+    let file=gtk::gio::Menu::new();file.append(Some("Sign out"),Some("win.sign-out"));file.append(Some("Quit"),Some("win.quit"));
+    let view=gtk::gio::Menu::new();view.append(Some("Preferences"),Some("win.preferences"));view.append(Some("Reload theme"),Some("win.reload-theme"));
+    let connections=gtk::gio::Menu::new();connections.append(Some("New conversation"),Some("win.new-conversation"));connections.append(Some("Invitations"),Some("win.invitations"));
+    let tools=gtk::gio::Menu::new();tools.append(Some("Devices & security"),Some("win.security"));tools.append(Some("Account recovery"),Some("win.recovery"));
+    let help=gtk::gio::Menu::new();help.append(Some("How Shadow Messenger Works"),Some("win.how-it-works"));help.append(Some("About Shadow Messenger"),Some("win.about"));
+    // GtkPopoverMenuBar does not paint its own themed background on this GTK/Xfwm4
+    // stack. A plain box with MenuButtons keeps the same actions and lets the
+    // application palette own the full menu strip.
+    let menubar=gtk::Box::new(gtk::Orientation::Horizontal,2);menubar.add_css_class("messenger-menubar");
+    for (label,model) in [("File",&file),("View",&view),("Connections",&connections),("Tools",&tools),("Help",&help)]{
+        let button=gtk::MenuButton::new();button.set_label(label);button.set_menu_model(Some(model));button.add_css_class("messenger-menu-button");button.add_css_class("flat");menubar.append(&button);
+    }
     let content=gtk::Box::new(gtk::Orientation::Vertical,0);content.append(&menubar);content.append(&stack);window.set_child(Some(&content));
 
     add_action(&window,"quit",{let window=window.clone();move||window.close()});
@@ -409,22 +411,24 @@ fn build(app:&gtk::Application){
                 }
                 Event::Timeline{room_id,messages}=>{
                     if selected_ui.borrow().as_deref()==Some(room_id.as_str()){if let Some(view)=chat_ui_state.borrow().as_ref(){view.messages(&room_id,&messages);}}
-                    let Some(last)=messages.last() else{continue};
-                    let first=loaded_ui.borrow_mut().insert(room_id.clone());
-                    if first{continue;}
-                    if last.own||!last.state.is_empty()||last.timestamp_ms<=0{continue;}
-                    let previous=last_ids_ui.borrow_mut().insert(room_id.clone(),last.id.clone());
-                    if previous.as_deref()==Some(last.id.as_str()){continue;}
+                }
+                Event::Incoming{room_id,sender,body,id}=>{
+                    // This covers every joined room, not only the conversation
+                    // whose timeline happens to be open. Opening a room clears
+                    // its last-id marker so a redelivered event can alert again.
+                    let previous=last_ids_ui.borrow_mut().insert(room_id.clone(),id.clone());
+                    if previous.as_deref()==Some(id.as_str()){continue;}
                     let room_name=rooms_ui.borrow().iter().find(|room|room.room_id==room_id).map(|room|room.name.clone()).unwrap_or_else(||room_id.clone());
-                    let sender=shadow_messenger_core::display_name(&last.sender);
+                    let sender_id=sender;
+                    let sender=shadow_messenger_core::display_name(&sender_id);
                     let own_user_value=own_user_ui.borrow().clone();let own_name_value=own_name_ui.borrow().clone();
-                    let mention=shadow_messenger_core::mentions(&last.body,&own_user_value,&own_name_value);
-                    shell_ui.push_activity(&room_id,&room_name,&last.sender,&shadow_messenger_core::notification_body(&last.body),mention,&time_now());
+                    let mention=shadow_messenger_core::mentions(&body,&own_user_value,&own_name_value);
+                    shell_ui.push_activity(&room_id,&room_name,&sender_id,&shadow_messenger_core::notification_body(&body),mention,&time_now());
                     if matches!(own_presence_ui.get(),Presence::DoNotDisturb|Presence::Invisible){continue;}
                     let focused=chat_ui_state.borrow().as_ref().is_some_and(|view|view.is_active()&&view.room_id().as_deref()==Some(room_id.as_str()));
                     if focused{continue;}
                     if settings::get("notifications",true){
-                        let preview=if settings::get("notification_previews",true){format!("{}: {}",sender,shadow_messenger_core::notification_body(&last.body))}else{"New message".to_owned()};
+                        let preview=if settings::get("notification_previews",true){format!("{}: {}",sender,shadow_messenger_core::notification_body(&body))}else{"New message".to_owned()};
                         let title=if mention{format!("{room_name} — mention")}else{room_name};
                         notify(&app_ui,&room_id,&title,&preview,mention);
                     }

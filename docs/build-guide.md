@@ -1,6 +1,6 @@
 # Building ShadowRealm-OS
 
-ShadowRealm-OS is a customized Debian 13 desktop. Its original desktop, artwork, Terminal and nine offline games are maintained here. Debian packages remain managed by APT; sandboxed applications use Flatpak.
+ShadowRealm-OS is a customized Debian 13 desktop. Its original desktop, artwork, Terminal, Shadow Messenger development preview and nine offline games are maintained here. Debian packages remain managed by APT; sandboxed applications use Flatpak.
 
 ## Contents
 
@@ -29,11 +29,14 @@ python3 components/build-identity.py outputs
 python3 release/build-archive-keyring.py release/shadowrealm-os-archive-keyring.gpg outputs
 bash components/build-panel.sh outputs
 python3 games/build-debs.py outputs
+bash messenger/build-deb.sh outputs
 ```
 
-The games builder produces nine independently removable DEBs in `outputs/`. Keep earlier package revisions in a separate directory. For the r4 baseline, `DESKTOP_VERSION` and `ARTWORK_VERSION` are both 0.2.3, and `ASSET_VERSION` gives Terminal 0.2.2. The installer settings are 0.2.1, and the distro identity package is 2026.11-4. Use each component's version file as the build authority and increment its version before publishing an updated package.
+The games builder produces nine independently removable DEBs in `outputs/`. Keep earlier package revisions in a separate directory. For the r5 development set, `DESKTOP_VERSION` is 0.2.21, `ARTWORK_VERSION` is 0.2.6, `ASSET_VERSION` gives Terminal 0.2.3, security is 0.2.1, installer settings are 0.2.2, Messenger is 0.1.0, and the distro identity package is 2026.11-4. Use each component's version file as the build authority and increment its version before publishing an updated package. The artwork 0.2.6 package must be reused rather than rebuilt until the committed artwork source gap is resolved.
 
-The installer configuration package adds the maintained Calamares framework, a ShadowRealm-OS interface, offline GRUB files, optional LUKS encryption and LVM controls. Nine custom packages plus nine game packages are installed.
+Shadow Messenger is a test-account development preview in the private r5 image, not a finished messaging application. Its package depends on `gnome-keyring` and installs `shadow-messenger-app` icons for all twelve palettes. Regenerate those icons after a palette change with `python3 messenger/packaging/build-icons.py branding/palettes.json messenger/packaging/icons`, then inspect `contact-sheet.png` before rebuilding the DEB.
+
+The installer configuration package adds the maintained Calamares framework, a ShadowRealm-OS interface, offline GRUB files, optional LUKS encryption and LVM controls. Ten custom packages plus nine game packages are installed in the r5 development set.
 
 ## Build the AMD64 installer
 
@@ -76,6 +79,8 @@ Before publishing, boot BIOS and UEFI, install to a blank disk with optional enc
 The menu prioritizes actual roles such as WebBrowser and Email over secondary Security/Network tags. Manual category overrides still win. Galculator and GNOME Clocks are the normal calculator/clock applications; the small built-in calculator/clock views are not duplicate top-level menu entries. VLC and Shutter replace the overlapping Parole and Xfce screenshot launchers. Bluetooth has one Shadow Bluetooth entry, with Blueman device and adapter pages inside it. Xfce Terminal remains an available recovery backend rather than a second normal Terminal entry. Print defaults to Shutter without replacing a deliberately customized shortcut.
 
 `components/test-menu-categories.c` checks the actual classifier with mixed desktop-entry tags and manual overrides. `components/vendor-notices/` is required when building the desktop package: it supplies upstream notices missing from two vendor packages. After finalizing an image root, run `python3 release/collect-release-notices.py ROOT OUTPUT` to create the package notice archive, exact package/source inventory and coverage report. Keep THIRD_PARTY_LICENSES.md with the original MIT license; neither replaces third-party terms.
+
+The r5 development set also includes a pre-installer guidance window and a first-run Welcome Summary. The summary is dismissible and can be reopened from **Welcome Summary** in the application menu. The firewall keeps inbound and forwarded traffic denied by default; its scoped Docker rules allow Docker bridge traffic and root-published DNAT ports without enabling global forwarding. Docker itself is optional and is not installed by the image.
 
 The final ISO assembler keeps Calamares as the single install path and removes the unused Debian text installer and offline package pool. `release/shadowrealm-os-live/clean-boot-menu.py` verifies matching packaged boot code, creates BIOS/UEFI menus and regenerates internal checksum manifests. The final ISO includes the generated package notices under `LICENSES`. The live session automatically signs in; its temporary credentials are `user` / `live`. Installed account names and passwords are chosen during installation.
 

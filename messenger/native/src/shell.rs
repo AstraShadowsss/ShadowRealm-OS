@@ -4,7 +4,6 @@ use async_channel::Sender;
 use gtk::prelude::*;
 use shadow_messenger_core::{Buddy,Connection,Presence};
 use crate::worker::Command;
-use crate::appearance;
 
 #[derive(Clone)]
 pub struct Actions {
@@ -14,7 +13,6 @@ pub struct Actions {
     pub recovery:Rc<dyn Fn()>,
     pub preferences:Rc<dyn Fn()>,
     pub away:Rc<dyn Fn()>,
-    pub logout:Rc<dyn Fn()>,
     pub avatar:Rc<dyn Fn()>,
 }
 #[derive(Clone,Copy,PartialEq,Eq)]
@@ -32,12 +30,22 @@ fn mark(buttons:&[gtk::Button],active:&gtk::Button){
     for button in buttons{button.remove_css_class("active");}
     active.add_css_class("active");
 }
+fn refresh_room_view(heading:&gtk::Label,empty:&gtk::Label,rooms:&Rc<RefCell<Vec<Connection>>>,filter:Filter){
+    let rooms=rooms.borrow();
+    let visible=rooms.iter().filter(|room|match filter{Filter::All=>true,Filter::Direct=>room.direct,Filter::Groups=>!room.direct}).count();
+    let title=match filter{Filter::All=>"Conversations",Filter::Direct=>"Conversations",Filter::Groups=>"Groups"};
+    heading.set_text(&format!("{title} ({visible})"));
+    empty.set_text(match filter{
+        Filter::Groups=>"No group conversations yet. Create or join a group to see it here.",
+        Filter::Direct=>"No direct conversations yet. Use New chat / Invite to start one.",
+        Filter::All=>"No conversations yet. Use New chat / Invite to start one or review invitations.",
+    });
+    empty.set_visible(visible==0);
+}
 
 pub struct Shell {
     pub root:gtk::Box,
-    pub connections:gtk::Button,
     pub conversations:gtk::Button,
-    pub groups:gtk::Button,
     pub activity:gtk::Button,
     pub avatar:gtk::Stack,
     avatar_initials:gtk::Label,
@@ -52,6 +60,11 @@ pub struct Shell {
     pub heading:gtk::Label,
     pub list:gtk::ListBox,
     empty:gtk::Label,
+    people_search:gtk::SearchEntry,
+    people_heading:gtk::Label,
+    people_list:gtk::ListBox,
+    people_empty:gtk::Label,
+    people_names:Rc<RefCell<Vec<String>>>,
     pub logout:gtk::Button,
     pub rooms:Rc<RefCell<Vec<Connection>>>,
     pub buddies:Rc<RefCell<HashMap<String,Buddy>>>,
@@ -60,7 +73,6 @@ pub struct Shell {
     presence:Rc<Cell<Presence>>,
     activity_list:gtk::ListBox,
     activity_count:Rc<Cell<u64>>,
-    commands:Sender<Command>,
     actions:Actions,
 }
 
@@ -90,12 +102,13 @@ impl Shell {
         {let action=actions.avatar.clone();avatar_button.connect_clicked(move|_|action());}
         let name=gtk::Label::new(Some("Not signed in"));name.add_css_class("messenger-page-title");name.set_halign(gtk::Align::Center);name.set_wrap(true);
         let presence=gtk::MenuButton::new();presence.set_label("Offline");presence.set_halign(gtk::Align::Center);presence.add_css_class("messenger-small-button");
+        presence.set_tooltip_text(Some("Set your visibility. Invisible makes you appear offline to contacts."));
         let status_entry=gtk::Entry::builder().placeholder_text("What's on your mind?").max_length(160).build();
         let popover=gtk::Popover::new();let options=gtk::Box::new(gtk::Orientation::Vertical,2);options.set_margin_top(6);options.set_margin_bottom(6);options.set_margin_start(6);options.set_margin_end(6);
         let presence_cell=Rc::new(Cell::new(Presence::Offline));
         for option in [Presence::Online,Presence::Away,Presence::DoNotDisturb,Presence::Invisible]{
             let button=gtk::Button::new();button.add_css_class("flat");let line=gtk::Box::new(gtk::Orientation::Horizontal,8);
-            let dot=gtk::Label::new(Some("●"));dot.add_css_class(dot_class(option));let text=gtk::Label::new(Some(option.label()));text.set_xalign(0.0);
+            let dot=gtk::Label::new(Some("●"));dot.add_css_class(dot_class(option));let label=if option==Presence::Invisible{"Invisible (appear offline)"}else{option.label()};let text=gtk::Label::new(Some(label));text.set_xalign(0.0);
             line.append(&dot);line.append(&text);button.set_child(Some(&line));
             let tx=commands.clone();let popover_copy=popover.clone();let entry=status_entry.clone();
             button.connect_clicked(move|_|{
@@ -105,7 +118,7 @@ impl Shell {
         }
         popover.set_child(Some(&options));presence.set_popover(Some(&popover));
         let set_status=gtk::Button::with_label("Set status");set_status.add_css_class("suggested-action");
-        let hint=gtk::Label::new(Some("Your status is published through Matrix presence. Do Not Disturb silences alerts."));hint.set_wrap(true);hint.set_xalign(0.0);hint.add_css_class("messenger-muted");
+        let hint=gtk::Label::new(Some("Your status and away message are shared through Matrix presence. Choose Invisible to appear offline to contacts. Do Not Disturb silences alerts."));hint.set_wrap(true);hint.set_xalign(0.0);hint.add_css_class("messenger-muted");
         let status_line=gtk::Label::new(Some("Offline"));status_line.set_wrap(true);status_line.set_xalign(0.0);status_line.add_css_class("messenger-muted");
         let custom=gtk::Button::with_label("Custom Away Message…");custom.add_css_class("flat");custom.add_css_class("messenger-small-button");
         for widget in [avatar_frame.upcast_ref::<gtk::Widget>(),avatar_button.upcast_ref(),name.upcast_ref(),presence.upcast_ref(),status_entry.upcast_ref(),set_status.upcast_ref(),custom.upcast_ref(),hint.upcast_ref(),status_line.upcast_ref()]{profile.append(widget);}
@@ -120,15 +133,27 @@ impl Shell {
         let right=gtk::Box::new(gtk::Orientation::Vertical,8);right.set_hexpand(true);right.set_valign(gtk::Align::Fill);
         let pager=gtk::Stack::new();pager.set_vexpand(true);pager.set_transition_type(gtk::StackTransitionType::Crossfade);
         let connections_page=gtk::Box::new(gtk::Orientation::Vertical,8);
-        let search=gtk::SearchEntry::new();search.set_placeholder_text(Some("Search connections…"));connections_page.append(&search);
-        let header=gtk::Box::new(gtk::Orientation::Horizontal,8);let heading=gtk::Label::new(Some("Connections (0)"));heading.add_css_class("messenger-page-title");heading.set_xalign(0.0);heading.set_hexpand(true);
+        let people_search=gtk::SearchEntry::new();people_search.set_placeholder_text(Some("Search people…"));connections_page.append(&people_search);
+        let people_header=gtk::Box::new(gtk::Orientation::Horizontal,8);let people_heading=gtk::Label::new(Some("Connections (0)"));people_heading.add_css_class("messenger-page-title");people_heading.set_xalign(0.0);people_heading.set_hexpand(true);
+        let add_person=gtk::Button::with_label("New chat / Invite");add_person.set_tooltip_text(Some("Start a conversation, invite people or review invitations"));add_person.add_css_class("messenger-small-button");
+        let add_person_action=actions.conversations.clone();add_person.connect_clicked(move|_|add_person_action());
+        people_header.append(&people_heading);people_header.append(&add_person);connections_page.append(&people_header);
+        let people_hint=gtk::Label::new(Some("People and friends you can message. Open a person to continue your direct conversation."));people_hint.set_wrap(true);people_hint.set_xalign(0.0);people_hint.add_css_class("messenger-muted");connections_page.append(&people_hint);
+        let people_empty=gtk::Label::new(Some("No contacts yet. Start a direct conversation or accept an invitation, and people will appear here."));people_empty.set_wrap(true);people_empty.set_xalign(0.0);people_empty.add_css_class("messenger-muted");connections_page.append(&people_empty);
+        let people_list=gtk::ListBox::new();people_list.set_selection_mode(gtk::SelectionMode::None);people_list.add_css_class("messenger-connection-list");
+        let people_scroll=gtk::ScrolledWindow::builder().child(&people_list).vexpand(true).hscrollbar_policy(gtk::PolicyType::Never).build();connections_page.append(&people_scroll);
+        pager.add_named(&connections_page,Some("connections"));
+
+        let conversations_page=gtk::Box::new(gtk::Orientation::Vertical,8);
+        let search=gtk::SearchEntry::new();search.set_placeholder_text(Some("Search conversations…"));conversations_page.append(&search);
+        let header=gtk::Box::new(gtk::Orientation::Horizontal,8);let heading=gtk::Label::new(Some("Conversations (0)"));heading.add_css_class("messenger-page-title");heading.set_xalign(0.0);heading.set_hexpand(true);
         let add=gtk::Button::with_label("New chat / Invite");add.set_tooltip_text(Some("Start a conversation, invite people or review invitations"));add.add_css_class("messenger-small-button");
         let add_action=actions.conversations.clone();add.connect_clicked(move|_|add_action());
-        header.append(&heading);header.append(&add);connections_page.append(&header);
-        let empty=gtk::Label::new(Some("No conversations yet. Use + to start a private conversation or review invitations."));empty.set_wrap(true);empty.set_xalign(0.0);empty.add_css_class("messenger-muted");connections_page.append(&empty);
+        header.append(&heading);header.append(&add);conversations_page.append(&header);
+        let empty=gtk::Label::new(Some("No conversations yet. Use New chat / Invite to start one or review invitations."));empty.set_wrap(true);empty.set_xalign(0.0);empty.add_css_class("messenger-muted");conversations_page.append(&empty);
         let list=gtk::ListBox::new();list.set_selection_mode(gtk::SelectionMode::Single);list.add_css_class("messenger-connection-list");
-        let scroll=gtk::ScrolledWindow::builder().child(&list).vexpand(true).hscrollbar_policy(gtk::PolicyType::Never).build();connections_page.append(&scroll);
-        pager.add_named(&connections_page,Some("connections"));
+        let scroll=gtk::ScrolledWindow::builder().child(&list).vexpand(true).hscrollbar_policy(gtk::PolicyType::Never).build();conversations_page.append(&scroll);
+        pager.add_named(&conversations_page,Some("conversations"));
 
         let activity_page=gtk::Box::new(gtk::Orientation::Vertical,8);
         let activity_title=gtk::Label::new(Some("Activity"));activity_title.add_css_class("messenger-page-title");activity_title.set_xalign(0.0);activity_page.append(&activity_title);
@@ -151,19 +176,29 @@ impl Shell {
         let rows_open=rows.clone();let open_action=actions.open_chat.clone();
         list.connect_row_selected(move|_,row|{if let Some(row)=row{if let Some(info)=rows_open.borrow().get(row.index() as usize).cloned(){(open_action)(info.room_id,info.name);}}});
 
+        let people_names=Rc::new(RefCell::new(Vec::<String>::new()));
+        let people_filter_names=people_names.clone();let people_search_filter=people_search.clone();
+        people_list.set_filter_func(move|row|{
+            let Some(name)=people_filter_names.borrow().get(row.index() as usize).cloned() else{return true};
+            let query=people_search_filter.text().trim().to_lowercase();query.is_empty()||name.to_lowercase().contains(&query)
+        });
+        let people_search_list=people_list.clone();people_search.connect_search_changed(move|_|people_search_list.invalidate_filter());
+
         let activity_count=Rc::new(Cell::new(0u64));
         let nav_buttons=vec![connections.clone(),conversations.clone(),groups.clone(),activity.clone(),away.clone(),settings.clone()];
         {
-            let filter=filter.clone();let pager=pager.clone();let buttons=nav_buttons.clone();let button=connections.clone();let target=list.clone();
-            connections.connect_clicked(move|_|{filter.set(Filter::All);pager.set_visible_child_name("connections");mark(&buttons,&button);target.invalidate_filter();});
+            let pager=pager.clone();let buttons=nav_buttons.clone();let button=connections.clone();let target=people_list.clone();
+            connections.connect_clicked(move|_|{pager.set_visible_child_name("connections");mark(&buttons,&button);target.invalidate_filter();});
         }
         {
             let filter=filter.clone();let pager=pager.clone();let buttons=nav_buttons.clone();let button=groups.clone();let target=list.clone();
-            groups.connect_clicked(move|_|{filter.set(Filter::Groups);pager.set_visible_child_name("connections");mark(&buttons,&button);target.invalidate_filter();});
+            let heading=heading.clone();let empty=empty.clone();let rooms=rooms.clone();
+            groups.connect_clicked(move|_|{filter.set(Filter::Groups);refresh_room_view(&heading,&empty,&rooms,Filter::Groups);pager.set_visible_child_name("conversations");mark(&buttons,&button);target.invalidate_filter();});
         }
         {
-            let filter=filter.clone();let pager=pager.clone();let buttons=nav_buttons.clone();let button=conversations.clone();let target=list.clone();let action=actions.conversations.clone();
-            conversations.connect_clicked(move|_|{filter.set(Filter::Direct);pager.set_visible_child_name("connections");mark(&buttons,&button);target.invalidate_filter();action();});
+            let filter=filter.clone();let pager=pager.clone();let buttons=nav_buttons.clone();let button=conversations.clone();let target=list.clone();
+            let heading=heading.clone();let empty=empty.clone();let rooms=rooms.clone();
+            conversations.connect_clicked(move|_|{filter.set(Filter::Direct);refresh_room_view(&heading,&empty,&rooms,Filter::Direct);pager.set_visible_child_name("conversations");mark(&buttons,&button);target.invalidate_filter();});
         }
         {
             let pager=pager.clone();let buttons=nav_buttons.clone();let button=activity.clone();let count=activity_count.clone();let label=activity.clone();
@@ -178,8 +213,9 @@ impl Shell {
         let security_action=actions.security.clone();security_button.connect_clicked(move|_|security_action());
         let recovery_action=actions.recovery.clone();recovery_button.connect_clicked(move|_|recovery_action());
 
-        // The connection rows and activity feed are filled from the account events.
-        let shell=Self{root,connections,conversations,groups,activity,avatar,avatar_initials,avatar_picture,avatar_button,name,presence_button:presence,status_entry,status_line,notice,search,heading,list,empty,logout,rooms,buddies,rows,filter,presence:presence_cell,activity_list,activity_count,commands:commands.clone(),actions};
+        connections.add_css_class("active");
+        // Connection rows, conversation rows and the activity feed are filled from account events.
+        let shell=Self{root,conversations,activity,avatar,avatar_initials,avatar_picture,avatar_button,name,presence_button:presence,status_entry,status_line,notice,search,heading,list,empty,people_search,people_heading,people_list,people_empty,people_names,logout,rooms,buddies,rows,filter,presence:presence_cell,activity_list,activity_count,actions};
         shell.render();
         shell
     }
@@ -220,11 +256,18 @@ impl Shell {
     fn render(&self){
         while let Some(child)=self.list.first_child(){self.list.remove(&child);}
         self.rows.borrow_mut().clear();
+        while let Some(child)=self.people_list.first_child(){self.people_list.remove(&child);}
+        self.people_names.borrow_mut().clear();
         let rooms=self.rooms.borrow().clone();
         for room in &rooms{self.append_room(room);}
-        self.heading.set_text(&format!("Connections ({})",rooms.len()));
-        self.empty.set_visible(rooms.is_empty());
+        refresh_room_view(&self.heading,&self.empty,&self.rooms,self.filter.get());
         self.list.invalidate_filter();
+        let mut buddies=self.buddies.borrow().values().cloned().collect::<Vec<_>>();
+        shadow_messenger_core::sort_buddies(&mut buddies);
+        for buddy in &buddies{self.append_person(buddy);}
+        self.people_heading.set_text(&format!("Connections ({})",buddies.len()));
+        self.people_empty.set_visible(buddies.is_empty());
+        self.people_list.invalidate_filter();
     }
     fn append_room(&self,room:&Connection){
         let row_box=gtk::Box::new(gtk::Orientation::Horizontal,10);
@@ -250,6 +293,26 @@ impl Shell {
         self.list.append(&row);
         self.rows.borrow_mut().push(RowInfo{room_id:room.room_id.clone(),name:room.name.clone(),direct:room.direct});
     }
+    fn append_person(&self,buddy:&Buddy){
+        let row=gtk::Button::new();row.add_css_class("messenger-connection-row");row.set_has_frame(false);row.set_halign(gtk::Align::Fill);
+        row.set_tooltip_text(Some(&format!("Open conversation with {}",buddy.name)));
+        let row_box=gtk::Box::new(gtk::Orientation::Horizontal,10);
+        let avatar=gtk::Label::new(Some(&shadow_messenger_core::initials(&buddy.name)));avatar.add_css_class("messenger-avatar-small");avatar.set_valign(gtk::Align::Center);
+        let info=gtk::Box::new(gtk::Orientation::Vertical,1);info.set_hexpand(true);
+        let name=gtk::Label::new(Some(&buddy.name));name.add_css_class("messenger-connection-name");name.set_xalign(0.0);name.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        let subtitle=gtk::Box::new(gtk::Orientation::Horizontal,5);
+        let dot=gtk::Label::new(Some("●"));dot.add_css_class(dot_class(buddy.presence));dot.set_tooltip_text(Some(buddy.presence.label()));
+        let text=if buddy.status.trim().is_empty(){buddy.presence.label().to_owned()}else{format!("{} · {}",buddy.presence.label(),buddy.status)};
+        let status=gtk::Label::new(Some(&text));status.add_css_class("messenger-connection-subtitle");status.set_xalign(0.0);status.set_ellipsize(gtk::pango::EllipsizeMode::End);
+        subtitle.append(&dot);subtitle.append(&status);info.append(&name);info.append(&subtitle);
+        let open=gtk::Label::new(Some("Message"));open.add_css_class("messenger-muted");open.set_valign(gtk::Align::Center);
+        row_box.append(&avatar);row_box.append(&info);row_box.append(&open);
+        row.set_child(Some(&row_box));
+        let action=self.actions.open_chat.clone();let id=buddy.room_id.clone();let room_name=buddy.name.clone();
+        row.connect_clicked(move|_|(action)(id.clone(),room_name.clone()));
+        self.people_list.append(&row);
+        self.people_names.borrow_mut().push(buddy.name.clone());
+    }
     pub fn select(&self,room_id:&str){
         let index={self.rows.borrow().iter().position(|row|row.room_id==room_id)};
         if let Some(index)=index{if let Some(row)=self.list.row_at_index(index as i32){self.list.select_row(Some(&row));}}
@@ -261,7 +324,7 @@ impl Shell {
         self.notice.set_text("No account connected. Choose a test account to continue development checks.");
         self.conversations.set_label("Conversations");self.activity.set_label("Activity");self.activity_count.set(0);
         while let Some(child)=self.activity_list.first_child(){self.activity_list.remove(&child);}
-        self.search.set_text("");
+        self.search.set_text("");self.people_search.set_text("");
     }
 }
 

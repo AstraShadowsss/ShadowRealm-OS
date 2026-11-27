@@ -1,6 +1,7 @@
 //! One account worker owns the session; GTK never blocks on network or keyring work.
 use async_channel::{Sender,Receiver};
 use shadow_messenger_core::{Connection,Presence};
+use std::sync::{Arc,atomic::{AtomicBool,Ordering}};
 use zeroize::Zeroizing;
 use crate::matrix::Session;
 
@@ -45,6 +46,7 @@ pub enum Event {
     Devices{user_id:String,devices:Vec<crate::verification::DeviceInfo>},
     Verification{flow_id:String,state:crate::verification::State},
     Status{presence:Presence,message:String},
+    Incoming{room_id:String,sender:String,body:String,id:String},
     Buddies{own_user:String,own_presence:Presence,own_message:String,buddies:Vec<shadow_messenger_core::Buddy>},
     Typing{room_id:String,users:Vec<String>},
     Queued{room_id:String,body:String},
@@ -304,6 +306,19 @@ async fn send_avatar(account:&Session,events:&Sender<Event>){
 fn start_sync(account:Session,events:Sender<Event>,commands:Sender<Command>)->tokio::task::JoinHandle<()>{
     tokio::spawn(async move{
         let client=account.client().clone();let updates=events.clone();
+        let synced=Arc::new(AtomicBool::new(false));
+        let handler_events=events.clone();let handler_synced=synced.clone();
+        let own=client.user_id().map(ToOwned::to_owned);
+        let messages=client.add_event_handler(move|event:matrix_sdk::ruma::events::room::message::OriginalSyncRoomMessageEvent,room:matrix_sdk::Room|{
+            let events=handler_events.clone();let synced=handler_synced.clone();let own=own.clone();
+            async move{
+                // The initial sync contains history, not new messages. The
+                // callback below flips this after that first response.
+                if !synced.load(Ordering::Relaxed)||own.as_ref()==Some(&event.sender){return;}
+                let body:String=event.content.body().chars().take(4_000).collect();
+                let _=events.send(Event::Incoming{room_id:room.room_id().to_string(),sender:event.sender.to_string(),body,id:event.event_id.to_string()}).await;
+            }
+        });let _message_guard=client.event_handler_drop_guard(messages);
         let handler_client=client.clone();let handle=client.add_event_handler(move|event:matrix_sdk::ruma::events::key::verification::request::ToDeviceKeyVerificationRequestEvent|{
             let client=handler_client.clone();let commands=commands.clone();async move{
                 if let (Some(device),Some(request))=(client.device_id(),client.encryption().get_verification_request(&event.sender,event.content.transaction_id.as_str()).await){
@@ -313,13 +328,14 @@ fn start_sync(account:Session,events:Sender<Event>,commands:Sender<Command>)->to
             }
         });let _handler_guard=client.event_handler_drop_guard(handle);
         let result=client.sync_with_callback(matrix_sdk::config::SyncSettings::default().timeout(std::time::Duration::from_secs(30)),move |_|{
-            let account=account.clone();let updates=updates.clone();
+            let account=account.clone();let updates=updates.clone();let synced=synced.clone();
             async move{
                 match account.connections().await{
                     Ok(rooms)=>if updates.send(Event::Rooms(rooms)).await.is_err(){return matrix_sdk::LoopCtrl::Break;},
                     Err(message)=>{let _=updates.send(Event::Error(message)).await;}
                 }
                 if updates.send(Event::Invitations(crate::conversations::invitations(account.client()).await)).await.is_err(){return matrix_sdk::LoopCtrl::Break;}
+                synced.store(true,Ordering::Relaxed);
                 matrix_sdk::LoopCtrl::Continue
             }
         }).await;
