@@ -290,7 +290,10 @@ fn build(app:&gtk::Application){
     let open_avatar:Rc<dyn Fn()> = {
         let window=window.clone();let commands=commands.clone();
         Rc::new(move||{
-            let chooser=gtk::FileChooserNative::new(Some("Choose a display picture"),Some(&window),gtk::FileChooserAction::Open,Some("Use picture"),Some("Cancel"));
+            // Use the plain GTK chooser: the portal-backed native dialog is
+            // unavailable on desktops without xdg-desktop-portal.
+            let chooser=gtk::FileChooserDialog::new(Some("Choose a display picture"),Some(&window),gtk::FileChooserAction::Open
+                ,&[("Cancel",gtk::ResponseType::Cancel),("Use picture",gtk::ResponseType::Accept)]);
             let filter=gtk::FileFilter::new();filter.set_name(Some("Pictures"));
             for mime in ["image/png","image/jpeg","image/webp","image/gif"]{filter.add_mime_type(mime);}
             chooser.add_filter(&filter);

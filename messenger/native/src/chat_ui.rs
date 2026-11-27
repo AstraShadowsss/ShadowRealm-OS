@@ -58,7 +58,10 @@ fn day_label(milliseconds:i64)->String{
     date.format("%A, %B %d").map(|text|text.replace(" 0"," ")).unwrap_or_default()
 }
 fn invite_dialog(parent:&gtk::Window,room_id:&str,commands:&Sender<Command>){
-    let window=gtk::Window::builder().title("Invite people").transient_for(parent).destroy_with_parent(true).default_width(460).default_height(280).build();
+    // Keep the dialog in the same application as the conversation so it
+    // receives keyboard input reliably on every window manager.
+    let app=parent.application().expect("conversation window belongs to the application");
+    let window:gtk::Window=gtk::ApplicationWindow::builder().application(&app).title("Invite people").transient_for(parent).destroy_with_parent(true).default_width(460).default_height(280).build().upcast();
     window.add_css_class("messenger-window");window.set_size_request(380,240);
     let root=gtk::Box::new(gtk::Orientation::Vertical,10);root.set_margin_top(20);root.set_margin_bottom(20);root.set_margin_start(20);root.set_margin_end(20);
     let heading=gtk::Label::new(Some("Invite people to this conversation"));heading.add_css_class("messenger-page-title");heading.set_xalign(0.0);root.append(&heading);
