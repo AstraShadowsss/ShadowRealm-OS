@@ -2,7 +2,8 @@
 
 ## In development for r5 (2026-11-27)
 
-- Ship Shadow Messenger 0.1.0 in the r5 image and the signed feed. The package installs the native GTK4 client with a `shadow-messenger-app` icon rendered from the existing theme artwork in all twelve palettes, plus a Secret Service dependency. The client no longer labels itself a development build; the preferences window shows the version and supported features.
+- Desktop 0.2.23 publishes the final panel, tray-icon and widget-layout scaling build. Desktop 0.2.22 is already published with different bytes, so the scaling changes keep a new version instead of replacing it.
+- Ship Shadow Messenger 0.1.1 in the r5 image and the signed feed. The package installs the native GTK4 client with a `shadow-messenger-app` icon rendered from the existing theme artwork in all twelve palettes, plus a Secret Service dependency. The client no longer labels itself a development build; the preferences window shows the version and supported features.
 - Publish the signed trixie index with a 90-day window (valid until 25 February 2027) and make 90 days the builder default, so an ordinary rebuild cannot leave installed systems with expired metadata.
 - Add a dismissible first-run summary and a **Welcome Summary** application-menu entry that reopens it with `--force`. Add a pre-installer guidance window covering disk erasure, encryption recovery and media removal.
 - Professional icon themes ship the light plates shown on the website again. Their raster app icons have no SVG master, so the artwork build now whitens each dark plate in place; the Icon Studio also treats the Professional theme names as unbranded even when an older mode manifest omits the flag. Artwork 0.2.7, desktop 0.2.22, Messenger 0.1.1.

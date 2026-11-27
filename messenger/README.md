@@ -1,6 +1,6 @@
 # Shadow Messenger
 
-A native GTK4 Matrix client under development for ShadowRealm-OS. It is included in the private r5 development image as a test-account preview, but it is not in the public r4 installer and is not a finished messaging application.
+A native GTK4 Matrix client for ShadowRealm-OS. Version 0.1.1 is included in the r5 development image and the signed package feed as a test-account preview; the public r4 ISO does not include it. Broader provider, interoperability and hardware coverage remain under validation.
 
 ## Current implementation
 
@@ -20,7 +20,7 @@ The client window follows the selected desktop palette through GTK4 application 
 
 ## Stack
 
-Rust, GTK4/gtk4-rs, GTK CSS, Matrix Rust SDK, Tokio, SDK-supported SQLite storage and Secret Service. Timeline integration uses matrix-sdk-ui 0.19.1. Desktop notifications use GIO/D-Bus; notification tones are embedded WAV files played through GTK's media backend, with a best-effort fallback when no audio sink is available. A Debian package builder is included and has produced an installable package containing the binary, launcher, theme-generated icons, README, copyright and declared runtime dependencies. The package installs `shadow-messenger-app` into every ShadowRealm-OS palette, plus a hicolor fallback, so the application menu, dock, desktop shortcut and window title use the same icon. The package has not yet been installed from a fresh r5 image; that remains an installer gate. The primary interface does not embed a browser.
+Rust, GTK4/gtk4-rs, GTK CSS, Matrix Rust SDK, Tokio, SDK-supported SQLite storage and Secret Service. Timeline integration uses matrix-sdk-ui 0.19.1. Desktop notifications use GIO/D-Bus; notification tones are embedded WAV files played through GTK's media backend, with a best-effort fallback when no audio sink is available. A Debian package builder is included and has produced an installable package containing the binary, launcher, theme-generated icons, README, copyright and declared runtime dependencies. The package installs `shadow-messenger-app` into every ShadowRealm-OS palette, plus a hicolor fallback, so the application menu, dock, desktop shortcut and window title use the same icon. The package has been installed in the disposable Debian 13 VM and launched from the installed system launcher; a fresh r5 image remains the installer gate. The primary interface does not embed a browser.
 
 One account worker owns the session. Network and keyring work run outside GTK, with two Tokio worker threads and bounded command queues. One SDK long-poll synchronization task runs per connected account. A failed sync requires an explicit reconnect through Restore saved account. Passwords, tokens, recovery material and message content must not be logged.
 

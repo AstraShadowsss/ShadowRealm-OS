@@ -66,7 +66,14 @@ static GtkWidget *menu_category_submenu(App *app){
  GtkWidget *item=gtk_separator_menu_item_new();gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);item=gtk_menu_item_new_with_label("Automatic Category");g_signal_connect(item,"activate",G_CALLBACK(menu_move_category),app);gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);
  item=gtk_menu_item_new_with_label("New Category…");g_signal_connect(item,"activate",G_CALLBACK(menu_create_category),app);gtk_menu_shell_append(GTK_MENU_SHELL(menu),item);return menu;
 }
-static int menu_scale_percent(void){return g_key_file_has_key(menu_preferences,"Menu","Scale",NULL)?CLAMP(g_key_file_get_integer(menu_preferences,"Menu","Scale",NULL),80,140):100;}
+static int menu_user_scale(void){return g_key_file_has_key(menu_preferences,"Menu","Scale",NULL)?CLAMP(g_key_file_get_integer(menu_preferences,"Menu","Scale",NULL),80,140):100;}
+/* Written by shadow_display_scale.py for the current screen. */
+static int menu_display_scale(void){
+ char *path=g_build_filename(g_get_user_config_dir(),"shadowrealm-os","display-scale",NULL),*data=NULL;gsize length=0;int value=100;
+ if(g_file_get_contents(path,&data,&length,NULL)){gint64 parsed=g_ascii_strtoll(data,NULL,10);if(parsed>=60&&parsed<=220)value=(int)parsed;}
+ g_free(data);g_free(path);return value;
+}
+static int menu_scale_percent(void){return CLAMP(menu_user_scale()*menu_display_scale()/100,60,280);}
 static int menu_item_spacing(void){return g_key_file_has_key(menu_preferences,"Menu","Spacing",NULL)?CLAMP(g_key_file_get_integer(menu_preferences,"Menu","Spacing",NULL),0,10):3;}
 static void menu_apply_size(void){
  if(!menu_size_provider){menu_size_provider=gtk_css_provider_new();gtk_style_context_add_provider_for_screen(gdk_screen_get_default(),GTK_STYLE_PROVIDER(menu_size_provider),GTK_STYLE_PROVIDER_PRIORITY_APPLICATION+2);}
@@ -113,6 +120,6 @@ static void menu_size_changed(GtkRange *range,gpointer key){g_key_file_set_integ
 static void menu_size_dialog(GtkButton *button,gpointer unused){
  (void)button;(void)unused;menu_interacting=TRUE;
  GtkWidget *dialog=gtk_dialog_new_with_buttons("Menu Size",GTK_WINDOW(menu_window),GTK_DIALOG_MODAL,"Done",GTK_RESPONSE_CLOSE,NULL);gtk_window_set_default_size(GTK_WINDOW(dialog),430,220);GtkWidget *box=gtk_dialog_get_content_area(GTK_DIALOG(dialog));gtk_container_set_border_width(GTK_CONTAINER(box),18);gtk_box_set_spacing(GTK_BOX(box),12);
- GtkWidget *label=gtk_label_new("Text and menu size (%)");gtk_box_pack_start(GTK_BOX(box),label,FALSE,FALSE,0);GtkWidget *scale=gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,80,140,5);gtk_range_set_value(GTK_RANGE(scale),menu_scale_percent());g_signal_connect(scale,"value-changed",G_CALLBACK(menu_size_changed),"Scale");gtk_box_pack_start(GTK_BOX(box),scale,FALSE,FALSE,0);
+ GtkWidget *label=gtk_label_new("Text and menu size (%)");gtk_box_pack_start(GTK_BOX(box),label,FALSE,FALSE,0);GtkWidget *scale=gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,80,140,5);gtk_range_set_value(GTK_RANGE(scale),menu_user_scale());g_signal_connect(scale,"value-changed",G_CALLBACK(menu_size_changed),"Scale");gtk_box_pack_start(GTK_BOX(box),scale,FALSE,FALSE,0);
  label=gtk_label_new("Space between items");gtk_box_pack_start(GTK_BOX(box),label,FALSE,FALSE,0);scale=gtk_scale_new_with_range(GTK_ORIENTATION_HORIZONTAL,0,10,1);gtk_range_set_value(GTK_RANGE(scale),menu_item_spacing());g_signal_connect(scale,"value-changed",G_CALLBACK(menu_size_changed),"Spacing");gtk_box_pack_start(GTK_BOX(box),scale,FALSE,FALSE,0);gtk_widget_show_all(dialog);gtk_dialog_run(GTK_DIALOG(dialog));gtk_widget_destroy(dialog);menu_interacting=FALSE;
 }

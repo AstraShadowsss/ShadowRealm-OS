@@ -6,7 +6,7 @@ This is not a released image. No r5 ISO has been built or installed. Package and
 
 ### Shadow Messenger
 
-The native client built without warnings, and the ordinary Rust tests passed. The GUI was exercised against the isolated loopback Synapse fixture: test-account login, an encrypted direct invitation accepted by a second profile, encrypted send/receive between two accounts, Presence selection, a custom away message, the Activity feed, normal and mention notifications, Do Not Disturb suppression, saved-account restore, message persistence after restart, Preferences, Devices & Security, and recovery-key setup. The notification click action did **not** open the conversation. The notification now also carries an explicit **Open** action button, and the session notification daemon reports the `actions` capability; a fresh click test is still required. The full test suite is still flaky when run in one process, while the ignored integration and theme tests pass individually.
+The native client built without warnings, and the ordinary Rust tests passed. The GUI was exercised against the isolated loopback Synapse fixture: test-account login, an encrypted direct invitation accepted by a second profile, encrypted send/receive between two accounts, Presence selection, a custom away message, the Activity feed, normal and mention notifications, Do Not Disturb suppression, saved-account restore, message persistence after restart, Preferences, Devices & Security, and recovery-key setup. The notification click action did **not** open the conversation. The notification now also carries an explicit **Open** action button, and the session notification daemon reports the `actions` capability; a fresh click test is still required. The full test suite is still flaky when run in one process, while the ignored integration and theme tests pass individually. On 27 November 2026 the packaged 0.1.1 client restored the disposable test account (`demo_3f46`) and was captured for the README, website and SourceForge page; the fixture contains no owner account data.
 
 ### Themes and icons
 
@@ -22,7 +22,7 @@ A pre-installer guidance window now covers disk erasure, encryption recovery and
 
 ### Package and disk state
 
-Current r5 packages staged in `/var/tmp/r5-out`: desktop 0.2.21, Terminal 0.2.4, artwork 0.2.6, panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, archive keyring 2026.11-2, all nine games and `shadowrealm-os-messenger` 0.1.0. Every staged DEB was compared with the version the signed feed publishes: all match except the terminal, which carried unreleased tab support under 0.2.3 and was rebuilt as 0.2.4 and published. Terminal 0.2.4 from the feed opened a tab strip, and `Ctrl+Shift+T` opened a second shell on the test VM. Regenerable `/var/tmp` build and test directories were removed, reclaiming about 6 GB; the Synapse fixture and account data were kept. The VM still has no root access, live-build, xorriso, mksquashfs, debootstrap or the expected build volume.
+Current r5 packages: desktop 0.2.23 (`/var/tmp/r5-0.2.23`), Terminal 0.2.4, artwork 0.2.7 (`/var/tmp/r5-new`), panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, archive keyring 2026.11-2, all nine games and `shadowrealm-os-messenger` 0.1.1. The signed feed publishes desktop 0.2.23, Terminal 0.2.4, artwork 0.2.7, panel 0.2.1, security 0.2.1, experience 0.2.0, installer settings 0.2.2, release 2026.11-4, the games and Messenger 0.1.1. Artwork 0.2.7 is both the feed and image package. Terminal 0.2.4 from the feed opened a tab strip, and `Ctrl+Shift+T` opened a second shell on the test VM. The VM still has no root access, live-build, xorriso, mksquashfs, debootstrap or the expected build volume.
 
 ### Release-folder audit
 
@@ -30,7 +30,7 @@ The desktop 0.2.20 and Terminal 0.2.3 DEBs that had been uploaded to the SourceF
 
 ### Dock shelf
 
-The dock shelf code is present in desktop 0.2.21, which the signed feed now publishes, so installed systems receive it through Software & Updates. Direct dragging, edge drops, multi-monitor behavior and final polish were not rechecked for r5.
+The dock shelf code is present in desktop 0.2.23, which the signed feed now publishes, so installed systems receive it through Software & Updates. Direct dragging, edge drops, multi-monitor behavior and final polish were not rechecked for r5.
 
 ## 2026.11 beta 1 r4 validation
 

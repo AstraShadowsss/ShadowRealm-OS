@@ -15,7 +15,7 @@ work=$(mktemp -d -p /mnt/shadowrealm-build iso-stage.XXXXXXXX)
 mkdir -p "$work/live" "$work/isolinux" "$work/boot/grub"
 for name in shadowrealm-os-desktop shadowrealm-os-terminal shadowrealm-os-panel shadowrealm-os-security shadowrealm-os-artwork shadowrealm-os-installer-settings shadowrealm-os-experience shadowrealm-os-messenger; do
  expected=0.2.0
- case "$name" in shadowrealm-os-installer-settings) expected=0.2.2;; shadowrealm-os-desktop) expected=0.2.22;; shadowrealm-os-artwork) expected=0.2.7;; shadowrealm-os-terminal) expected=0.2.4;; shadowrealm-os-panel) expected=0.2.1;; shadowrealm-os-security) expected=0.2.1;; shadowrealm-os-messenger) expected=0.1.1;; esac
+ case "$name" in shadowrealm-os-installer-settings) expected=0.2.2;; shadowrealm-os-desktop) expected=0.2.23;; shadowrealm-os-artwork) expected=0.2.7;; shadowrealm-os-terminal) expected=0.2.4;; shadowrealm-os-panel) expected=0.2.1;; shadowrealm-os-security) expected=0.2.1;; shadowrealm-os-messenger) expected=0.1.1;; esac
  test "$(dpkg-query --admindir="$root/var/lib/dpkg" -W -f='${Version}' "$name")" = "$expected"
 done
 test "$(dpkg-query --admindir="$root/var/lib/dpkg" -W -f='${Version}' shadow-solitaire)" = 0.2.2-1

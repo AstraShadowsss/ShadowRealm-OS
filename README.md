@@ -28,6 +28,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 - Custom application menu with categories, favorites and adjustable sizing; editable dock and desktop shortcuts.
 - Coordinated GTK, window, icon, terminal, login and boot artwork using the SR identity.
 - Shadow Icon Studio for importing, previewing and exporting application icons in all twelve palettes, with batch export, custom logo packs and a built-in guide.
+- Shadow Messenger, a native GTK4 Matrix client with encrypted rooms, device verification, recovery, presence and desktop notifications, installed from the signed feed.
 - Control Center for appearance, accounts, network, audio, Bluetooth and system tools. Hardware controls depend on the available device and driver.
 - Debian APT packages, the signed LibreWolf repository, and Flatpak support.
 - LibreWolf, Thunderbird, LibreOffice, VLC, Thunar, Mousepad and other desktop applications. See the release package inventory for exact versions.
@@ -36,7 +37,7 @@ The AMD64 ISO starts a live desktop so you can try it before installing. Open **
 - Customizable login backgrounds, optional original session chimes and three screensaver animations with standard XFCE locking.
 - Nine offline games, including Shadow Pinball, Skull Invaders, Shadow Runner, Circuit Chase, Snake, Shadow Spider Solitaire, Neon Ascent, Neon Breaker and Marble Reactor. Scores and settings stay local.
 
-**Desktop 0.2.19+window1.icon1.clean3+refresh1+launch1 and artwork 0.2.6+window1.icon1.clean3** add coordinated window borders, the redesigned application icon family and Shadow Icon Studio, and correct application launch from the menu. Weather, Local Search and the DNSCrypt transition fix remain in the signed update stream. Install updates through Software & Updates. [Release notes](CHANGELOG.md)
+**Desktop 0.2.23 and Shadow Messenger 0.1.1** are the current r5 development packages. Desktop 0.2.23 adds display-aware panel, tray, menu and widget scaling; Shadow Messenger 0.1.1 adds the native encrypted Matrix client and its theme-generated application icon. Artwork 0.2.7 is in the signed feed and the next image. The public ISO remains the r4 beta until the r5 installer checks pass. Install updates through Software & Updates. [Release notes](CHANGELOG.md)
 
 ## Screenshots
 
@@ -96,6 +97,14 @@ Load your own artwork or the built-in Prism sample, then see the icon in all twe
 ![Shadow Icon Studio previewing the Prism sample in all twelve themes](screenshots/icon-studio-final.png)
 
 [Icon Studio guide](docs/icon-studio.md)
+
+### Shadow Messenger
+
+Shadow Messenger is the native GTK4 Matrix client included in the r5 development image and signed package feed. It supports encrypted rooms, device verification, account recovery, presence, notifications and every ShadowRealm-OS palette. This screenshot shows the packaged client signed in to the disposable local Matrix test fixture.
+
+![Shadow Messenger signed in with a test account](screenshots/messenger/signed-in.png)
+
+[Shadow Messenger guide](docs/user-guide.md#shadow-messenger)
 
 ### Games
 

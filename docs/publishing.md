@@ -20,16 +20,16 @@ Installer changes require a rebuilt ISO and new checksums, matching source and n
 
 ## Building the r5 image
 
-The image must carry packages newer than the published feed, or every fresh install immediately needs updates. Desktop 0.2.21, security 0.2.1, installer settings 0.2.2, artwork 0.2.6 and Messenger 0.1.0 are the r5 source versions. The signed trixie feed now publishes desktop 0.2.21, security 0.2.1, installer settings 0.2.2, Terminal 0.2.4, Messenger 0.1.0 and artwork 0.2.6. Artwork 0.2.6 remains the published package that must be reused because the committed artwork source cannot yet reproduce it. Keep incrementing versions whenever shipped content changes.
+The image must carry packages newer than the published feed, or every fresh install immediately needs updates. Desktop 0.2.23, security 0.2.1, installer settings 0.2.2, artwork 0.2.7 and Messenger 0.1.1 are the r5 source versions. The signed trixie feed now publishes desktop 0.2.23, security 0.2.1, installer settings 0.2.2, Terminal 0.2.4, Messenger 0.1.1 and artwork 0.2.7. Artwork 0.2.7 is published in the feed and included in the image; 0.2.6 remains available to older installed systems. Keep incrementing versions whenever shipped content changes.
 
 1. Build every custom package on a disposable Debian 13 builder, following the commands in `docs/build-guide.md`. Run them from the repository root, not from inside `components/`, so relative artwork paths such as `branding/professional-masters` resolve.
 2. Check each DEB version with `dpkg-deb -f <deb> Version` before continuing.
-3. Confirm the feed carries desktop 0.2.21, security 0.2.1, installer settings 0.2.2, Terminal 0.2.4 and Messenger 0.1.0 before advertising those changes. It does; re-check after any rebuild.
+3. Confirm the feed carries desktop 0.2.23, security 0.2.1, installer settings 0.2.2, Terminal 0.2.4 and Messenger 0.1.1, and that the image carries artwork 0.2.7. It does; re-check after any rebuild.
 4. Build the live image, then run `release/shadowrealm-os-live/check-iso.sh` and the installer checks in `docs/installation.md`.
 5. Install the image in a clean VM, run `sudo apt update` and confirm no custom package is offered as an upgrade. If one is, the image is older than the feed and must not be published.
 6. Publish the ISO with new checksums, matching source and notices to the single SourceForge version folder.
 
-Shadow Messenger 0.1.0 is included in the r5 image and in the signed package feed. Its package installs the GTK4 client, a theme-generated `shadow-messenger-app` icon in every ShadowRealm-OS palette, and a `gnome-keyring` dependency. Keep r5 unpublished until the remaining release checklist gates and a fresh installed-image test pass.
+Shadow Messenger 0.1.1 is included in the r5 image and in the signed package feed. Its package installs the GTK4 client, a theme-generated `shadow-messenger-app` icon in every ShadowRealm-OS palette, and a `gnome-keyring` dependency. Keep r5 unpublished until the remaining release checklist gates and a fresh installed-image test pass.
 
 ## Hosting boundaries
 

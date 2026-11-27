@@ -43,6 +43,32 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-artwork-',dir=os.environ
  from restyle_professional_icons import whiten_theme_pngs
  for theme in sorted((root/'usr/share/icons').glob('ShadowRealm-OS-Professional*')):
   print('Whitening',theme.name,whiten_theme_pngs(theme),'app icons')
+ # nm-applet uses nm-device-wired, but the source theme shipped a monitor
+ # glyph under that name. Render the panel Ethernet port in each palette's
+ # wireless colour so it matches the rest of that theme's status indicators.
+ from PIL import Image
+ from collections import Counter
+ ethernet = a.source/'ethernet-status.svg'
+ if ethernet.is_file():
+  template = ethernet.read_text()
+  for theme in sorted((root/'usr/share/icons').glob('ShadowRealm-OS-*')):
+   wireless = theme/'48x48/status/nm-device-wireless.png'
+   if not wireless.is_file():
+    wireless = theme/'32x32/status/nm-device-wireless.png'
+   colour = '#00eafb'
+   if wireless.is_file():
+    image = Image.open(wireless).convert('RGBA')
+    common = Counter((r, g, b) for r, g, b, alpha in image.getdata() if alpha > 200)
+    if common:
+     colour = '#%02x%02x%02x' % common.most_common(1)[0][0]
+   svg = template.replace('#00eafb', colour).encode()
+   for size in (16, 24, 32, 48):
+    raster = subprocess.run(['rsvg-convert', '-w', str(size), '-h', str(size)],
+                            input=svg, capture_output=True, check=True).stdout
+    for category in ('apps', 'devices', 'status'):
+     target = theme/f'{size}x{size}/{category}/nm-device-wired.png'
+     if target.is_file():
+      target.write_bytes(raster)
  # Shadow Messenger uses the theme's mail glyph; replace the retired chat-bubble
  # aliases so every palette and menu shows the same envelope plate.
  mail=('orbital-dock-email','shadow-email','shadowrealm-os-release-orbital-dock-email','shadowrealm-os-app-email')

@@ -10,7 +10,7 @@ ShadowRealm-OS is a Debian 13 and Xfce desktop with a recognizable visual identi
 
 ## Desktop and system controls
 
-The signed desktop updates include Local Search, searchable settings, independent widgets, Notes, opt-in Weather and dock editing. Desktop 0.2.19 and artwork 0.2.6 include package-removal controls, light-theme readability improvements and the restored gold Circuit Corridor logo. Terminal remains 0.2.3.
+The signed desktop updates include Local Search, searchable settings, independent widgets, Notes, opt-in Weather, dock editing and Shadow Messenger. Desktop 0.2.23 adds display-aware panel, tray, menu and widget scaling. Artwork 0.2.7 and Terminal 0.2.4 are the current r5 image packages.
 - Show current state at the point of action. Explain whether Bluetooth is off or an adapter is missing and why an administrative action failed. Provide visible keyboard focus, readable toggle labels, and clear confirmation for changes that can interrupt connectivity.
 - Check the settings on smaller displays and with larger text. Carry the same focus and status conventions into the remaining system windows.
 - Keep the dock's drag-and-drop behavior consistent on smaller displays. Check Local Search performance and keep Weather lookups optional.

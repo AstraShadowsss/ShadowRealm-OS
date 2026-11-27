@@ -5,6 +5,7 @@ from shadow_whole_theme import matching_icons,set_widgets
 from shadow_palette import write_active_palette
 from shadow_icon_style import selected_icons
 from shadow_appearance_desktop import query as q, set_property as setq, wallpaper_properties, set_wallpaper, matching_wallpaper
+from shadow_display_scale import apply_scale
 h=Path.home();base=h/'.local/share/shadow-link';cfg=h/'.config/shadowrealm-os';cfg.mkdir(parents=True,exist_ok=True)
 mode=sys.argv[1] if len(sys.argv)>1 else 'neon';modes=json.loads((base/'appearance-modes.json').read_text())
 if mode not in modes:raise SystemExit('Unknown appearance mode')
@@ -68,6 +69,7 @@ subprocess.run(['gsettings','set','org.gnome.desktop.interface','color-scheme','
 set_wallpaper(wallpaper,wallprops)
 from shadow_effects import sync_panels
 sync_panels()
+apply_scale(restart=False)
 set_widgets(selected.get('unbranded',False),base)
 subprocess.run(['xfce4-panel','--restart'],check=True)
 subprocess.run(['xfdesktop','--reload'],check=False,timeout=10)

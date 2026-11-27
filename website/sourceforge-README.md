@@ -8,11 +8,16 @@ A Debian 13 and Xfce desktop with coordinated themes, integrated controls and a 
 
 - Twelve coordinated palettes, independent wallpapers and an editable dock.
 - Shadow Icon Studio for creating, previewing and exporting application icons in every palette.
+- Shadow Messenger, a native GTK4 Matrix client with encrypted rooms, device verification, account recovery, presence and desktop notifications.
 - Four local desktop panels for resources, interface traffic, processes and security-service status.
 - Appearance, accounts, network, audio, Bluetooth and software controls.
 - Signed custom component/game updates alongside Debian and configured vendor repositories.
 - Everyday desktop applications and nine offline games.
 - Graphical installation with optional disk encryption.
+
+![Shadow Messenger signed in with a test account](https://raw.githubusercontent.com/AstraShadowsss/ShadowRealm-OS/main/screenshots/messenger/signed-in.png)
+
+Shadow Messenger is included in the r5 development image and signed package feed. It supports encrypted rooms, device verification, recovery, presence and notifications, and follows every ShadowRealm-OS palette. It only makes outbound connections. The screenshot shows the packaged client signed in to a disposable local test account.
 
 Read the installation and validation guides before changing disks. This is a public beta: hardware coverage is limited, and Secure Boot, shared-ESP dual boot and suspend/resume are not certified. Original project work is MIT; bundled third-party software retains its own licenses. Matching notices and corresponding source accompany the release.
 

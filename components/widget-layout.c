@@ -4,6 +4,7 @@ typedef struct {
 } WidgetLayout;
 
 static WidgetLayout widget_layout[WIDGET_COUNT];
+static int layout_screen_width, layout_screen_height;
 static struct {
     int index, x, y, width, applied_x, applied_y, applied_width;
     double pointer_x, pointer_y;
@@ -29,6 +30,17 @@ static void widget_layout_read(void)
         layout->y = g_key_file_get_integer(file, key, "Y", NULL);
         layout->width = CLAMP(g_key_file_get_integer(file, key, "Width", NULL), 0, 540);
     }
+    layout_screen_width = g_key_file_get_integer(file, "Screen", "Width", NULL);
+    layout_screen_height = g_key_file_get_integer(file, "Screen", "Height", NULL);
+    if (layout_screen_width < 1 || layout_screen_height < 1) {
+        /* Older files were written on the 1920x1080 reference desktop. */
+        int right = 0;
+        for (int i = 0; i < WIDGET_COUNT; i++)
+            if (widget_layout[i].positioned)
+                right = MAX(right, widget_layout[i].x + widget_layout[i].width);
+        layout_screen_width = right > 1280 ? 1920 : 1280;
+        layout_screen_height = layout_screen_width == 1920 ? 1080 : 800;
+    }
     g_free(path);
     g_key_file_unref(file);
 }
@@ -36,6 +48,8 @@ static void widget_layout_read(void)
 static void widget_layout_save(void)
 {
     GKeyFile *file = g_key_file_new();
+    g_key_file_set_integer(file, "Screen", "Width", layout_screen_width);
+    g_key_file_set_integer(file, "Screen", "Height", layout_screen_height);
     for (int i = 0; i < WIDGET_COUNT; i++) {
         const char *key = widget_keys[i];
         const WidgetLayout *layout = &widget_layout[i];
@@ -87,14 +101,32 @@ static void reflow_widgets(void)
         primary = gdk_display_get_monitor(display, 0);
     if (!primary)
         return;
-    GdkRectangle area;
+    GdkRectangle area, geometry;
     gdk_monitor_get_workarea(primary, &area);
+    gdk_monitor_get_geometry(primary, &geometry);
+    if ((layout_screen_width != geometry.width || layout_screen_height != geometry.height) &&
+        layout_screen_width > 0 && layout_screen_height > 0) {
+        double sx = (double)geometry.width / layout_screen_width;
+        double sy = (double)geometry.height / layout_screen_height;
+        for (int i = 0; i < WIDGET_COUNT; i++) {
+            WidgetLayout *layout = &widget_layout[i];
+            if (!layout->positioned)
+                continue;
+            layout->x = MAX(0, (int)(layout->x * sx + .5));
+            layout->y = MAX(0, (int)(layout->y * sy + .5));
+            if (layout->width)
+                layout->width = CLAMP((int)(layout->width * sx + .5), 0, 540);
+        }
+        layout_screen_width = geometry.width;
+        layout_screen_height = geometry.height;
+        widget_layout_save();
+    }
     int total = 0;
     for (int i = 0; i < WIDGET_COUNT; i++) {
         if (widget_enabled(i))
             total += widget_heights[i] + 12;
     }
-    double size = CLAMP((area.height - 85) / 685., .68, 1.2) *
+    double size = CLAMP((area.height - 85) / 685., .68, 1.6) *
                   CLAMP(widget_integer("ScalePercent", 100), 70, 120) / 100.;
     if (total)
         size = MIN(size, MAX(1, area.height - 30) / (double) total);

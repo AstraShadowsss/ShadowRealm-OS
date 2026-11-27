@@ -31,6 +31,7 @@ COMMANDS = {
     "widgets": ("shadow-link", "--widgets"),
     "widget-settings": ("shadow-link", "--widget-settings"),
     "session": ("shadow-xfce-session",),
+    "display-scale": ("shadow_display_scale.py", "--apply"),
     "first-run": ("shadow-first-run",),
     "welcome": ("shadow-first-run", "--force"),
 }

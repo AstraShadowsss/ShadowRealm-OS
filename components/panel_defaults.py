@@ -34,8 +34,8 @@ def seed_panel(root):
     for ident in (1, 2):
         ET.SubElement(group, "value", type="int", value=str(ident))
     for ident, size, position, plugins in (
-        (1, 30, "p=6;x=0;y=0", (1,4,5,2,3,8,25,6,24,23,9,10)),
-        (2, 54, "p=10;x=0;y=0", (12,13,14,15,16,20,19,18,11)),
+        (1, 46, "p=6;x=0;y=0", (1,4,5,2,3,8,25,6,24,23,9,10)),
+        (2, 75, "p=10;x=0;y=0", (12,13,14,15,16,20,19,18,11)),
     ):
         panel = property_node(group, f"panel-{ident}", "empty")
         property_node(panel,"position","string",position)

@@ -13,3 +13,11 @@ if ! systemctl --user is-active --quiet graphical-session.target; then
 fi
 "$(dirname "$0")/shadow_flatpak_exports.py"
 systemctl --user start xdg-desktop-portal.service
+scale_script="$(dirname "$0")/shadow_display_scale.py"
+if [ -f "$scale_script" ] && ! pgrep -u "$(id -u)" -f 'shadow_display_scale.py --watch' >/dev/null; then
+    if ! systemd-run --user --collect --unit=shadowrealm-os-display-scale \
+        --property=Restart=on-failure \
+        /usr/bin/python3 "$scale_script" --watch >/dev/null 2>&1; then
+        setsid /usr/bin/python3 "$scale_script" --watch >/dev/null 2>&1 &
+    fi
+fi

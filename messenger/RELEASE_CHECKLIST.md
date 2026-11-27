@@ -29,7 +29,7 @@ Shadow Messenger is included in the private r5 development image as a test-accou
 - [ ] Independent-client interoperability and live-account tests.
 - [x] Dependency lockfiles, Debian package builder, launcher and a theme-generated icon family; package contents and runtime dependencies inspected.
 - [x] Icon family covers menu, dock, desktop shortcut and window icon through the shared `shadow-messenger-app` name in all twelve palettes, with a hicolor fallback.
-- [ ] Install the rebuilt 0.1.0 package from a fresh r5 image and confirm the icon, keyring dependency and launcher in the installed desktop.
+- [ ] Install the rebuilt 0.1.1 package from a fresh r5 image and confirm the icon, keyring dependency and launcher in the installed desktop.
 - [ ] Third-party notices and license collection for binary distribution.
 - [ ] Actual screenshots and matching user documentation.
 - [ ] Fresh-profile and encrypted-install checks before installer inclusion.

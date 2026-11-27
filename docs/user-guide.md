@@ -36,6 +36,12 @@ Internet pause/airplane controls can disconnect your session. The firewall start
 
 Docker is optional and not installed by the image. The firewall permits Docker bridge traffic and root-published container ports through scoped rules while leaving arbitrary forwarding blocked. This path was syntax-checked but not exercised with a running Docker engine in the build VM; test published ports and DNS before relying on them.
 
+## Shadow Messenger
+
+Open **Shadow Messenger** from the application menu. It is a native GTK4 Matrix client included in the r5 development image and signed package feed. Enter an HTTPS homeserver and Matrix account, acknowledge the device-list notice, and sign in. If the provider allows registration, **Create a new account…** opens a separate form; captcha, email-verification and disabled-registration policies must be completed with the provider.
+
+Encrypted rooms, device verification, account recovery, presence, notifications and per-palette styling are available. Saved sessions use the desktop keyring; signing out removes the saved session from the device. Test-account sign-in, encrypted send and receive, session restore, device verification and recovery controls have been exercised against the disposable local fixture. Cross-client interoperability, accessibility and physical-hardware checks remain in the release checklist. Shadow Messenger makes outbound connections only, so the default inbound firewall policy does not block it; the homeserver must be reachable and the keyring unlocked.
+
 ## Accounts
 
 Installed users choose their own password during installation. Sudo normally asks for the current user's password when that user is allowed to administer the system. Account changes requiring administrator authorization use a local prompt. Keep a backup before renaming a login and its Home directory; third-party application files may contain paths the system cannot safely rewrite.

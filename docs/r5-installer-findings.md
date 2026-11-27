@@ -28,7 +28,7 @@ publication.
 | 26 | Verify Secure Boot chain and module signatures in enrolled UEFI and physical hardware; investigate reported security violation. | **Open** | VirtualBox tests cannot establish this. Requires physical UEFI hardware with Secure Boot enrolled, `mokutil`/`sbverify` evidence and the reported violation's firmware logs. |
 | 27 | Recheck DNSCrypt startup/effective resolver/reconnect/reboot/leaks/failure on hardware. | **Partial** | r4 software checks showed the resolver switching to the local DNSCrypt listener and no outbound port-53 traffic. r5 and hardware reconnect/reboot tests are outstanding. |
 | 28 | Reproduce optional Docker firewall forwarding problem; scoped DNS/NAT/bridge/published-port support without global forwarding. | **Implemented, runtime test open** | Security 0.2.1 accepts `docker0`/`br-*` traffic, established/related traffic and root-published DNAT ports; the forward policy remains `drop`. `nft -c` syntax passed. Docker is not installed in the guest, so published-port and embedded-DNS behavior still needs a Docker runtime test. |
-| 30 | Repeat APT upgrade/autoremove/dependency/startup recovery simulations; do not switch the main distribution to testing or add dummy packages. | **Partial; fresh-image run open** | On the installed r4 image with current indexes, `apt-get -s dist-upgrade` plans only desktop 0.2.21, security 0.2.1 and terminal 0.2.4, and `release/tests/check-desktop-apt.sh` passes dist-upgrade, autoremove and the network-manager-gnome removal. `release/tests/test-apt-rejection.sh` rejects unsigned, altered, expired and byte-modified metadata. Still to run a real upgrade and the same checks on a fresh r5 install. |
+| 30 | Repeat APT upgrade/autoremove/dependency/startup recovery simulations; do not switch the main distribution to testing or add dummy packages. | **Partial; fresh-image run open** | On the installed r4 image with current indexes, `apt-get -s dist-upgrade` plans desktop 0.2.23, security 0.2.1, terminal 0.2.4 and Messenger 0.1.1, and `release/tests/check-desktop-apt.sh` passes dist-upgrade, autoremove and the network-manager-gnome removal. `release/tests/test-apt-rejection.sh` rejects unsigned, altered, expired and byte-modified metadata. Still to run a real upgrade and the same checks on a fresh r5 install. |
 | 31 | Add dismissible/reopenable first-run summary of installed software, active services, network behavior and update sources. | **Implemented; installed-image check open** | `shadow-first-run` shows the summary and remembers dismissal. A new **Welcome Summary** menu entry runs it with `--force`. View it from a fresh r5 install and confirm its network/service text matches the image. |
 | 32 | Verify latest boot/login/GRUB/Plymouth art visually; fix GRUB contrast over light artwork and check animation, beyond asset-path checks. | **Open** | No r5 ISO exists to inspect. The GRUB background and menu assets still need a real BIOS/UEFI boot check, including light artwork contrast, Plymouth animation and late-shutdown notice. |
 | 33 | Check app menu. | **Live check passed; r5 image check open** | Menu/classifier tests cover mixed categories and duplicate avoidance. The menu was opened live on the r4 desktop with the r5 packages: Favorites lists Shadow Messenger with the same envelope-plate icon as the theme's mail application, the desktop entry and the conversation window icon share the file, and the renamed launcher no longer shows a development title. Welcome Summary still needs the same pass on a booted r5 image. |
@@ -37,9 +37,9 @@ publication.
 
 ## Package set staged for the builder
 
-- desktop 0.2.21 (includes the dock shelf and Welcome Summary entry)
+- desktop 0.2.23 (includes display scaling, the dock shelf and Welcome Summary entry)
 - terminal 0.2.4 (tabs and Ctrl+V paste)
-- artwork 0.2.6 (reuse the built package; do not rebuild from the incomplete source archive)
+- artwork 0.2.7 (r5 image and signed-feed package; 0.2.6 remains available to older systems)
 - panel 0.2.1
 - security 0.2.1 (scoped Docker forwarding)
 - experience 0.2.0
@@ -47,12 +47,12 @@ publication.
 - release 2026.11-4
 - archive keyring 2026.11-2
 - nine game packages
-- Messenger 0.1.0
+- Messenger 0.1.1
 
 ## Publication blockers
 
-- The two loose DEBs that were in the release folder (desktop 0.2.20 and terminal 0.2.3) were removed. Their contents are superseded by the signed feed, which now carries desktop 0.2.21, terminal 0.2.4, installer settings 0.2.2, security 0.2.1 and Messenger 0.1.0.
-- The signed feed is published and verified: `apt-get update` accepts `InRelease`, `apt-get download` returns Messenger 0.1.0 with the expected SHA256, `apt-get -s dist-upgrade` plans only terminal 0.2.4, desktop 0.2.21 and security 0.2.1, and `apt-cache policy` resolves every current candidate. The index is valid until 25 February 2027; `release/build-apt-repository.py` now defaults to a 90-day window so a rebuild cannot silently return to the old 14 days.
+- The two loose DEBs that were in the release folder (desktop 0.2.20 and terminal 0.2.3) were removed. Their contents are superseded by the signed feed, which now carries desktop 0.2.23, terminal 0.2.4, installer settings 0.2.2, security 0.2.1, artwork 0.2.7 and Messenger 0.1.1.
+- The signed feed is published and verified: `apt-get update` accepts `InRelease`, `apt-get download` returns Messenger 0.1.1 with the expected SHA256, `apt-get -s dist-upgrade` plans terminal 0.2.4, desktop 0.2.23, security 0.2.1 and Messenger 0.1.1, and `apt-cache policy` resolves every current candidate. The index is valid until 25 February 2027; `release/build-apt-repository.py` now defaults to a 90-day window so a rebuild cannot silently return to the old 14 days.
 - No root-capable ISO builder: r5 cannot be built or installed here.
 
 The signed feed is verified; the dock shelf, Messenger and the Docker forwarding

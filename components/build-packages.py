@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory(prefix='shadowrealm-os-packages-',dir=os.enviro
  write(root,'usr/share/glib-2.0/schemas/90-shadowrealm-os.gschema.override',"[org.gnome.desktop.interface]\ncolor-scheme='prefer-dark'\n")
  runtime=root/'usr/share/shadowrealm-os/desktop/runtime/bin'
  runtime.mkdir(parents=True,exist_ok=True)
- names='wallpaper-collections.json shadow-weather.py local-file-search.py shadow-account shadow_account_preflight.py shadow_airplane.py shadow-appearance shadow-appearance-apply shadow_appearance_desktop.py shadow_palette.py shadow_icon_style.py shadow_dock_layout.py shadow-audio-panel shadow-browser shadow-dock-settings shadow_effects.py shadow-files shadow-first-run shadow_network_tools.py shadow-notes shadow-screenshot shadow-software shadow-system-panels shadow-terminal shadow-trash shadow_whole_theme.py'.split()
+ names='wallpaper-collections.json shadow-weather.py local-file-search.py shadow-account shadow_account_preflight.py shadow_airplane.py shadow-appearance shadow-appearance-apply shadow_appearance_desktop.py shadow_display_scale.py shadow_palette.py shadow_icon_style.py shadow_dock_layout.py shadow-audio-panel shadow-browser shadow-dock-settings shadow_effects.py shadow-files shadow-first-run shadow_network_tools.py shadow-notes shadow-screenshot shadow-software shadow-system-panels shadow-terminal shadow-trash shadow_whole_theme.py'.split()
  for name in names:
   target=runtime/name
   shutil.copyfile(src/name,target);target.chmod(0o644 if target.suffix in ('.py','.json') else 0o755)
