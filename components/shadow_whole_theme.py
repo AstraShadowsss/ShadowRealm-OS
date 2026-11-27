@@ -5,6 +5,18 @@ gi.require_version('Gtk','3.0')
 from gi.repository import Gio,GLib,Gtk,GdkPixbuf
 from PIL import Image,ImageColor,ImageOps
 
+def retarget_dock_launchers():
+    """Point pinned dock entries at icons/current so theme switches apply."""
+    for desktop in (Path.home()/'.config/xfce4/panel').glob('launcher-*/shadow.desktop'):
+        try:
+            text=desktop.read_text()
+        except OSError:
+            continue
+        updated=re.sub(r'(/shadow-link/icons/)[^/]+/',r'\1current/',text)
+        if updated!=text:
+            desktop.write_text(updated)
+
+
 def matching_icons(mode,base,files):
     from shadow_icon_style import repair_icons
     repair_icons(mode, base)
@@ -100,7 +112,9 @@ def matching_icons(mode,base,files):
                 path.write_text(restored)
             continue
         if branded and (not neutral or mode.get('custom_system_icons') or old.stem in brand_icons):
-            icon=str(managed_asset if managed_asset and managed_asset.is_file() else palette/old.name)
+            chosen=managed_asset if managed_asset and managed_asset.is_file() else palette/old.name
+            # Dock entries follow icons/current so a theme switch updates them.
+            icon=str(base/'icons/current'/chosen.name) if dock else str(chosen)
         else:
             name=original
             if branded:
@@ -113,6 +127,7 @@ def matching_icons(mode,base,files):
         if not metadata:
             updated=updated.replace('[Desktop Entry]\n','[Desktop Entry]\nX-ShadowRealm-OS-OriginalIcon='+original+'\n',1)
         if updated!=text:path.write_text(updated)
+    retarget_dock_launchers()
     subprocess.run(['gtk-update-icon-cache','-f','-t',str(icon_dir.parent.parent)],stdout=subprocess.DEVNULL,check=True)
 
 def set_widgets(professional,base):

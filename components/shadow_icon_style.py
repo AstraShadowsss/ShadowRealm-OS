@@ -9,6 +9,7 @@ def signature_dock_svg(text, mode):
     for gradient in root.iter(namespace+'linearGradient'):
         stops=list(gradient)
         colors=([mode['accent'],mode['foreground'],mode['secondary']] if gradient.get('id')=='rim'
+                else ['#f2f5f3','#ffffff','#ffffff','#e9eeec'] if gradient.get('id')=='plate' and mode.get('unbranded')
                 else ['#252734','#090a12','#11121a'] if gradient.get('id')=='plate' else None)
         if colors:
             for stop,color in zip(stops,colors):stop.set('stop-color',color)
